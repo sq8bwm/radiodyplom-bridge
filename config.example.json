@@ -1,0 +1,39 @@
+{
+  "udp": {
+    "host": "127.0.0.1",
+    "port": 12060,
+    "multicastGroups": []
+  },
+  "dataDir": "auto",
+  "radiodyplom": {
+    "apiUrl": "https://radiodyplom.pl/qso_upload.php",
+    "pin": "WSTAW-PIN",
+    "timeoutMs": 10000,
+    "dryRun": true
+  },
+  "forward": {
+    "operations": [
+      "insert"
+    ],
+    "_targets_komentarz": "Pusta lista = jedno QSO ze stacja z loggera. Podaj cele, aby rozmnozyc jedno QSO na kilka wpisow. station_callsign wymagany; operator i pin opcjonalne.",
+    "targets": []
+  },
+  "queue": {
+    "dir": "./data/queue",
+    "failedDir": "./data/failed",
+    "seenFile": "./data/seen.json",
+    "maxAttempts": 20,
+    "baseDelayMs": 5000,
+    "maxDelayMs": 900000
+  },
+  "rateLimit": {
+    "maxPerMinute": 9,
+    "minSpacingMs": 700
+  },
+  "logLevel": "info",
+  "api": {
+    "enabled": true,
+    "port": 12061
+  },
+  "language": "pl"
+}

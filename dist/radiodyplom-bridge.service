@@ -1,0 +1,14 @@
+[Unit]
+Description=Mostek logger -> radiodyplom.pl
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/radiodyplom
+ExecStart=/usr/bin/node %h/radiodyplom/src/index.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

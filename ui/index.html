@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+<title>RadioDyplom Bridge</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #fff; --line: #e2e6ec; --text: #1e2430;
+    --muted: #6b7480; --ok: #1c9d5b; --warn: #b8860b; --err: #c0392b; --accent: #2c3e50;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161a20; --panel:#1e242c; --line:#2c343e; --text:#e6eaf0;
+            --muted:#98a2af; --ok:#3ecf8e; --warn:#e3b341; --err:#f0736a; --accent:#8ab4f8; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         background:var(--bg); color:var(--text); }
+  header { display:flex; align-items:center; gap:12px; padding:12px 16px;
+           border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:0; }
+  h1 { font-size:15px; margin:0; font-weight:600; }
+  .dot { width:10px; height:10px; border-radius:50%; background:var(--muted); flex:none; }
+  .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.err{background:var(--err)}
+  .grow { flex:1; }
+  .badge { font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--line);
+           color:var(--muted); font-weight:500; }
+  .badge.dry { color:var(--warn); border-color:var(--warn); }
+  /* Stan łączności – te same kolory co ikona w zasobniku */
+  .badge.st-ok    { color:var(--ok);   border-color:var(--ok);   background:color-mix(in srgb, var(--ok) 10%, transparent); }
+  .badge.st-warn  { color:var(--warn); border-color:var(--warn); background:color-mix(in srgb, var(--warn) 12%, transparent); }
+  .badge.st-error { color:var(--err);  border-color:var(--err);  background:color-mix(in srgb, var(--err) 12%, transparent); }
+  select.lang { width:auto; font-size:12px; padding:3px 6px; }
+  nav { display:flex; gap:4px; padding:8px 16px 0; }
+  nav button { background:none; border:none; border-bottom:2px solid transparent; color:var(--muted);
+               padding:6px 12px; cursor:pointer; font-size:13px; }
+  nav button.active { color:var(--text); border-bottom-color:var(--accent); }
+  main { padding:16px; }
+  section { display:none; } section.active { display:block; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; }
+  .card .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .card .v { font-size:22px; font-weight:600; margin-top:2px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+           padding:12px 14px; margin-top:12px; }
+  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.04em;
+              color:var(--muted); margin:0 0 8px; font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; font-weight:500; color:var(--muted); font-size:11px;
+       text-transform:uppercase; padding:4px 6px; }
+  td { padding:4px 6px; border-top:1px solid var(--line); }
+  .empty { color:var(--muted); font-style:italic; padding:6px; }
+  button.act { background:var(--accent); color:#fff; border:none; border-radius:6px;
+               padding:7px 14px; cursor:pointer; font-size:13px; }
+  button.act.sec { background:none; color:var(--text); border:1px solid var(--line); }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  label { display:block; font-size:12px; color:var(--muted); margin:10px 0 3px; }
+  input[type=text], input[type=number], select {
+    width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
+    background:var(--bg); color:var(--text); font-size:13px; font-family:inherit; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .three { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end; }
+  pre#logbox { background:var(--bg); border:1px solid var(--line); border-radius:6px;
+       padding:10px; font-size:12px; max-height:460px; overflow:auto; margin:0;
+       font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; }
+  .lvl-warn{color:var(--warn)} .lvl-error{color:var(--err)}
+  .hint { font-size:12px; color:var(--muted); margin-top:6px; }
+  .note { border-left:3px solid var(--warn); padding:8px 10px; background:var(--panel);
+          border-radius:0 6px 6px 0; font-size:12px; margin-top:10px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="dot"></span>
+  <h1 id="title" data-i18n="app.name">RadioDyplom Bridge</h1>
+  <span class="badge" id="profile">—</span>
+  <span class="badge dry" id="dryBadge" hidden>DRY-RUN</span>
+  <span class="grow"></span>
+  <select class="lang" id="langPick" title="Język / Language"></select>
+  <button class="act sec" id="btnPause" data-i18n="btn.pause">Wstrzymaj</button>
+  <button class="act sec" id="btnRequeue" data-i18n="btn.requeue">Ponów odrzucone</button>
+</header>
+
+<div class="note" id="restartNote" hidden style="margin:10px 16px 0;border-left-color:var(--warn)"></div>
+
+<nav>
+  <button data-tab="stan" class="active" data-i18n="tab.state">Stan</button>
+  <button data-tab="kolejka" data-i18n="tab.queue">Kolejka</button>
+  <button data-tab="konfig" data-i18n="tab.config">Konfiguracja</button>
+  <button data-tab="log" data-i18n="tab.log">Log</button>
+</nav>
+
+<main>
+  <section id="stan" class="active">
+    <div class="cards">
+      <div class="card"><div class="k" data-i18n="card.sent"></div><div class="v" id="cSent">0</div></div>
+      <div class="card"><div class="k" data-i18n="card.pending"></div><div class="v" id="cPending">0</div></div>
+      <div class="card"><div class="k" data-i18n="card.failed"></div><div class="v" id="cFailed">0</div></div>
+      <div class="card"><div class="k" data-i18n="card.received"></div><div class="v" id="cRecv">0</div></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="panel.listen"></h2>
+      <div id="listenInfo"></div>
+      <div class="note" id="localNote" data-i18n="note.localhost" hidden></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="panel.sources"></h2>
+      <div id="sources" class="empty"></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="panel.lastEvents"></h2>
+      <div id="lastInfo"></div>
+    </div>
+  </section>
+
+  <section id="kolejka">
+    <div class="panel">
+      <h2 data-i18n="panel.pending"></h2>
+      <table><thead><tr>
+        <th data-i18n="th.callsign"></th><th data-i18n="th.station"></th>
+        <th data-i18n="th.operator"></th>
+        <th data-i18n="th.attempts"></th><th data-i18n="th.error"></th>
+      </tr></thead><tbody id="tPending"></tbody></table>
+      <div class="empty" id="ePending" data-i18n="empty.queue"></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="panel.rejected"></h2>
+      <table><thead><tr>
+        <th data-i18n="th.callsign"></th><th data-i18n="th.station"></th>
+        <th data-i18n="th.operator"></th>
+        <th data-i18n="th.attempts"></th><th data-i18n="th.reason"></th>
+      </tr></thead><tbody id="tFailed"></tbody></table>
+      <div class="empty" id="eFailed" data-i18n="empty.none"></div>
+      <div class="hint" data-i18n="hint.requeue"></div>
+    </div>
+  </section>
+
+  <section id="konfig">
+    <div class="panel">
+      <h2 data-i18n="panel.connection"></h2>
+      <label data-i18n="label.pin"></label>
+      <input type="text" id="fPin" placeholder="ABCD-1234">
+      <div class="hint" data-i18n="hint.pin"></div>
+      <div class="row" style="margin-top:10px">
+        <input type="checkbox" id="fDryRun" style="width:auto">
+        <label for="fDryRun" style="margin:0" data-i18n="label.dryRun"></label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 data-i18n="panel.udp"></h2>
+      <div class="two">
+        <div><label data-i18n="label.address"></label>
+          <select id="fHost">
+            <option value="127.0.0.1" data-i18n="opt.localhost"></option>
+            <option value="0.0.0.0" data-i18n="opt.anyhost"></option>
+          </select></div>
+        <div><label data-i18n="label.port"></label><input type="number" id="fPort"></div>
+      </div>
+      <label data-i18n="label.multicast"></label>
+      <input type="text" id="fMulticast">
+      <div class="note" data-i18n="note.anyhost"></div>
+    </div>
+
+    <div class="panel">
+      <h2 data-i18n="panel.fanout"></h2>
+      <div id="targets"></div>
+      <button class="act sec" id="btnAddTarget" data-i18n="btn.addTarget" style="margin-top:8px"></button>
+      <div class="hint" data-i18n="hint.fanout"></div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="act" id="btnSave" data-i18n="btn.save"></button>
+      <span id="saveInfo" class="hint"></span>
+    </div>
+  </section>
+
+  <section id="log">
+    <pre id="logbox"></pre>
+  </section>
+</main>
+<script type="module" src="renderer.js"></script>
+</body>
+</html>

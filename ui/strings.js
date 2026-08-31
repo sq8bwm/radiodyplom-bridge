@@ -1,0 +1,251 @@
+// Tłumaczenia interfejsu. JEDEN słownik dla okna i dla zasobnika — dwie kopie
+// rozjechałyby się, co już raz w tym projekcie zdążyło się stać przy logice stanu.
+//
+// Moduł ESM: proces główny Electrona importuje go bezpośrednio, a renderer
+// przez <script type="module">.
+
+export const LANGS = ['pl', 'en'];
+export const LANG_NAMES = { pl: 'Polski', en: 'English' };
+
+const DICT = {
+  pl: {
+    'app.name': 'RadioDyplom Bridge',
+
+    'tab.state': 'Stan',
+    'tab.queue': 'Kolejka',
+    'tab.config': 'Konfiguracja',
+    'tab.log': 'Log',
+
+    'btn.pause': 'Wstrzymaj',
+    'btn.resume': 'Wznów',
+    'btn.requeue': 'Ponów odrzucone',
+    'btn.save': 'Zapisz',
+    'btn.addTarget': 'Dodaj stację',
+    'btn.remove': 'Usuń',
+
+    'card.sent': 'Wysłane',
+    'card.pending': 'W kolejce',
+    'card.failed': 'Odrzucone',
+    'card.received': 'Odebrane z loggera',
+
+    'panel.listen': 'Nasłuch',
+    'panel.sources': 'Źródła',
+    'panel.lastEvents': 'Ostatnie zdarzenia',
+    'panel.pending': 'Oczekujące',
+    'panel.rejected': 'Odrzucone',
+    'panel.connection': 'Połączenie z radiodyplom',
+    'panel.udp': 'Nasłuch UDP',
+    'panel.fanout': 'Rozmnażanie QSO na wiele stacji',
+    'panel.language': 'Język',
+
+    'th.callsign': 'Znak',
+    'th.station': 'Stacja',
+    'th.operator': 'Operator',
+    'th.attempts': 'Próby',
+    'th.error': 'Błąd',
+    'th.reason': 'Powód',
+
+    'label.pin': 'PIN API (profil użytkownika)',
+    'label.dryRun': 'Tryb próbny (nic nie wysyła na serwer)',
+    'label.address': 'Adres',
+    'label.port': 'Port',
+    'label.multicast': 'Grupy multicast (po przecinku, np. 224.0.0.222)',
+    'label.stationCall': 'Znak stacji',
+    'label.operator': 'Operator (opcjonalnie)',
+    'label.targetPin': 'PIN tej stacji',
+    'label.language': 'Język interfejsu',
+
+    'hint.pin': 'Zostaw zamaskowany, żeby nie zmieniać. Wpisz nowy, aby podmienić.',
+    'hint.multicast': 'puste = brak',
+    'hint.targetPin': 'jeśli inna niż profil',
+    'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Znak inny niż profil '
+      + 'PIN-u wymaga własnego PIN-u tej stacji.',
+    'hint.requeue': '„Ponów odrzucone" wraca do kolejki tylko te, które padły z powodu '
+      + 'awarii łączności. Odrzucone przez serwer (zły znak, brak uprawnień) zostają.',
+    'hint.saved': 'Zapisano i zastosowano.',
+    'hint.savedRestart': 'Zapisano. Wymaga restartu: ',
+
+    'opt.localhost': '127.0.0.1 — tylko ten komputer',
+    'opt.anyhost': '0.0.0.0 — cała sieć lokalna (i rozgłoszeniowe)',
+
+    'note.localhost': 'Nasłuch tylko na localhost. Jeśli logger działa na innym komputerze '
+      + 'albo wysyła rozgłoszeniowo, ustaw adres 0.0.0.0 w zakładce Konfiguracja.',
+    'note.anyhost': 'Adres 0.0.0.0 otwiera port na całą sieć lokalną — każdy w tej sieci '
+      + 'może wtedy dopisać QSO do Twojej akcji.',
+
+    'empty.sources': 'Brak odebranych datagramów',
+    'empty.queue': 'Kolejka pusta',
+    'empty.none': 'Brak',
+    'empty.nothing': 'Nic jeszcze nie przeszło',
+
+    'state.ok': 'Działa',
+    'state.paused': 'Wysyłka wstrzymana',
+    'state.offline': 'Brak łączności z radiodyplom',
+    'state.rejected': 'Odrzucone QSO: ',
+    'state.noPin': 'brak PIN-u API',
+    'state.noConn': 'brak łączności',
+    'state.coreDown': 'Rdzeń nie wystartował',
+
+    'msg.noPinHint': 'Brak PIN-u API. Wpisz go w zakładce Konfiguracja — '
+      + 'do tego czasu nic nie zostanie wysłane.',
+    'msg.lastSent': 'Ostatnie wysłane: ',
+    'msg.lastError': 'Ostatni błąd: ',
+    'msg.action': 'akcja ',
+    'msg.autoResend': ' (dosyłam automatycznie)',
+    'msg.inQueue': 'w kolejce: ',
+    'msg.sentCount': 'wysłane: ',
+
+    'restart.banner': 'Zapisane zmiany zaczną obowiązywać po ponownym uruchomieniu programu: ',
+    'restart.tray': 'wymaga restartu',
+
+    'tray.show': 'Pokaż okno',
+    'tray.pause': 'Wstrzymaj wysyłkę',
+    'tray.resume': 'Wznów wysyłkę',
+    'tray.requeue': 'Ponów odrzucone',
+    'tray.openConfig': 'Otwórz plik konfiguracji',
+    'tray.quit': 'Zakończ',
+
+    // Kody błędów z API — komunikat serwera przychodzi po polsku, więc dla
+    // interfejsu angielskiego tłumaczymy po kodzie, a treść serwera zostaje w tle.
+    'err.INVALID_CALLSIGN': 'Nieprawidłowy znak korespondenta',
+    'err.INVALID_API_KEY': 'Nieprawidłowy PIN API albo konto nieaktywne',
+    'err.MISSING_API_KEY': 'Brak PIN-u API',
+    'err.INVALID_QSO_DATA': 'Brak wymaganych danych QSO',
+    'err.NOT_SAVED': 'Serwer przyjął QSO, ale nie zapisał go do żadnej akcji '
+      + '(znak stacji bez uprawnień?)',
+    'err.METHOD_NOT_ALLOWED': 'Niedozwolona metoda żądania',
+  },
+
+  en: {
+    'app.name': 'RadioDyplom Bridge',
+
+    'tab.state': 'Status',
+    'tab.queue': 'Queue',
+    'tab.config': 'Settings',
+    'tab.log': 'Log',
+
+    'btn.pause': 'Pause',
+    'btn.resume': 'Resume',
+    'btn.requeue': 'Retry rejected',
+    'btn.save': 'Save',
+    'btn.addTarget': 'Add station',
+    'btn.remove': 'Remove',
+
+    'card.sent': 'Uploaded',
+    'card.pending': 'Queued',
+    'card.failed': 'Rejected',
+    'card.received': 'Received from logger',
+
+    'panel.listen': 'Listening',
+    'panel.sources': 'Sources',
+    'panel.lastEvents': 'Recent events',
+    'panel.pending': 'Waiting',
+    'panel.rejected': 'Rejected',
+    'panel.connection': 'radiodyplom connection',
+    'panel.udp': 'UDP listener',
+    'panel.fanout': 'Duplicate QSO to several stations',
+    'panel.language': 'Language',
+
+    'th.callsign': 'Call',
+    'th.station': 'Station',
+    'th.operator': 'Operator',
+    'th.attempts': 'Tries',
+    'th.error': 'Error',
+    'th.reason': 'Reason',
+
+    'label.pin': 'API PIN (user profile)',
+    'label.dryRun': 'Dry run (nothing is sent to the server)',
+    'label.address': 'Address',
+    'label.port': 'Port',
+    'label.multicast': 'Multicast groups (comma separated, e.g. 224.0.0.222)',
+    'label.stationCall': 'Station callsign',
+    'label.operator': 'Operator (optional)',
+    'label.targetPin': "This station's PIN",
+    'label.language': 'Interface language',
+
+    'hint.pin': 'Leave it masked to keep the current PIN. Type a new one to replace it.',
+    'hint.multicast': 'empty = none',
+    'hint.targetPin': 'if different from profile',
+    'hint.fanout': 'Empty = one QSO with the station callsign from the logger. A callsign '
+      + "other than the PIN's profile needs that station's own PIN.",
+    'hint.requeue': '“Retry rejected” only requeues QSOs that failed due to connectivity. '
+      + 'Those rejected by the server (bad callsign, no permission) stay.',
+    'hint.saved': 'Saved and applied.',
+    'hint.savedRestart': 'Saved. Restart required for: ',
+
+    'opt.localhost': '127.0.0.1 — this computer only',
+    'opt.anyhost': '0.0.0.0 — whole local network (incl. broadcast)',
+
+    'note.localhost': 'Listening on localhost only. If the logger runs on another computer '
+      + 'or broadcasts, set the address to 0.0.0.0 in Settings.',
+    'note.anyhost': 'Address 0.0.0.0 opens the port to the whole local network — anyone on '
+      + 'it could then add QSOs to your award activity.',
+
+    'empty.sources': 'No datagrams received',
+    'empty.queue': 'Queue is empty',
+    'empty.none': 'None',
+    'empty.nothing': 'Nothing has gone through yet',
+
+    'state.ok': 'Running',
+    'state.paused': 'Uploading paused',
+    'state.offline': 'No connection to radiodyplom',
+    'state.rejected': 'Rejected QSOs: ',
+    'state.noPin': 'no API PIN',
+    'state.noConn': 'no connection',
+    'state.coreDown': 'Core failed to start',
+
+    'msg.noPinHint': 'No API PIN. Enter it in Settings — nothing will be uploaded until then.',
+    'msg.lastSent': 'Last uploaded: ',
+    'msg.lastError': 'Last error: ',
+    'msg.action': 'activity ',
+    'msg.autoResend': ' (retrying automatically)',
+    'msg.inQueue': 'queued: ',
+    'msg.sentCount': 'uploaded: ',
+
+    'restart.banner': 'Saved changes take effect after restarting the program: ',
+    'restart.tray': 'restart required',
+
+    'tray.show': 'Show window',
+    'tray.pause': 'Pause uploading',
+    'tray.resume': 'Resume uploading',
+    'tray.requeue': 'Retry rejected',
+    'tray.openConfig': 'Open config file',
+    'tray.quit': 'Quit',
+
+    'err.INVALID_CALLSIGN': 'Invalid worked callsign',
+    'err.INVALID_API_KEY': 'Invalid API PIN or inactive account',
+    'err.MISSING_API_KEY': 'API PIN missing',
+    'err.INVALID_QSO_DATA': 'Required QSO fields missing',
+    'err.NOT_SAVED': 'Server accepted the QSO but stored it in no activity '
+      + '(station callsign without permission?)',
+    'err.METHOD_NOT_ALLOWED': 'Request method not allowed',
+  },
+};
+
+let current = 'pl';
+
+export function setLang(lang) {
+  current = DICT[lang] ? lang : 'pl';
+  return current;
+}
+
+export function getLang() {
+  return current;
+}
+
+/** Tłumaczenie; brak klucza zwraca sam klucz, żeby braki były widoczne. */
+export function t(key) {
+  return DICT[current]?.[key] ?? DICT.pl[key] ?? key;
+}
+
+/**
+ * Komunikat błędu API. Serwer odpowiada po polsku, więc gdy znamy kod,
+ * pokazujemy własny tekst; treść serwera zostaje jako uzupełnienie.
+ */
+export function errText(code, serverMessage) {
+  if (code && DICT[current]?.[`err.${code}`]) {
+    const own = t(`err.${code}`);
+    return current === 'pl' || !serverMessage ? own : `${own} (${serverMessage})`;
+  }
+  return serverMessage || code || t('state.offline');
+}

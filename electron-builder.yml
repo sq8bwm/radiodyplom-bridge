@@ -1,0 +1,64 @@
+appId: pl.radiodyplom.bridge
+productName: RadioDyplom Bridge
+copyright: Mostek logger → radiodyplom.pl
+
+directories:
+  buildResources: build
+  output: release
+
+# Co wchodzi do paczki. Lista jest jawna i wąska z jednego powodu:
+# config.json zawiera PIN-y API i NIE MOŻE trafić do dystrybucji.
+# Do paczki idzie tylko wzorzec config.example.json, z którego program
+# zasiewa konfigurację w katalogu użytkownika przy pierwszym uruchomieniu.
+files:
+  - src/**/*
+  - ui/**/*
+  - package.json
+  - config.example.json
+  - '!**/*.map'
+  - '!config.json'
+  - '!data/**'
+  - '!release/**'
+  - '!dist/**'
+
+# Rdzeń nie ma zależności runtime, więc nie ma czego rozpakowywać z asara.
+asar: true
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  icon: build/icon.png
+  # Brak podpisu kodu – patrz README. Windows pokaże ostrzeżenie SmartScreen.
+
+nsis:
+  oneClick: false                  # użytkownik ma wybrać katalog i skróty
+  perMachine: false                # instalacja dla użytkownika = bez UAC
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: RadioDyplom Bridge
+  # Dane i konfiguracja żyją w %APPDATA%, więc odinstalowanie
+  # nie usuwa kolejki ani PIN-ów. Świadoma decyzja: log operatora jest cenniejszy
+  # niż czystość odinstalowania.
+  deleteAppDataOnUninstall: false
+
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}
+
+linux:
+  target:
+    - AppImage
+    - deb
+  # Opiekun pakietu bierze się z pola "author" w package.json.
+  # UWAGA: ten adres jest widoczny w metadanych każdego rozdanego .deb
+  # (dpkg -I / apt show), więc jest z definicji publiczny.
+  icon: build/icon.png
+  category: HamRadio
+  synopsis: Mostek między loggerem krótkofalarskim a radiodyplom.pl
+  description: >
+    Odbiera zalogowane QSO z loggera (QLog, N1MM/DXLog, WSJT-X/JTDX/MSHV) po UDP
+    i przekazuje je na radiodyplom.pl. Trwała kolejka na dysku, ponawianie przy
+    awarii łączności, rozmnażanie QSO na wiele znaków stacji.

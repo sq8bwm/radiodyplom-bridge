@@ -17,35 +17,43 @@ przycisk „Zakończ", menu pod ikoną w zasobniku.
 - praca w tle po zamknięciu okna przez dłuższy czas,
 - autostart (nadal niezaimplementowany, patrz niżej).
 
-### Zgubione QSO po zmianie celów rozmnażania — DO ZBADANIA
-Zgłoszone z Windows 2026-08-31 wieczorem, wersja 0.1.2. Po zmianie i zapisaniu
-konfiguracji rozmnażania QSO (trzy cele):
+### KRYTYCZNE: deduplikacja po cichu gubi prawdziwe QSO
+Zgłoszone z Windows 2026-08-31, wersja 0.1.2. Zdiagnozowane z logu operatora.
 
-- **20:35 SP4OIK** → poszło **tylko na jeden z trzech** celów (`SQ8BWM`)
-- **20:37 SP7VCL** → **w ogóle nie pojawiło się na wejściu** (nie zostało odebrane)
+**Objawy:** QSO o 20:35 (SP4OIK) poszło tylko na **jeden z trzech** celów; QSO
+o ~20:37 (SP7VCL) **nie pojawiło się nigdzie** — ani w logu, ani w kolejce, ani
+w odrzuconych. Obie łączności przeszły dopiero po **ponownym zalogowaniu w QLog**
+(ok. 20:47), już na wszystkie trzy cele.
 
-Drugi objaw jest groźniejszy: to nie jest błąd wysyłki, tylko **brak odbioru**.
+**Przyczyna.** Klucz deduplikacji to `qlog:{logid}#{rowid}|{stacja}`, gdzie `rowid`
+pochodzi z bazy QLog. To identyfikator wiersza SQLite, a taki **jest ponownie
+używany po skasowaniu rekordu**. Operator kasował w QLog testowe QSO, więc nowe
+łączności dostawały `rowid` już zapisany w `seen` — i były odrzucane jako duplikaty.
 
-Hipotezy do sprawdzenia, w kolejności prawdopodobieństwa:
+Dane z `seen.json` to potwierdzają: 141 kluczy, 47 różnych `rowid` w ciągłym
+zakresie 54287–54333, **bez ani jednej luki**, po dokładnie 3 klucze na `rowid`.
+Przez wieczór zalogowano więcej niż 47 QSO, więc numery musiały się powtarzać.
 
-1. **Pozostałe dwa cele zostały odrzucone, nie pominięte.** Znak stacji bez
-   uprawnień w akcji daje `success:true` z pustym `savedTo` → `NOT_SAVED` → kopia
-   ląduje w `data/failed/`. Wtedy „poszło na jeden" znaczy „dwa odrzucone".
-   Sprawdzić zakładkę **Odrzucone** i czy każdy cel ma własny PIN swojego profilu.
-2. **Wyjątek podczas obsługi pierwszego QSO wywrócił nasłuch.** W `udp.js`
-   wywołanie `onQSO` w pętli kopii **nie jest opakowane w try/catch** — błąd przy
-   jednej kopii (np. zapis do `failed/`) przerwałby pętlę i mógł uszkodzić stan.
-   To tłumaczyłoby, dlaczego następne QSO nie zostało w ogóle odebrane.
-   **Najpilniejsze do obejrzenia.**
-3. **Dwie instancje na jednym porcie UDP.** Jeśli po zapisie uruchomiono program
-   drugi raz, datagramy mogły trafić do tej drugiej. Blokada portu chroni przed
-   naszymi instancjami, ale nie przed sytuacją, gdy pierwsza zawiesiła się bez
-   zwolnienia blokady.
-4. Logger nie wysłał drugiego datagramu (do wykluczenia po stronie QLog).
+To wyjaśnia oba objawy:
+- SP7VCL: wszystkie trzy klucze już były w `seen` → **cisza absolutna**, bo wpis
+  „Nowe QSO" powstaje tylko przy udanym dodaniu do kolejki,
+- SP4OIK: dwa klucze były (z wcześniejszej konfiguracji o dwóch celach), trzeci
+  nowy → jedna kopia.
 
-Czego zabrakło do diagnozy: **trwałego logu**. Wszystko było w buforze w pamięci
-i przepadło. Dlatego zapisywanie logu (pozycja niżej) jest warunkiem sensownego
-zbadania tej usterki.
+**To najgroźniejsza usterka w projekcie**: prawdziwe QSO znika bez śladu.
+
+Do zrobienia:
+1. **Klucz deduplikacji nie może opierać się wyłącznie na `rowid`.** Dołożyć treść
+   QSO (znak + data + czas + pasmo + emisja + stacja), tak jak już robi dekoder
+   WSJT-X, który nie ma identyfikatora i liczy skrót syntetyczny. Rozważyć
+   syntetyczny klucz dla wszystkich dekoderów, a `rowid` traktować najwyżej jako
+   dodatek.
+2. **Pominięcie deduplikacyjne musi być widoczne.** Dziś leci na poziomie `debug`,
+   więc przy zwykłych ustawieniach nie widać go wcale. Podnieść do `info`, a przy
+   fan-oucie zalogować, ile kopii pominięto i dlaczego.
+3. Rozważyć wygasanie wpisów w `seen` (np. po dobie) — lista rośnie bez końca,
+   a kolizje starych kluczy tylko zyskują na prawdopodobieństwie.
+4. Test regresyjny: ten sam `rowid` z **innym** QSO musi przejść.
 
 ### Zapisywanie logu do pliku
 Dziś log żyje wyłącznie w pamięci (bufor 300 wpisów) i ginie przy zamknięciu.

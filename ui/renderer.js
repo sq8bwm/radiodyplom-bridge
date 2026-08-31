@@ -14,6 +14,7 @@ function applyLang() {
   });
   $('fPin').placeholder = getLang() === 'pl' ? 'np. ABCD-1234' : 'e.g. ABCD-1234';
   $('fMulticast').placeholder = t('hint.multicast');
+  $('btnQuit').title = t('hint.closeToTray');
   refresh();
   if ($('konfig').classList.contains('active')) loadConfig();
 }
@@ -215,6 +216,11 @@ $('btnPause').onclick = async () => {
   refresh();
 };
 $('btnRequeue').onclick = async () => { await window.bridge.requeue(); refresh(); };
+
+$('btnQuit').onclick = async () => {
+  // Potwierdzenie, bo zamknięcie przerywa przekazywanie QSO.
+  if (window.confirm(t('confirm.quit'))) await window.bridge.quit();
+};
 
 // ---------- start ----------
 (async () => {

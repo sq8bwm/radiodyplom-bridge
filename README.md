@@ -165,7 +165,11 @@ npm run ui
 ```
 
 Aplikacja żyje **w zasobniku systemowym**. Zamknięcie okna ją tylko ukrywa —
-mostek pracuje dalej; kończy ją wyłącznie „Zakończ" w menu ikony.
+mostek pracuje dalej.
+
+**Aby zakończyć program, użyj przycisku „Zakończ" w oknie.** Menu pod ikoną
+w zasobniku robi to samo, ale nie na każdym systemie jest dostępne (na Windows
+potrafi się nie pokazywać), więc przycisk w oknie jest drogą pewną.
 
 Ikona pokazuje stan bez otwierania okna:
 

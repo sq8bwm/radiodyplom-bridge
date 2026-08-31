@@ -57,12 +57,25 @@ function trayState() {
   };
 }
 
+let lastTrayKey = '';
+
 function refreshTray() {
   if (!tray) return;
   const { state, tip } = trayState();
   tray.setImage(iconFor(state));
   tray.setToolTip(`${t('app.name')} — ${tip}`);
-  tray.setContextMenu(buildMenu());
+
+  // Menu przebudowujemy TYLKO gdy zmieniły się jego etykiety. Ustawianie go
+  // co 3 sekundy potrafi na Windows sprawić, że menu przestaje się pokazywać.
+  const key = `${daemon?.worker.paused}|${getLangKey()}`;
+  if (key !== lastTrayKey) {
+    lastTrayKey = key;
+    tray.setContextMenu(buildMenu());
+  }
+}
+
+function getLangKey() {
+  return t('tray.quit');
 }
 
 function buildMenu() {
@@ -145,6 +158,11 @@ app.whenReady().then(async () => {
   ipcMain.handle('resume', () => { daemon.resume(); refreshTray(); return true; });
   ipcMain.handle('requeue', () => { const n = daemon.requeue(); refreshTray(); return n; });
   ipcMain.handle('config:get', () => daemon?.getConfig() ?? null);
+  // Zamknięcie z okna — na Windows menu ikony w zasobniku bywa niedostępne,
+  // a samo zamknięcie okna tylko chowa aplikację. Bez tego użytkownik nie
+  // miałby żadnego sposobu, żeby ją zakończyć.
+  ipcMain.handle('quit', () => { shutdown('przycisk w oknie'); return true; });
+
   ipcMain.handle('config:save', (_e, patch) => {
     const r = daemon.saveConfig(patch);
     // Zmiana języka musi też przełożyć menu i podpowiedź w zasobniku.

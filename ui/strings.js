@@ -22,6 +22,11 @@ const DICT = {
     'btn.save': 'Zapisz',
     'btn.addTarget': 'Dodaj stację',
     'btn.remove': 'Usuń',
+    'btn.quit': 'Zakończ',
+    'confirm.quit': 'Zakończyć mostek? Do czasu ponownego uruchomienia QSO z loggera '
+      + 'nie będą przekazywane.',
+    'hint.closeToTray': 'Zamknięcie okna nie kończy programu — mostek pracuje dalej '
+      + 'w zasobniku. Aby go zakończyć, użyj przycisku „Zakończ".',
 
     'card.sent': 'Wysłane',
     'card.pending': 'W kolejce',
@@ -131,6 +136,11 @@ const DICT = {
     'btn.save': 'Save',
     'btn.addTarget': 'Add station',
     'btn.remove': 'Remove',
+    'btn.quit': 'Quit',
+    'confirm.quit': 'Quit the bridge? QSOs from the logger will not be forwarded '
+      + 'until you start it again.',
+    'hint.closeToTray': 'Closing the window does not quit the program — the bridge '
+      + 'keeps running in the tray. Use the “Quit” button to stop it.',
 
     'card.sent': 'Uploaded',
     'card.pending': 'Queued',

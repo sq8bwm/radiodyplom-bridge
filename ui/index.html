@@ -16,14 +16,18 @@
   * { box-sizing: border-box; }
   body { margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
          background:var(--bg); color:var(--text); }
-  header { display:flex; align-items:center; gap:12px; padding:12px 16px;
+  header { display:flex; align-items:center; gap:10px; padding:12px 16px; flex-wrap:wrap;
            border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:0; }
-  h1 { font-size:15px; margin:0; font-weight:600; }
+  /* Nagłówek ma sporo kontrolek — nic nie może się łamać w środku wyrazu.
+     Przy wąskim oknie cały pasek zawija się w całości, a nie etykiety. */
+  h1 { font-size:15px; margin:0; font-weight:600; white-space:nowrap; }
+  header button, header select { white-space:nowrap; flex:none; }
+  #profile { overflow:hidden; text-overflow:ellipsis; max-width:38ch; }
   .dot { width:10px; height:10px; border-radius:50%; background:var(--muted); flex:none; }
   .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.err{background:var(--err)}
   .grow { flex:1; }
   .badge { font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--line);
-           color:var(--muted); font-weight:500; }
+           color:var(--muted); font-weight:500; white-space:nowrap; }
   .badge.dry { color:var(--warn); border-color:var(--warn); }
   /* Stan łączności – te same kolory co ikona w zasobniku */
   .badge.st-ok    { color:var(--ok);   border-color:var(--ok);   background:color-mix(in srgb, var(--ok) 10%, transparent); }
@@ -52,6 +56,7 @@
   button.act { background:var(--accent); color:#fff; border:none; border-radius:6px;
                padding:7px 14px; cursor:pointer; font-size:13px; }
   button.act.sec { background:none; color:var(--text); border:1px solid var(--line); }
+  button.act.danger { color:var(--err); border-color:color-mix(in srgb, var(--err) 45%, var(--line)); }
   .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   label { display:block; font-size:12px; color:var(--muted); margin:10px 0 3px; }
   input[type=text], input[type=number], select {
@@ -78,6 +83,7 @@
   <select class="lang" id="langPick" title="Język / Language"></select>
   <button class="act sec" id="btnPause" data-i18n="btn.pause">Wstrzymaj</button>
   <button class="act sec" id="btnRequeue" data-i18n="btn.requeue">Ponów odrzucone</button>
+  <button class="act sec danger" id="btnQuit" data-i18n="btn.quit" title=""></button>
 </header>
 
 <div class="note" id="restartNote" hidden style="margin:10px 16px 0;border-left-color:var(--warn)"></div>

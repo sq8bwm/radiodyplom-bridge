@@ -4,15 +4,18 @@ Stan na 2026-08-31. Pozycje uporządkowane wg tego, co blokuje wydanie.
 
 ## Blokujące wydanie
 
-### Test na prawdziwym Windows
-Całość była budowana i sprawdzana na Linuksie. Z Linuksa **nie da się** zweryfikować:
-- odbioru rozgłoszeniowego z **N1MM** (to najbardziej prawdopodobna przyczyna „nie działa" —
-  N1MM często nadaje na adres rozgłoszeniowy, nie na localhost, więc trzeba `udp.host: 0.0.0.0`),
-- pytania **zapory Windows** przy pierwszym bindzie UDP (bez zgody dla sieci prywatnej
-  datagramy z innych maszyn nie dojdą),
-- ikony w **zasobniku Windows** i pracy w tle po zamknięciu okna,
-- ścieżek `%APPDATA%` i zasiewania konfiguracji przy pierwszym uruchomieniu,
-- jakości ikony wygenerowanej z PNG (electron-builder sam robi `.ico`).
+### Test na prawdziwym Windows — częściowo zrobiony
+Wersja instalacyjna przetestowana na Windows (2026-08-31). **Potwierdzone działa:**
+instalator, zasiewanie konfiguracji w `%APPDATA%`, zapis i trwałość PIN-u,
+przycisk „Zakończ", menu pod ikoną w zasobniku.
+
+**Nadal niesprawdzone na Windows** — wymaga dostępu do maszyny z loggerem:
+- odbiór **rozgłoszeniowy z N1MM** (najbardziej prawdopodobna przyczyna „nie działa" —
+  N1MM często nadaje na adres rozgłoszeniowy, nie na localhost, więc trzeba
+  `udp.host: 0.0.0.0`),
+- pytanie **zapory Windows** przy pierwszym bindzie UDP,
+- praca w tle po zamknięciu okna przez dłuższy czas,
+- autostart (nadal niezaimplementowany, patrz niżej).
 
 ## Świadomie odłożone
 
@@ -130,6 +133,11 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- Menu pod ikoną w zasobniku na Windows: przyczyną było przebudowywanie menu
+  co 3 s (`setContextMenu` w pętli odświeżania). Po ograniczeniu do zmian
+  etykiet menu działa — potwierdzone na Windows.
+- Zamykanie programu: przycisk „Zakończ" w oknie, niezależny od zasobnika.
+  Potwierdzony na Windows i na Linuksie.
 - Testowe QSO z prób (`SP0*`, akcja 295) — usunięte przez operatora w Managerze.
 - Testy automatyczne: **99 testów** na `node:test`, bez zależności (`npm test`).
   Każdy dzisiejszy błąd ma swój test regresyjny. Skuteczność sprawdzona mutacjami:

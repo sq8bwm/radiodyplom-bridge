@@ -258,8 +258,12 @@ Dwie decyzje projektowe, świadome i celowe:
 > **PIN-y nigdy nie opuszczają procesu.** W `/api/status` są zamaskowane (`ABCD-****`),
 > tak samo PIN-y celów fan-outu. UI nie potrzebuje ich w jawnej postaci.
 
-Jeśli port jest zajęty, daemon **loguje ostrzeżenie i pracuje dalej** — brak UI nigdy
-nie może zatrzymać przekazywania QSO. Sprawdzone.
+Jeśli **port API** (12061) jest zajęty, daemon loguje ostrzeżenie i pracuje dalej —
+brak podglądu nigdy nie może zatrzymać przekazywania QSO. Sprawdzone: przy zajętym
+12061 QSO z loggera nadal przechodzi.
+
+To dotyczy **wyłącznie portu API**. Port UDP, na którym słucha logger, to osobna
+sprawa — patrz „Zajęty port UDP" niżej.
 
 `queue.pending` / `queue.failed` / `queue.sent` to **liczniki**, a `pendingItems`
 i `failedItems` to listy przycięte do 50 pozycji — nie myl ich przy budowie UI.
@@ -531,6 +535,30 @@ data/failed/   QSO odrzucone lub po wyczerpaniu prób
 data/seen.json klucze już obsłużone (deduplikacja)
 ```
 Zapis jest atomowy (`.tmp` + `rename`), więc ubicie procesu nie uszkodzi kolejki.
+
+### Zajęty port UDP
+
+Trzy różne sytuacje, często mylone:
+
+| Kto zajmuje | Co się dzieje | Czy QSO dochodzą |
+|---|---|---|
+| **Port API** (12061) | ostrzeżenie w logu, daemon pracuje | **tak** |
+| **Druga instancja mostka** na porcie UDP | blokada odmawia startu | nie temu procesowi — odbiera ta pierwsza |
+| **Obcy program** na porcie UDP | mostek **startuje normalnie** | **tak, i to on je dostaje** |
+
+Ten trzeci przypadek jest zaskakujący, więc został zmierzony: przy obcym programie
+trzymającym już `127.0.0.1:12067` nasz mostek zbindował się obok i odebrał
+**6 z 6** datagramów, a tamten program **0**.
+
+Wynika to z `SO_REUSEADDR` przy transmisji **unicast**: kopii nie dostają wszyscy —
+datagram trafia do jednego gniazda, w praktyce do tego, które zbindowało się
+później. Inaczej jest przy **multicaście**, gdzie każdy słuchacz dostaje własną kopię
+i współistnienie działa naprawdę.
+
+Praktyczny wniosek: jeśli logger wysyła unicastem, a na tym samym porcie nasłuchuje
+jeszcze inne narzędzie, **tylko jedno z nich dostanie QSO** — i nasz mostek może je
+tamtemu odebrać. Gdy potrzebujesz obu naraz, użyj multicastu albo skonfiguruj logger
+tak, żeby wysyłał na dwa różne porty.
 
 ### Dwie blokady chroniące przed drugą instancją
 

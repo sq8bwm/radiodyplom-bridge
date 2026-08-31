@@ -21,9 +21,11 @@ export class LoggerListener {
   }
 
   start() {
-    // reuseAddr jest potrzebny do multicastu i współistnienia z innymi
-    // odbiorcami, ale sprawia, że DWIE nasze instancje też zajmą ten port
-    // i podzielą datagramy. Dlatego pilnujemy tego własną blokadą.
+    // reuseAddr jest potrzebny do multicastu, gdzie KAŻDY słuchacz dostaje
+    // własną kopię datagramu. Przy unicaście współistnienia nie ma: datagram
+    // trafia do jednego gniazda (zmierzone: do tego, które zbindowało się
+    // później). Skutkiem ubocznym jest to, że dwie nasze instancje też zajmą
+    // ten port — i jedna odbierałaby QSO drugiej. Stąd własna blokada.
     this.portLock = udpLockPath(this.host, this.port);
     acquireLock(
       this.portLock,

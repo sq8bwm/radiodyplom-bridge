@@ -17,6 +17,46 @@ przycisk „Zakończ", menu pod ikoną w zasobniku.
 - praca w tle po zamknięciu okna przez dłuższy czas,
 - autostart (nadal niezaimplementowany, patrz niżej).
 
+### Zgubione QSO po zmianie celów rozmnażania — DO ZBADANIA
+Zgłoszone z Windows 2026-08-31 wieczorem, wersja 0.1.2. Po zmianie i zapisaniu
+konfiguracji rozmnażania QSO (trzy cele):
+
+- **20:35 SP4OIK** → poszło **tylko na jeden z trzech** celów (`SQ8BWM`)
+- **20:37 SP7VCL** → **w ogóle nie pojawiło się na wejściu** (nie zostało odebrane)
+
+Drugi objaw jest groźniejszy: to nie jest błąd wysyłki, tylko **brak odbioru**.
+
+Hipotezy do sprawdzenia, w kolejności prawdopodobieństwa:
+
+1. **Pozostałe dwa cele zostały odrzucone, nie pominięte.** Znak stacji bez
+   uprawnień w akcji daje `success:true` z pustym `savedTo` → `NOT_SAVED` → kopia
+   ląduje w `data/failed/`. Wtedy „poszło na jeden" znaczy „dwa odrzucone".
+   Sprawdzić zakładkę **Odrzucone** i czy każdy cel ma własny PIN swojego profilu.
+2. **Wyjątek podczas obsługi pierwszego QSO wywrócił nasłuch.** W `udp.js`
+   wywołanie `onQSO` w pętli kopii **nie jest opakowane w try/catch** — błąd przy
+   jednej kopii (np. zapis do `failed/`) przerwałby pętlę i mógł uszkodzić stan.
+   To tłumaczyłoby, dlaczego następne QSO nie zostało w ogóle odebrane.
+   **Najpilniejsze do obejrzenia.**
+3. **Dwie instancje na jednym porcie UDP.** Jeśli po zapisie uruchomiono program
+   drugi raz, datagramy mogły trafić do tej drugiej. Blokada portu chroni przed
+   naszymi instancjami, ale nie przed sytuacją, gdy pierwsza zawiesiła się bez
+   zwolnienia blokady.
+4. Logger nie wysłał drugiego datagramu (do wykluczenia po stronie QLog).
+
+Czego zabrakło do diagnozy: **trwałego logu**. Wszystko było w buforze w pamięci
+i przepadło. Dlatego zapisywanie logu (pozycja niżej) jest warunkiem sensownego
+zbadania tej usterki.
+
+### Zapisywanie logu do pliku
+Dziś log żyje wyłącznie w pamięci (bufor 300 wpisów) i ginie przy zamknięciu.
+Uniemożliwia to diagnozę czegokolwiek po fakcie — co właśnie boleśnie wyszło
+przy zgłoszeniu powyżej.
+
+Do zrobienia: zapis do pliku w katalogu danych, z rotacją (żeby nie rósł
+w nieskończoność), poziom konfigurowalny, oraz przycisk „otwórz katalog z logiem"
+w interfejsie. Warto rozważyć osobny zapis zdarzeń QSO (kto, kiedy, dokąd,
+z jakim wynikiem) — przydatny nie tylko do diagnozy, ale i jako ślad dla operatora.
+
 ## Świadomie odłożone
 
 ### Podpis kodu dla Windows — nie podpisujemy

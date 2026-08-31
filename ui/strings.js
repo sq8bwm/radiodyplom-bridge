@@ -64,6 +64,7 @@ const DICT = {
       + 'awarii łączności. Odrzucone przez serwer (zły znak, brak uprawnień) zostają.',
     'hint.saved': 'Zapisano i zastosowano.',
     'hint.savedRestart': 'Zapisano. Wymaga restartu: ',
+    'hint.saveFailed': 'NIE ZAPISANO —',
 
     'opt.localhost': '127.0.0.1 — tylko ten komputer',
     'opt.anyhost': '0.0.0.0 — cała sieć lokalna (i rozgłoszeniowe)',
@@ -172,6 +173,7 @@ const DICT = {
       + 'Those rejected by the server (bad callsign, no permission) stay.',
     'hint.saved': 'Saved and applied.',
     'hint.savedRestart': 'Saved. Restart required for: ',
+    'hint.saveFailed': 'NOT SAVED —',
 
     'opt.localhost': '127.0.0.1 — this computer only',
     'opt.anyhost': '0.0.0.0 — whole local network (incl. broadcast)',

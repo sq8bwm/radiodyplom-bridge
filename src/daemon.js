@@ -77,6 +77,12 @@ export async function startDaemon(cfg, opts = {}) {
     pause: () => worker.pause(),
     resume: () => worker.resume(),
     requeue: () => requeueFailed(store).restored,
+    /** Natychmiastowe sprawdzenie klucza (np. zaraz po jego zmianie w UI). */
+    async refreshPing() {
+      handle.lastPing = await client.ping();
+      if (handle.lastPing.ok) handle.profile = handle.lastPing.operator;
+      return handle.lastPing;
+    },
     status: () => handle.api.status(),
     getConfig: () => editableConfig(cfg),
     saveConfig: (patch) => applyConfig(handle, patch),

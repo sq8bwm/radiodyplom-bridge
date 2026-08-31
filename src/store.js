@@ -7,6 +7,7 @@ import {
 import { join, basename } from 'node:path';
 import { log } from './log.js';
 import { acquireLock, releaseLock } from './lock.js';
+import { writeAtomic } from './atomic.js';
 
 export class Store {
   constructor({ dir, failedDir, seenFile }) {
@@ -62,13 +63,11 @@ export class Store {
   }
 
   _atomicWrite(path, obj) {
-    const tmp = path + '.tmp';
     // _file to pole runtime'owe – nie zapisujemy go do pliku.
     const body = obj && typeof obj === 'object' && !Array.isArray(obj)
       ? Object.fromEntries(Object.entries(obj).filter(([k]) => k !== '_file'))
       : obj;
-    writeFileSync(tmp, JSON.stringify(body, null, 2));
-    renameSync(tmp, path);
+    writeAtomic(path, JSON.stringify(body, null, 2));
   }
 
   /** Dodaje nowy element. Zwraca false, jeśli klucz już znany (dedup). */

@@ -180,6 +180,17 @@ function collectTargets() {
 }
 
 $('btnSave').onclick = async () => {
+  try {
+    await saveFromForm();
+  } catch (err) {
+    // Cichy błąd zapisu byłby najgorszy: pola pokazywałyby nową wartość,
+    // a na dysku zostałaby stara.
+    $('saveInfo').textContent = `${t('hint.saveFailed')} ${err?.message || err}`;
+    $('saveInfo').className = 'hint lvl-error';
+  }
+};
+
+async function saveFromForm() {
   const r = await window.bridge.saveConfig({
     radiodyplom: { pin: $('fPin').value.trim(), dryRun: $('fDryRun').checked },
     udp: {
@@ -195,7 +206,7 @@ $('btnSave').onclick = async () => {
   $('saveInfo').className = r.restartRequired.length ? 'hint lvl-warn' : 'hint';
   await loadConfig();
   refresh();
-};
+}
 
 // ---------- akcje ----------
 $('btnPause').onclick = async () => {

@@ -4,8 +4,9 @@
 // zamaskowaną, a przy zapisie wartość zamaskowana (albo pusta) znaczy
 // „zostaw dotychczasowy PIN". Dzięki temu edycja innych pól nie wymaga
 // przesyłania sekretu tam i z powrotem.
-import { writeFileSync, readFileSync, existsSync, renameSync } from 'node:fs';
-import { configPath } from './config.js';
+import { readFileSync, existsSync } from 'node:fs';
+import { writeAtomic } from './atomic.js';
+import { configPath, isPinMissing } from './config.js';
 import { maskPin } from './httpapi.js';
 import { log, setLevel } from './log.js';
 
@@ -59,6 +60,7 @@ function keepExisting(value) {
 export function applyConfig(daemon, patch) {
   const cfg = daemon.cfg;
   const restartRequired = [];
+  let pinChanged = false;
 
   // Porównanie z normalizacją: brak klucza i pusta lista to ta sama rzecz.
   // Bez tego zapis niezmienionej konfiguracji kazałby restartować bez powodu.
@@ -77,7 +79,10 @@ export function applyConfig(daemon, patch) {
     if (r.apiUrl) cfg.radiodyplom.apiUrl = String(r.apiUrl);
     if (typeof r.timeoutMs === 'number') cfg.radiodyplom.timeoutMs = r.timeoutMs;
     if (typeof r.dryRun === 'boolean') cfg.radiodyplom.dryRun = r.dryRun;
-    if (!keepExisting(r.pin)) cfg.radiodyplom.pin = String(r.pin).trim();
+    if (!keepExisting(r.pin)) {
+      cfg.radiodyplom.pin = String(r.pin).trim();
+      pinChanged = true;
+    }
   }
 
   // --- cele fan-outu ---
@@ -127,6 +132,10 @@ export function applyConfig(daemon, patch) {
   if (patch.language) cfg.language = String(patch.language);
 
   // --- zastosuj na żywo, co się da ---
+  // Flagę „brak PIN-u" trzeba przeliczyć, inaczej interfejs pokazywałby
+  // komunikat o braku PIN-u także po jego wpisaniu, aż do restartu.
+  cfg._pinMissing = isPinMissing(cfg.radiodyplom.pin);
+
   daemon.client.apiUrl = cfg.radiodyplom.apiUrl;
   daemon.client.dryRun = !!cfg.radiodyplom.dryRun;
   daemon.client.pin = cfg.radiodyplom.pin;
@@ -137,6 +146,10 @@ export function applyConfig(daemon, patch) {
   daemon.worker.maxPerMinute = cfg.rateLimit.maxPerMinute;
   daemon.worker.minSpacingMs = cfg.rateLimit.minSpacingMs;
   setLevel(cfg.logLevel || 'info');
+
+  // Po zmianie PIN-u nie każemy czekać do następnego cyklicznego PING-a —
+  // użytkownik właśnie go wpisał i chce od razu wiedzieć, czy działa.
+  if (pinChanged && typeof daemon.refreshPing === 'function') daemon.refreshPing();
 
   const path = writeConfigFile(cfg);
 
@@ -186,8 +199,5 @@ export function writeConfigFile(cfg) {
   };
   if (cfg.dataDir) out.dataDir = cfg.dataDir;
 
-  const tmp = `${target}.tmp`;
-  writeFileSync(tmp, JSON.stringify(out, null, 2));
-  renameSync(tmp, target);
-  return target;
+  return writeAtomic(target, JSON.stringify(out, null, 2));
 }

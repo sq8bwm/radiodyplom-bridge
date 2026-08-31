@@ -152,6 +152,45 @@ describe('applyConfig — zapis z interfejsu', () => {
     assert.equal(saved().forward.targets.length, 1);
   });
 
+  // REGRESJA (zgłoszone z testów na Windows): po wpisaniu PIN-u interfejs nadal
+  // pokazywał „brak PIN-u API". Flaga _pinMissing była liczona tylko przy
+  // wczytaniu konfiguracji i nigdy po zapisie — komunikat wisiał aż do restartu.
+  test('wpisanie PIN-u kasuje flagę „brak PIN-u"', () => {
+    const dir2 = mkdtempSync(join(tmpdir(), 'rdb-pin-'));
+    writeFileSync(join(dir2, 'config.json'), JSON.stringify({
+      ...BASE(), radiodyplom: { ...BASE().radiodyplom, pin: 'WSTAW-PIN' },
+    }));
+    process.env.RD_CONFIG_DIR = dir2;
+    try {
+      const cfg = cfgMod.loadConfig();
+      assert.equal(cfg._pinMissing, true, 'placeholder = brak PIN-u');
+
+      const d = fakeDaemon(cfg);
+      mod.applyConfig(d, { radiodyplom: { pin: 'NOWY-1234' } });
+      assert.equal(cfg._pinMissing, false, 'po wpisaniu PIN-u flaga musi zgasnąć');
+    } finally {
+      process.env.RD_CONFIG_DIR = dir;
+      rmSync(dir2, { recursive: true, force: true });
+    }
+  });
+
+  test('skasowanie PIN-u ponownie zapala flagę', () => {
+    const cfg = cfgMod.loadConfig();
+    assert.equal(cfg._pinMissing, false);
+    mod.applyConfig(fakeDaemon(cfg), { radiodyplom: { pin: 'WSTAW-PIN' } });
+    assert.equal(cfg._pinMissing, true);
+  });
+
+  test('zmiana PIN-u wyzwala natychmiastowe sprawdzenie klucza', () => {
+    const cfg = cfgMod.loadConfig();
+    let pinged = 0;
+    const d = { ...fakeDaemon(cfg), refreshPing: () => { pinged += 1; } };
+    mod.applyConfig(d, { radiodyplom: { pin: 'NOWY-1234' } });
+    assert.equal(pinged, 1, 'użytkownik ma od razu wiedzieć, czy PIN działa');
+    mod.applyConfig(d, { radiodyplom: { dryRun: true } });
+    assert.equal(pinged, 1, 'bez zmiany PIN-u nie pingujemy');
+  });
+
   test('język jest zapisywany', () => {
     const cfg = cfgMod.loadConfig();
     mod.applyConfig(fakeDaemon(cfg), { language: 'en' });

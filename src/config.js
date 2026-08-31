@@ -72,6 +72,15 @@ export function ensureConfig() {
 }
 
 /**
+ * Czy PIN jest w praktyce nieustawiony. JEDNO miejsce, bo ta ocena jest
+ * potrzebna i przy wczytaniu, i po każdym zapisie z interfejsu — rozjechanie
+ * się tych dwóch dawało komunikat „brak PIN-u" wiszący mimo wpisania PIN-u.
+ */
+export function isPinMissing(pin) {
+  return !pin || !String(pin).trim() || String(pin).toUpperCase() === 'WSTAW-PIN';
+}
+
+/**
  * @param {{seed?:boolean}} opts seed=true zasiewa config.json, gdy go brak
  * @returns cfg; brak PIN-u NIE jest błędem – UI musi wstać, żeby dało się go wpisać
  */
@@ -92,8 +101,7 @@ export function loadConfig(opts = {}) {
 
   // Brak PIN-u tylko odnotowujemy. Rzucenie wyjątkiem uniemożliwiłoby
   // pierwsze uruchomienie zainstalowanej aplikacji, gdzie PIN wpisuje się w UI.
-  cfg._pinMissing = !cfg.radiodyplom?.pin || !String(cfg.radiodyplom.pin).trim()
-    || String(cfg.radiodyplom.pin).toUpperCase() === 'WSTAW-PIN';
+  cfg._pinMissing = isPinMissing(cfg.radiodyplom?.pin);
 
   if (!cfg.udp?.port) throw new Error('Brak config.udp.port.');
 

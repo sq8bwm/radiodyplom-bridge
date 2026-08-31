@@ -34,6 +34,9 @@ win:
   # Brak podpisu kodu – patrz README. Windows pokaże ostrzeżenie SmartScreen.
 
 nsis:
+  # Bez spacji w nazwie: GitHub zamienia je na kropki przy wgrywaniu załączników,
+  # a wtedy SHA256SUMS nie pasuje do tego, co odbiorca pobierze.
+  artifactName: radiodyplom-bridge-${version}-setup.${ext}
   oneClick: false                  # użytkownik ma wybrać katalog i skróty
   perMachine: false                # instalacja dla użytkownika = bez UAC
   allowToChangeInstallationDirectory: true
@@ -46,9 +49,10 @@ nsis:
   deleteAppDataOnUninstall: false
 
 portable:
-  artifactName: ${productName}-${version}-portable.${ext}
+  artifactName: radiodyplom-bridge-${version}-portable.${ext}
 
 linux:
+  artifactName: radiodyplom-bridge-${version}.${ext}
   target:
     - AppImage
     - deb

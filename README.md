@@ -352,7 +352,9 @@ npm run pack:linux    # AppImage
 npm run pack:win      # instalator NSIS + wersja przenośna
 npm run pack          # oba
 ```
-Artefakty trafiają do `release/` (ok. 94–119 MB każdy). Windows buduje się **z
+Artefakty trafiają do `release/` (ok. 94–119 MB każdy). Nazwy są **bez spacji** —
+GitHub zamienia spacje na kropki przy wgrywaniu załączników do wydania, przez co
+plik sum kontrolnych przestawał pasować do tego, co odbiorca pobiera. Windows buduje się **z
 Linuksa** — electron-builder sam dociąga NSIS, wine nie jest potrzebne.
 
 Każde pakowanie kończy się wygenerowaniem **`release/SHA256SUMS`** (osobno:

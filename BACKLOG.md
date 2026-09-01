@@ -105,7 +105,7 @@ Na czas testów jest `RD_NO_TRAY=1` (start bez ikony). Uwaga: zmienna musi dotrz
 do samego procesu Electrona — przy `xvfb-run` potrafi się zgubić.
 
 ### Autostart
-Opisany w README (Harmonogram zadań / systemd), ale **nie zaimplementowany** —
+Opisany w `docs/windows-i-siec.md` (Harmonogram zadań / systemd), ale **nie zaimplementowany** —
 brak opcji w instalatorze i brak `app.setLoginItemSettings()`. Dla usługi w tle
 to naturalne oczekiwanie użytkownika.
 

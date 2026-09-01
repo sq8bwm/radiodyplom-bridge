@@ -60,9 +60,27 @@ linux:
   # UWAGA: ten adres jest widoczny w metadanych każdego rozdanego .deb
   # (dpkg -I / apt show), więc jest z definicji publiczny.
   icon: build/icon.png
-  category: HamRadio
+  # UWAGA: sama "HamRadio" NIE wystarczy. Wg specyfikacji freedesktop HamRadio to
+  # kategoria dodatkowa i musi jej towarzyszyć kategoria główna (Network albo Audio).
+  # Bez tego wpis nie trafia do żadnej gałęzi menu — w XFCE ląduje w koszu
+  # "Inne", a przy menu bez sekcji na nieprzypisane znika zupełnie.
+  # Sprawdzenie: desktop-file-validate na wygenerowanym .desktop ma milczeć.
+  category: Network;HamRadio;
   synopsis: Mostek między loggerem krótkofalarskim a radiodyplom.pl
-  description: >
-    Odbiera zalogowane QSO z loggera (QLog, N1MM/DXLog, WSJT-X/JTDX/MSHV) po UDP
-    i przekazuje je na radiodyplom.pl. Trwała kolejka na dysku, ponawianie przy
-    awarii łączności, rozmnażanie QSO na wiele znaków stacji.
+  # UWAGA: "description" trafia jednocześnie do opisu pakietu i do pola Comment
+  # w .desktop, czyli do dymka w menu (electron-builder nadpisuje nim Comment
+  # PO scaleniu desktop.entry, więc tam się tego nie da rozdzielić).
+  # Dlatego jedno zdanie, a nie akapit — akapit w dymku menu wygląda źle.
+  description: >-
+    Przekazuje zalogowane QSO z loggera (QLog, N1MM, WSJT-X) na radiodyplom.pl.
+  # Nazwa pliku .desktop i StartupWMClass mają się zgadzać z app_id Electrona.
+  # Bez tego środowisko graficzne nie kojarzy działającego okna z pozycją w menu
+  # (zmierzone: WM_CLASS okna to "radiodyplom-bridge", a nie productName).
+  syncDesktopName: true
+  desktop:
+    entry:
+      GenericName: Mostek QSO do radiodyplom.pl
+      # Po tym program da się znaleźć wyszukiwarką w GNOME, KDE i Whisker Menu,
+      # nawet gdy ktoś nie wie, w której gałęzi menu szukać.
+      Keywords: krótkofalarstwo;krotkofalarstwo;hamradio;ham;radio;QSO;log;logger;QLog;N1MM;WSJT-X;JTDX;MSHV;ADIF;dyplom;radiodyplom;
+      StartupNotify: 'true'

@@ -133,6 +133,13 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **Brak pozycji w menu po instalacji `.deb`** — naprawione w 0.1.4. Przyczyną było
+  `Categories=HamRadio;`: wg specyfikacji freedesktop to kategoria dodatkowa i sama
+  nie wpina wpisu do żadnej gałęzi. Rozstrzygnięcie plików menu potwierdziło:
+  przed poprawką XFCE → tylko kosz „Inne", GNOME → nigdzie; po `Network;HamRadio;`
+  XFCE → Sieć, GNOME → Internet. Przy okazji `StartupWMClass` zgadza się teraz
+  z faktycznym `WM_CLASS` okna (zmierzone), więc środowisko kojarzy działające
+  okno z pozycją w menu. 5 testów pilnujących konfiguracji pakowania.
 - **Ciche gubienie QSO przez kolizję `rowid`** — naprawione w 0.1.3. Klucz łączy
   identyfikator loggera z odciskiem treści, więc odzyskany `rowid` nie kasuje
   nowego QSO, a przelogowanie tej samej łączności nadal przechodzi.

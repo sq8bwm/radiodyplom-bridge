@@ -1,6 +1,7 @@
 // Dekoder QLog: JSON z rekordem ADIF w data.value.
 // {appid:"QLog", msgtype:"qso", time, logid, data:{operation, rowid, type:"adif", value}}
 import { parseAdif } from '../adif.js';
+import { qsoKey } from '../dedupkey.js';
 
 export const name = 'QLog';
 
@@ -31,7 +32,9 @@ export function decode(buf, { operations }) {
   const adif = parseAdif(d.value);
 
   return {
-    key: `qlog:${msg.logid || 'nolog'}#${d.rowid}`,
+    // rowid SAM W SOBIE nie wystarcza: SQLite używa go ponownie po skasowaniu
+    // rekordu, więc nowe QSO dostawało numer już wysłanego i ginęło. Patrz dedupkey.js.
+    key: qsoKey('qlog', `${msg.logid || 'nolog'}#${d.rowid}`, adif),
     adif,
     meta: {
       source: 'QLog',

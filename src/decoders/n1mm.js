@@ -1,8 +1,8 @@
 // Dekoder rodziny N1MM: XML <contactinfo> (N1MM+, DXLog, BBlogger, Log4OM w trybie N1MM).
 // Uwaga: <rxfreq>/<txfreq> są w jednostkach 10 Hz, a <band> to MHz (np. "3.5"), nie pasmo ADIF.
-import { createHash } from 'node:crypto';
 import { bandFromMHz } from '../bands.js';
 import { normalizeMode } from '../modes.js';
+import { qsoKey } from '../dedupkey.js';
 
 export const name = 'N1MM';
 
@@ -76,11 +76,10 @@ export function decode(buf) {
   if (band) adif.band = band;
   if (Number.isFinite(mhz) && mhz > 0) adif.freq = mhz.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
 
-  // N1MM ma własny <ID>; gdy go brak – klucz syntetyczny.
+  // <ID> N1MM plus odcisk treści — tak samo jak w QLog, żeby ewentualne
+  // powtórzenie identyfikatora nie kasowało prawdziwego QSO.
   const id = tag(xml, 'ID');
-  const key = id
-    ? `n1mm:${id}`
-    : `n1mm:${syntheticKey(adif)}`;
+  const key = qsoKey('n1mm', id || null, adif);
 
   return {
     key,
@@ -89,8 +88,3 @@ export function decode(buf) {
   };
 }
 
-export function syntheticKey(adif) {
-  const basis = [adif.call, adif.qso_date, adif.time_on, adif.band, adif.mode, adif.station_callsign]
-    .join('|');
-  return createHash('sha1').update(basis).digest('hex').slice(0, 16);
-}

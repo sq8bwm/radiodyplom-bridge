@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('bridge', {
   resume: () => ipcRenderer.invoke('resume'),
   requeue: () => ipcRenderer.invoke('requeue'),
   quit: () => ipcRenderer.invoke('quit'),
+  openLog: () => ipcRenderer.invoke('openLog'),
   getConfig: () => ipcRenderer.invoke('config:get'),
   saveConfig: (patch) => ipcRenderer.invoke('config:save', patch),
 });

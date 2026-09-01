@@ -11,6 +11,7 @@ import { StatusApi } from './httpapi.js';
 import { requeueFailed } from './requeue.js';
 import { editableConfig, applyConfig } from './configedit.js';
 import { log, setLevel, recentLog } from './log.js';
+import { enableFileLog, closeFileLog, logFilePath } from './logfile.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -35,6 +36,17 @@ export async function startDaemon(cfg, opts = {}) {
   const { startHttpApi = true } = opts;
   setLevel(cfg.logLevel || 'info');
 
+  // Log do pliku obok danych kolejki — tam, gdzie użytkownik ma prawo zapisu.
+  if (cfg.logFile?.enabled !== false) {
+    const dir = cfg.logFile?.dir || dirname(cfg.queue.seenFile);
+    const p = enableFileLog({
+      dir,
+      maxBytes: cfg.logFile?.maxBytes,
+      keep: cfg.logFile?.keep,
+    });
+    log.info(`Log zapisywany do pliku: ${p}`);
+  }
+
   const store = new Store(cfg.queue);
   store.init();
 
@@ -58,7 +70,13 @@ export async function startDaemon(cfg, opts = {}) {
           band: item.payload.band, mode: item.payload.mode, operator: item.payload.operator,
         });
       } else {
-        log.debug(`QSO ${item.payload.callsign} już znane (dedup)`, { key: item.key });
+        // NIE debug: pominięta kopia znikała bez śladu, przez co realnie
+        // zgubione QSO wyglądało jak „nic nie przyszło". Musi być widoczne.
+        log.info(
+          `QSO ${item.payload.callsign} → ${item.payload.station_callsign} POMINIĘTE `
+          + '(już wysłane wcześniej)',
+          { key: item.key },
+        );
       }
     },
   });
@@ -87,6 +105,7 @@ export async function startDaemon(cfg, opts = {}) {
     getConfig: () => editableConfig(cfg),
     saveConfig: (patch) => applyConfig(handle, patch),
     log: (n) => recentLog(n),
+    logFilePath: () => logFilePath(),
     stop() {
       listener.stop();
       worker.stop();
@@ -103,6 +122,7 @@ export async function startDaemon(cfg, opts = {}) {
     getPing: () => handle.lastPing,
     getProfile: () => handle.profile,
     getPendingRestart: () => [...(handle.pendingRestart || [])],
+    getLogFile: () => logFilePath(),
     requeue: handle.requeue,
     getConfig: () => editableConfig(cfg),
     saveConfig: (patch) => applyConfig(handle, patch),

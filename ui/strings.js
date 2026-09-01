@@ -23,6 +23,7 @@ const DICT = {
     'btn.addTarget': 'Dodaj stację',
     'btn.remove': 'Usuń',
     'btn.quit': 'Zakończ',
+    'btn.openLog': 'Pokaż plik logu',
     'confirm.quit': 'Zakończyć mostek? Do czasu ponownego uruchomienia QSO z loggera '
       + 'nie będą przekazywane.',
     'hint.closeToTray': 'Zamknięcie okna nie kończy programu — mostek pracuje dalej '
@@ -32,6 +33,7 @@ const DICT = {
     'card.pending': 'W kolejce',
     'card.failed': 'Odrzucone',
     'card.received': 'Odebrane z loggera',
+    'card.skipped': 'Pominięte (duplikaty)',
 
     'panel.listen': 'Nasłuch',
     'panel.sources': 'Źródła',
@@ -109,6 +111,7 @@ const DICT = {
     'tray.resume': 'Wznów wysyłkę',
     'tray.requeue': 'Ponów odrzucone',
     'tray.openConfig': 'Otwórz plik konfiguracji',
+    'tray.openLog': 'Pokaż plik logu',
     'tray.quit': 'Zakończ',
 
     // Kody błędów z API — komunikat serwera przychodzi po polsku, więc dla
@@ -137,6 +140,7 @@ const DICT = {
     'btn.addTarget': 'Add station',
     'btn.remove': 'Remove',
     'btn.quit': 'Quit',
+    'btn.openLog': 'Show log file',
     'confirm.quit': 'Quit the bridge? QSOs from the logger will not be forwarded '
       + 'until you start it again.',
     'hint.closeToTray': 'Closing the window does not quit the program — the bridge '
@@ -146,6 +150,7 @@ const DICT = {
     'card.pending': 'Queued',
     'card.failed': 'Rejected',
     'card.received': 'Received from logger',
+    'card.skipped': 'Skipped (duplicates)',
 
     'panel.listen': 'Listening',
     'panel.sources': 'Sources',
@@ -222,6 +227,7 @@ const DICT = {
     'tray.resume': 'Resume uploading',
     'tray.requeue': 'Retry rejected',
     'tray.openConfig': 'Open config file',
+    'tray.openLog': 'Show log file',
     'tray.quit': 'Quit',
 
     'err.INVALID_CALLSIGN': 'Invalid worked callsign',

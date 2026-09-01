@@ -31,7 +31,7 @@ export function computeState({ paused, online, failed, pingOk }) {
 }
 
 export class StatusApi {
-  constructor({ cfg, store, listener, worker, pkg, getPing, getProfile, requeue, getConfig, saveConfig, getPendingRestart }) {
+  constructor({ cfg, store, listener, worker, pkg, getPing, getProfile, requeue, getConfig, saveConfig, getPendingRestart, getLogFile }) {
     this.cfg = cfg;
     this.store = store;
     this.listener = listener;
@@ -40,6 +40,7 @@ export class StatusApi {
     this.getPing = getPing;
     this.getProfile = getProfile;
     this.getPendingRestart = getPendingRestart;
+    this.getLogFile = getLogFile;
     this.requeue = requeue;
     this.getConfig = getConfig;
     this.saveConfig = saveConfig;
@@ -122,6 +123,7 @@ export class StatusApi {
         })),
       },
 
+      logFile: this.getLogFile ? this.getLogFile() : null,
       lastSent: this.worker.lastSent,
       lastError: this.worker.lastError,
     };

@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path';
 import { loadConfig, configPath } from '../src/config.js';
 import { startDaemon } from '../src/daemon.js';
 import { log } from '../src/log.js';
+import { closeFileLog } from '../src/logfile.js';
 import { t, setLang } from './strings.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -93,6 +94,10 @@ function buildMenu() {
     },
     { type: 'separator' },
     { label: t('tray.openConfig'), click: () => shell.showItemInFolder(configPath()) },
+    {
+      label: t('tray.openLog'),
+      click: () => { const p = daemon?.logFilePath?.(); if (p) shell.showItemInFolder(p); },
+    },
     { type: 'separator' },
     { label: t('tray.quit'), click: () => shutdown('menu') },
   ]);
@@ -163,6 +168,14 @@ app.whenReady().then(async () => {
   // miałby żadnego sposobu, żeby ją zakończyć.
   ipcMain.handle('quit', () => { shutdown('przycisk w oknie'); return true; });
 
+  // Pokaż plik logu w menedżerze plików — przy zgłoszeniu usterki to pierwsza
+  // rzecz, o którą trzeba poprosić, więc nie może wymagać szukania po dysku.
+  ipcMain.handle('openLog', () => {
+    const p = daemon?.logFilePath?.();
+    if (p) shell.showItemInFolder(p);
+    return p || null;
+  });
+
   ipcMain.handle('config:save', (_e, patch) => {
     const r = daemon.saveConfig(patch);
     // Zmiana języka musi też przełożyć menu i podpowiedź w zasobniku.
@@ -189,6 +202,7 @@ function shutdown(reason) {
   log.info(`Zamykam (${reason})`);
   try { if (tray) { tray.destroy(); tray = null; } } catch { /* już zniszczona */ }
   try { if (daemon) daemon.stop(); } catch { /* już zatrzymany */ }
+  closeFileLog();
   app.quit();
 }
 

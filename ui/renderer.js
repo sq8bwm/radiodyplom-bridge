@@ -77,6 +77,8 @@ function renderStatus(s) {
   $('cPending').textContent = s.queue.pending;
   $('cFailed').textContent = s.queue.failed;
   $('cRecv').textContent = s.listener.stats.received;
+  $('cSkipped').textContent = s.queue.skipped ?? 0;
+  $('logPath').textContent = s.logFile || '';
 
   const mc = s.listener.multicastGroups?.length
     ? ` · multicast: ${s.listener.multicastGroups.join(', ')}` : '';
@@ -216,6 +218,7 @@ $('btnPause').onclick = async () => {
   refresh();
 };
 $('btnRequeue').onclick = async () => { await window.bridge.requeue(); refresh(); };
+$('btnOpenLog').onclick = () => window.bridge.openLog();
 
 $('btnQuit').onclick = async () => {
   // Potwierdzenie, bo zamknięcie przerywa przekazywanie QSO.

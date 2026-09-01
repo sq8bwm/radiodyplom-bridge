@@ -1,4 +1,9 @@
 // Prosty logger z poziomami; jedna linia = jedno zdarzenie.
+// Zdarzenia trafiają do: konsoli, bufora w pamięci (podgląd w UI) i — jeśli
+// włączony — do pliku (logfile.js). Plik jest jedynym śladem, który przeżywa
+// zamknięcie programu, więc bez niego diagnoza po fakcie jest niemożliwa.
+import { appendLine } from './logfile.js';
+
 const LEVELS = { debug: 10, info: 20, warn: 30, error: 40 };
 
 let threshold = LEVELS.info;
@@ -27,6 +32,7 @@ function emit(level, msg, extra) {
   const line = `${ts} [${level.toUpperCase()}] ${msg}${tail}`;
   if (level === 'error' || level === 'warn') process.stderr.write(line + '\n');
   else process.stdout.write(line + '\n');
+  appendLine(line);
 }
 
 function safe(v) {

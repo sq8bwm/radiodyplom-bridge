@@ -35,5 +35,10 @@
     "enabled": true,
     "port": 12061
   },
-  "language": "pl"
+  "language": "pl",
+  "logFile": {
+    "enabled": true,
+    "maxBytes": 5242880,
+    "keep": 3
+  }
 }

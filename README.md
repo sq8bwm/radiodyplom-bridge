@@ -480,42 +480,59 @@ status — awaria jednej nie blokuje pozostałych.
 w kolejce i jest dosyłany.
 
 ## Deduplikacja
-Każde QSO ma klucz, po którym daemon rozpoznaje powtórki (lista obsłużonych kluczy
-w `data/seen.json` przetrwa restart):
 
-| Źródło | Klucz |
+Każde QSO ma klucz, po którym mostek rozpoznaje powtórki. Lista obsłużonych kluczy
+(`data/seen.json`) przetrwa restart.
+
+Klucz to **identyfikator z loggera + odcisk treści QSO**:
+
+```
+qlog:{logid}#{rowid}:{sha1(call|data|czas|pasmo|emisja|stacja)}
+```
+
+Odcisk jest tam **konieczny, nie ozdobny**. QLog podaje `rowid` z bazy SQLite, a taki
+numer **jest ponownie używany po skasowaniu rekordu**. Klucz oparty na samym `rowid`
+sprawiał, że nowe QSO z odzyskanym numerem znikało jako rzekomy duplikat — zdarzyło
+się to realnie 2026-08-31 i kosztowało dwie łączności.
+
+Sam odcisk treści też by nie wystarczył: ponowne zalogowanie tej samej łączności
+w loggerze (naturalna reakcja operatora, gdy coś nie doszło) zostałoby wtedy
+odrzucone, czyli droga ratunkowa przestałaby działać. Dlatego oba składniki naraz.
+
+| Źródło | Identyfikator w kluczu |
 |---|---|
-| QLog | `qlog:{logid}#{rowid}` — identyfikator bazy + numer rekordu |
-| N1MM | `n1mm:{ID}` — własny identyfikator z XML |
-| WSJT-X | `wsjtx:{sha1}` — **syntetyczny**, bo WSJT-X nie ma ID QSO (jego „Id” to nazwa klienta) |
+| QLog | `{logid}#{rowid}` |
+| N1MM | `<ID>` z XML |
+| WSJT-X | brak (`noid`) — sam odcisk treści |
 
-Klucz syntetyczny liczony jest z `call + data + czas + pasmo + emisja + znak stacji`.
+Do odcisku wchodzą tylko pola tożsamości łączności. Raporty, komentarz czy
+częstotliwość **nie** — bywają poprawiane po fakcie, a to wciąż ta sama łączność.
 
 Przy fan-oucie do klucza doklejany jest znak stacji celu (`…|SN0ABC`), inaczej trzy
-kopie tego samego QSO miałyby ten sam klucz i do kolejki weszłaby tylko pierwsza.
+kopie miałyby ten sam klucz i do kolejki weszłaby tylko pierwsza.
 
-**Serwer NIE odrzuca duplikatów — zapisuje je i oznacza.** Wysłanie dwa razy
-tego samego QSO tworzy **dwa** rekordy; późniejszy dostaje w Managerze status
-*„Niepunktowane — Duplikat na danym paśmie i emisji"*. Odpowiedź API brzmi
-`savedTo:[295]` w obu przypadkach i jest prawdziwa — rekord faktycznie powstał.
+**Pominięcie jest widoczne w logu i liczone** (karta „Pominięte (duplikaty)").
+Wcześniej leciało na poziomie `debug`, więc zgubione QSO wyglądało jak „nic nie
+przyszło" — najgorszy możliwy tryb awarii.
 
-**Reguła duplikatu jest ustawieniem AKCJI, nie zachowaniem API** — organizator
-może ją włączyć albo wyłączyć dla swojej akcji. Tam, gdzie jest włączona (jak
-w akcji 295), punktowane jest **jedno QSO z daną stacją, z danym uczestnikiem,
-jednego dnia, na danym paśmie i emisji**.
+## Log
 
-Czas w obrębie doby nie ma znaczenia: dwa QSO różniące się tylko sekundami
-(10:40:00 i 10:40:37) dały dwa wpisy, z których drugi jest niepunktowany.
-Do klucza wchodzi **data**, nie godzina.
+Zdarzenia trafiają do konsoli, do bufora w pamięci (podgląd w zakładce **Log**)
+oraz **do pliku** — `bridge.log` w katalogu danych, obok kolejki. Przycisk
+„Pokaż plik logu" otwiera go w menedżerze plików; ta sama pozycja jest w menu
+ikony w zasobniku.
 
-Ponieważ do reguły wchodzi też **stacja**, kopie fan-outu wysyłane na różne znaki
-stacji punktują się niezależnie.
+Rotacja: po przekroczeniu `logFile.maxBytes` (domyślnie 5 MB) plik przechodzi na
+`bridge.log.1`, starsze przesuwają się dalej, a najstarsze ponad `logFile.keep`
+(domyślnie 3) jest usuwane.
 
-Skutek praktyczny: ponowienie po timeoucie (żądanie doszło, odpowiedź nie)
-**utworzy drugi rekord** — niepunktowany, więc nieszkodliwy dla dyplomu, ale
-zaśmiecający log. **Nasza deduplikacja jest jedynym zabezpieczeniem przed tym.**
+Zapis jest **synchroniczny** i to świadoma decyzja: przy strumieniu asynchronicznym
+ostatnie linie — czyli te najciekawsze przy awarii — ginęły razem z buforem przy
+wyjściu z procesu. Log ma kilka linii na QSO, więc koszt jest bez znaczenia.
 
-## Zachowanie przy błędach
+Wyłączenie: `"logFile": { "enabled": false }`.
+
+## Zachowanie przy błędach## Zachowanie przy błędach
 - **Brak sieci / 5xx / timeout** → ponawianie z backoffem (5 s, 10 s, 20 s, 40 s…
   do 15 min), do `queue.maxAttempts`. Przy domyślnych ustawieniach
   (`baseDelayMs: 5000`, `maxDelayMs: 900000`, `maxAttempts: 20`) daje to

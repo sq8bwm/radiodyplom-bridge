@@ -1,9 +1,9 @@
 // Dekoder rodziny WSJT-X: binarny QDataStream (WSJT-X, JTDX >=2.2.158, MSHV).
 // Nagłówek: magic 0xADBCCBDA (quint32) | schema (quint32) | type (quint32) | id (utf8)
 // Interesuje nas typ 5 = "QSO Logged" (wysyłany po zatwierdzeniu okna Log QSO).
-import { createHash } from 'node:crypto';
 import { bandFromHz } from '../bands.js';
 import { normalizeMode } from '../modes.js';
+import { qsoKey } from '../dedupkey.js';
 
 export const name = 'WSJT-X';
 
@@ -131,10 +131,9 @@ export function decode(buf) {
     if (band) adif.band = band;
     if (txFreqHz > 0) adif.freq = (txFreqHz / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
 
-    // WSJT-X nie ma identyfikatora QSO (jego "Id" to nazwa klienta),
-    // więc klucz deduplikacji musi być syntetyczny.
-    const basis = [adif.call, adif.qso_date, adif.time_on, adif.band, adif.mode, adif.station_callsign].join('|');
-    const key = `wsjtx:${createHash('sha1').update(basis).digest('hex').slice(0, 16)}`;
+    // WSJT-X nie ma identyfikatora QSO ("Id" to nazwa klienta), więc zostaje
+    // sam odcisk treści.
+    const key = qsoKey('wsjtx', null, adif);
 
     return { key, adif, meta: { source: 'WSJT-X', client: clientId } };
   } catch (err) {

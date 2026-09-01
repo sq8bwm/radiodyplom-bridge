@@ -69,11 +69,34 @@ describe('rozpoznanie formatu datagramu', () => {
 
 // ---------- QLog ----------
 describe('dekoder QLog', () => {
-  test('czyta rekord i buduje klucz z logid + rowid', () => {
+  test('czyta rekord i buduje klucz z logid, rowid oraz odcisku treści', () => {
     const r = qlog.decode(qlogDatagram({ rowid: 42 }), { operations: OPS });
     assert.equal(r.adif.call, 'SP9XYZ');
-    assert.equal(r.key, 'qlog:{L}#42');
+    assert.match(r.key, /^qlog:\{L\}#42:[0-9a-f]{12}$/);
     assert.equal(r.meta.source, 'QLog');
+  });
+
+  test('ten sam rekord daje ten sam klucz (dedup działa)', () => {
+    const a = qlog.decode(qlogDatagram({ rowid: 7 }), { operations: OPS });
+    const b = qlog.decode(qlogDatagram({ rowid: 7 }), { operations: OPS });
+    assert.equal(a.key, b.key);
+  });
+
+  // REGRESJA (2026-08-31, realna utrata QSO): rowid pochodzi z SQLite i jest
+  // ponownie używany po skasowaniu rekordu. Klucz oparty na samym rowid sprawiał,
+  // że nowe QSO z odzyskanym numerem znikało jako rzekomy duplikat.
+  test('ten sam rowid z INNYM QSO daje inny klucz', () => {
+    const a = qlog.decode(qlogDatagram({ rowid: 54300, call: 'SP4OIK' }), { operations: OPS });
+    const b = qlog.decode(qlogDatagram({ rowid: 54300, call: 'SP7VCL' }), { operations: OPS });
+    assert.notEqual(a.key, b.key, 'odzyskany rowid nie może kasować nowego QSO');
+  });
+
+  // Druga strona medalu: ponowne zalogowanie tej samej łączności w loggerze
+  // (reakcja operatora, gdy coś nie doszło) dostaje nowy rowid i MUSI przejść.
+  test('to samo QSO po przelogowaniu (nowy rowid) nie jest blokowane', () => {
+    const a = qlog.decode(qlogDatagram({ rowid: 100, call: 'SP4OIK' }), { operations: OPS });
+    const b = qlog.decode(qlogDatagram({ rowid: 999, call: 'SP4OIK' }), { operations: OPS });
+    assert.notEqual(a.key, b.key);
   });
 
   test('operacje inne niż insert są pomijane, nie przetwarzane', () => {
@@ -119,11 +142,17 @@ describe('dekoder N1MM', () => {
     assert.equal(r.adif.time_on, '164338');
   });
 
-  test('klucz bierze się z <ID> i jest stabilny', () => {
+  test('klucz łączy <ID> z odciskiem treści i jest stabilny', () => {
     const a = n1mm.decode(N1MM_XML());
     const b = n1mm.decode(N1MM_XML());
-    assert.equal(a.key, 'n1mm:abc123');
+    assert.match(a.key, /^n1mm:abc123:[0-9a-f]{12}$/);
     assert.equal(a.key, b.key);
+  });
+
+  test('ten sam <ID> z innym QSO daje inny klucz', () => {
+    const a = n1mm.decode(N1MM_XML({ call: 'W1AW' }));
+    const b = n1mm.decode(N1MM_XML({ call: 'W9XYZ' }));
+    assert.notEqual(a.key, b.key);
   });
 
   test('contactreplace/contactdelete są pomijane', () => {

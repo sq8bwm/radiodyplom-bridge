@@ -17,54 +17,6 @@ przycisk „Zakończ", menu pod ikoną w zasobniku.
 - praca w tle po zamknięciu okna przez dłuższy czas,
 - autostart (nadal niezaimplementowany, patrz niżej).
 
-### KRYTYCZNE: deduplikacja po cichu gubi prawdziwe QSO
-Zgłoszone z Windows 2026-08-31, wersja 0.1.2. Zdiagnozowane z logu operatora.
-
-**Objawy:** QSO o 20:35 (SP4OIK) poszło tylko na **jeden z trzech** celów; QSO
-o ~20:37 (SP7VCL) **nie pojawiło się nigdzie** — ani w logu, ani w kolejce, ani
-w odrzuconych. Obie łączności przeszły dopiero po **ponownym zalogowaniu w QLog**
-(ok. 20:47), już na wszystkie trzy cele.
-
-**Przyczyna.** Klucz deduplikacji to `qlog:{logid}#{rowid}|{stacja}`, gdzie `rowid`
-pochodzi z bazy QLog. To identyfikator wiersza SQLite, a taki **jest ponownie
-używany po skasowaniu rekordu**. Operator kasował w QLog testowe QSO, więc nowe
-łączności dostawały `rowid` już zapisany w `seen` — i były odrzucane jako duplikaty.
-
-Dane z `seen.json` to potwierdzają: 141 kluczy, 47 różnych `rowid` w ciągłym
-zakresie 54287–54333, **bez ani jednej luki**, po dokładnie 3 klucze na `rowid`.
-Przez wieczór zalogowano więcej niż 47 QSO, więc numery musiały się powtarzać.
-
-To wyjaśnia oba objawy:
-- SP7VCL: wszystkie trzy klucze już były w `seen` → **cisza absolutna**, bo wpis
-  „Nowe QSO" powstaje tylko przy udanym dodaniu do kolejki,
-- SP4OIK: dwa klucze były (z wcześniejszej konfiguracji o dwóch celach), trzeci
-  nowy → jedna kopia.
-
-**To najgroźniejsza usterka w projekcie**: prawdziwe QSO znika bez śladu.
-
-Do zrobienia:
-1. **Klucz deduplikacji nie może opierać się wyłącznie na `rowid`.** Dołożyć treść
-   QSO (znak + data + czas + pasmo + emisja + stacja), tak jak już robi dekoder
-   WSJT-X, który nie ma identyfikatora i liczy skrót syntetyczny. Rozważyć
-   syntetyczny klucz dla wszystkich dekoderów, a `rowid` traktować najwyżej jako
-   dodatek.
-2. **Pominięcie deduplikacyjne musi być widoczne.** Dziś leci na poziomie `debug`,
-   więc przy zwykłych ustawieniach nie widać go wcale. Podnieść do `info`, a przy
-   fan-oucie zalogować, ile kopii pominięto i dlaczego.
-3. Rozważyć wygasanie wpisów w `seen` (np. po dobie) — lista rośnie bez końca,
-   a kolizje starych kluczy tylko zyskują na prawdopodobieństwie.
-4. Test regresyjny: ten sam `rowid` z **innym** QSO musi przejść.
-
-### Zapisywanie logu do pliku
-Dziś log żyje wyłącznie w pamięci (bufor 300 wpisów) i ginie przy zamknięciu.
-Uniemożliwia to diagnozę czegokolwiek po fakcie — co właśnie boleśnie wyszło
-przy zgłoszeniu powyżej.
-
-Do zrobienia: zapis do pliku w katalogu danych, z rotacją (żeby nie rósł
-w nieskończoność), poziom konfigurowalny, oraz przycisk „otwórz katalog z logiem"
-w interfejsie. Warto rozważyć osobny zapis zdarzeń QSO (kto, kiedy, dokąd,
-z jakim wynikiem) — przydatny nie tylko do diagnozy, ale i jako ślad dla operatora.
-
 ## Świadomie odłożone
 
 ### Podpis kodu dla Windows — nie podpisujemy
@@ -181,6 +133,12 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **Ciche gubienie QSO przez kolizję `rowid`** — naprawione w 0.1.3. Klucz łączy
+  identyfikator loggera z odciskiem treści, więc odzyskany `rowid` nie kasuje
+  nowego QSO, a przelogowanie tej samej łączności nadal przechodzi.
+  Pominięcia są widoczne w logu i liczone. 7 testów regresyjnych.
+- **Zapis logu do pliku** z rotacją, synchroniczny (ostatnie linie nie giną przy
+  wyjściu), plus przycisk „Pokaż plik logu" w UI i w menu zasobnika.
 - Menu pod ikoną w zasobniku na Windows: przyczyną było przebudowywanie menu
   co 3 s (`setContextMenu` w pętli odświeżania). Po ograniczeniu do zmian
   etykiet menu działa — potwierdzone na Windows.

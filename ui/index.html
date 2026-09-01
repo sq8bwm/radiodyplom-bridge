@@ -102,6 +102,7 @@
       <div class="card"><div class="k" data-i18n="card.pending"></div><div class="v" id="cPending">0</div></div>
       <div class="card"><div class="k" data-i18n="card.failed"></div><div class="v" id="cFailed">0</div></div>
       <div class="card"><div class="k" data-i18n="card.received"></div><div class="v" id="cRecv">0</div></div>
+      <div class="card"><div class="k" data-i18n="card.skipped"></div><div class="v" id="cSkipped">0</div></div>
     </div>
     <div class="panel">
       <h2 data-i18n="panel.listen"></h2>
@@ -181,6 +182,10 @@
   </section>
 
   <section id="log">
+    <div class="row" style="margin-bottom:10px">
+      <button class="act sec" id="btnOpenLog" data-i18n="btn.openLog"></button>
+      <span class="hint" id="logPath" style="margin:0"></span>
+    </div>
     <pre id="logbox"></pre>
   </section>
 </main>

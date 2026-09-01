@@ -16,6 +16,7 @@ export class Store {
     this.seenFile = seenFile;
     this.seen = new Set();        // klucze już wysłane (albo trwale odrzucone)
     this.pendingKeys = new Set(); // klucze aktualnie w kolejce
+    this.skipped = 0;             // ile QSO pominięto jako już znane
   }
 
   init() {
@@ -72,7 +73,7 @@ export class Store {
 
   /** Dodaje nowy element. Zwraca false, jeśli klucz już znany (dedup). */
   enqueue({ key, payload, meta }) {
-    if (this.isKnown(key)) return false;
+    if (this.isKnown(key)) { this.skipped += 1; return false; }
     const item = {
       key,
       payload,
@@ -116,7 +117,10 @@ export class Store {
     const count = (dir) => {
       try { return readdirSync(dir).filter((f) => f.endsWith('.json')).length; } catch { return 0; }
     };
-    return { pending: count(this.dir), failed: count(this.failedDir), sent: this.seen.size };
+    return {
+      pending: count(this.dir), failed: count(this.failedDir),
+      sent: this.seen.size, skipped: this.skipped,
+    };
   }
 
   /** Elementy z katalogu failed/ (do podglądu i ponowienia z UI). */

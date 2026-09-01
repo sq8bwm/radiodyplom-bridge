@@ -4,3 +4,6 @@ data/
 *.log
 release/
 build/*.ico
+*.swp
+*.swo
+*~

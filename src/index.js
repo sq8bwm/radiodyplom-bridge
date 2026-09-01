@@ -4,6 +4,7 @@
 import { loadConfig } from './config.js';
 import { log } from './log.js';
 import { startDaemon } from './daemon.js';
+import { closeFileLog } from './logfile.js';
 
 async function main() {
   const cfg = loadConfig();
@@ -21,6 +22,7 @@ async function main() {
     log.info(`Sygnał ${sig} – zamykam`);
     daemon.stop();
     log.info('Statystyki UDP', daemon.listener.stats);
+    closeFileLog();          // dopiero po ostatniej linii
     process.exit(0);
   };
   process.on('SIGINT', () => shutdown('SIGINT'));

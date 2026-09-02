@@ -142,6 +142,12 @@ const DICT = {
       + '(znak stacji bez uprawnień?)',
     'err.METHOD_NOT_ALLOWED': 'Niedozwolona metoda żądania',
     'btn.ackProblems': 'Wyczyść sygnalizację problemów',
+    'btn.discardFailed': 'Usuń odrzucone QSO',
+    'confirm.discardFailed': 'Trwale usunąć {n} odrzuconych QSO?\n\nTEGO NIE DA SIĘ '
+      + 'ODWRÓCIĆ. Jeśli chcesz je jeszcze wysłać — na przykład po poprawieniu '
+      + 'konfiguracji — użyj „Ponów odrzucone".\n\nKażde usunięte QSO zostanie '
+      + 'wypisane w pliku logu.',
+    'hint.discarded': 'Usunięto trwale QSO:',
     'panel.view': 'Widok',
     'label.recentEvents': 'Ile ostatnich zdarzeń pokazywać',
     'hint.recentEvents': 'Od 5 do 200. Dotyczy panelu „Ostatnie zdarzenia" na zakładce Stan.',
@@ -293,6 +299,12 @@ const DICT = {
       + '(station callsign without permission?)',
     'err.METHOD_NOT_ALLOWED': 'Request method not allowed',
     'btn.ackProblems': 'Clear problem indicator',
+    'btn.discardFailed': 'Delete rejected QSOs',
+    'confirm.discardFailed': 'Permanently delete {n} rejected QSOs?\n\nTHIS CANNOT BE '
+      + 'UNDONE. If you still want to send them — for instance after fixing the '
+      + 'configuration — use “Retry rejected”.\n\nEvery deleted QSO is written '
+      + 'to the log file.',
+    'hint.discarded': 'QSOs permanently deleted:',
     'panel.view': 'View',
     'label.recentEvents': 'How many recent events to show',
     'hint.recentEvents': 'Between 5 and 200. Applies to the “Recent events” panel on the Status tab.',

@@ -84,3 +84,20 @@ Wyłączenie: `"logFile": { "enabled": false }`.
 Liczy **realnie wysłane** QSO. Trwałe odrzucenia trafiają do zbioru
 deduplikacji, ale nie do tego licznika — wcześniej był nim rozmiar tego zbioru,
 więc rósł przy każdym odrzuceniu i sugerował, że QSO doszło.
+
+## Usuwanie odrzuconych QSO
+
+Gdy odrzucone łączności są po prostu **błędne** — testowe, z pomyłkowym znakiem,
+z nieistniejącej stacji — nie ma czego ratować. Przycisk **„Usuń odrzucone QSO"**
+w panelu Odrzucone opróżnia `data/failed/`.
+
+Zabezpieczenia, bo to jedyna w programie akcja, która trwale niszczy dane:
+
+- pytanie o potwierdzenie z **liczbą** QSO i zdaniem „TEGO NIE DA SIĘ ODWRÓCIĆ",
+  plus podpowiedzią, że do wysłania ich mimo wszystko służy „Ponów odrzucone";
+- **każde usunięte QSO trafia do pliku logu** — znak, stacja, kod błędu i klucz.
+  Ciche kasowanie łączności byłoby wbrew całej zasadzie tego programu: jeśli QSO
+  ma zniknąć, musi po nim zostać ślad.
+
+Po usunięciu poziom potwierdzenia sygnalizacji zjeżdża do zera, więc następne
+odrzucone QSO znów zapali plakietkę.

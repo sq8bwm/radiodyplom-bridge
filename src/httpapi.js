@@ -191,6 +191,10 @@ export class StatusApi {
       if (req.method === 'POST' && url.pathname === '/api/problems/ack') {
         return send(200, { ok: true, cleared: this.store.ackFailed() });
       }
+      if (req.method === 'POST' && url.pathname === '/api/failed/discard') {
+        const r = this.store.discardFailed();
+        return send(200, { ok: true, ...r });
+      }
       if (req.method === 'POST' && url.pathname === '/api/requeue') {
         const n = this.requeue ? this.requeue() : 0;
         return send(200, { ok: true, restored: n });

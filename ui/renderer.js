@@ -174,6 +174,9 @@ function renderProblems(s) {
     badge.title = `${last}\n${t('hint.problemBadge')}`;
   }
   $('btnAckProblems').hidden = !p.count;
+  // Usuwanie zależy od tego, czy COKOLWIEK leży w odrzuconych — także wtedy,
+  // gdy sygnalizacja jest już potwierdzona.
+  $('btnDiscardFailed').hidden = !s.queue.failed;
   $('ackHint').textContent = p.count ? t('hint.ackProblems') : '';
 }
 
@@ -363,6 +366,16 @@ $('btnPause').onclick = async () => {
 };
 $('btnRequeue').onclick = async () => { await window.bridge.requeue(); refresh(); };
 $('btnAckProblems').onclick = async () => { await window.bridge.ackProblems(); refresh(); };
+$('btnDiscardFailed').onclick = async () => {
+  // Trwałe usunięcie łączności – pytamy z podaniem liczby i bez owijania.
+  const s = await window.bridge.status();
+  const n = s?.queue?.failed ?? 0;
+  if (!n) return;
+  if (!window.confirm(t('confirm.discardFailed').replace('{n}', n))) return;
+  const r = await window.bridge.discardFailed();
+  $('ackHint').textContent = `${t('hint.discarded')} ${r.removed}`;
+  refresh();
+};
 // Plakietka kasuje sygnalizację po potwierdzeniu — bo właśnie po nią sięga
 // ręka, gdy chce się „odkliknąć" ostrzeżenie. Potwierdzenie chroni przed
 // przypadkowym trafieniem w nagłówek.

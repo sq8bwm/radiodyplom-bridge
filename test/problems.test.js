@@ -16,7 +16,7 @@ import { join } from 'node:path';
 
 import { Store } from '../src/store.js';
 import { requeueFailed } from '../src/requeue.js';
-import { setLevel } from '../src/log.js';
+import { setLevel, recentLog } from '../src/log.js';
 
 setLevel('error');
 
@@ -160,5 +160,66 @@ describe('sygnalizacja problemów', () => {
     const s2 = new Store(cfg); s2.init();
     assert.equal(s2.unackedFailed(), 2, 'brak pola = nic nie potwierdzone');
     s2.release();
+  });
+
+  test('usunięcie odrzuconych opróżnia failed/ i gasi sygnalizację', () => {
+    const s = new Store(paths()); s.init();
+    reject(s, 3);
+    assert.equal(s.unackedFailed(), 3);
+
+    const r = s.discardFailed();
+    assert.equal(r.removed, 3);
+    assert.equal(r.calls.length, 3);
+    assert.equal(s.counts().failed, 0);
+    assert.equal(s.unackedFailed(), 0);
+    s.release();
+  });
+
+  test('usunięcie na pustym katalogu nic nie psuje', () => {
+    const s = new Store(paths()); s.init();
+    assert.deepEqual(s.discardFailed(), { removed: 0, calls: [] });
+    s.release();
+  });
+
+  test('po usunięciu NOWE odrzucenie znów zapala sygnalizację', () => {
+    // Ta sama pułapka arytmetyki co przy „Ponów odrzucone": po opróżnieniu
+    // failed/ poziom potwierdzenia musi zjechać do zera.
+    const s = new Store(paths()); s.init();
+    reject(s, 3);
+    s.discardFailed();
+    reject(s, 1);
+    assert.equal(s.unackedFailed(), 1);
+    s.release();
+  });
+
+  test('usunięcie przeżywa restart — QSO nie wracają', () => {
+    const cfg = paths();
+    const s1 = new Store(cfg); s1.init();
+    reject(s1, 2);
+    s1.discardFailed();
+    s1.release();
+
+    const s2 = new Store(cfg); s2.init();
+    assert.equal(s2.counts().failed, 0);
+    assert.equal(s2.unackedFailed(), 0);
+    s2.release();
+  });
+
+  test('usunięte QSO trafia do logu', () => {
+    // Ciche kasowanie łączności byłoby wbrew całej zasadzie tego programu:
+    // jeśli QSO ma zniknąć, musi po nim zostać ślad.
+    const s = new Store(paths()); s.init();
+    reject(s, 1);
+    setLevel('info');                       // bufor logu przyjmuje warn dopiero od info
+    try {
+      s.discardFailed();
+      const lines = recentLog(50).map((e) => `${e.msg} ${e.extra || ''}`);
+      assert.ok(lines.some((l) => /USUNI/.test(l) && /SP0AAA/.test(l)),
+        `w logu brak śladu usunięcia: ${lines.slice(-4).join(' | ')}`);
+      assert.ok(lines.some((l) => /Usuni.to trwale 1/.test(l)), 'brak podsumowania');
+    } finally {
+      setLevel('error');
+      s.release();
+    }
   });
 });

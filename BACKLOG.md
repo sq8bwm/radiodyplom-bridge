@@ -133,6 +133,13 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **Usuwanie odrzuconych QSO** — przycisk w panelu Odrzucone, na wypadek gdy są
+  to łączności błędne i nie ma czego ratować. Jedyna akcja w programie, która
+  trwale niszczy dane, więc: potwierdzenie z liczbą i zdaniem „TEGO NIE DA SIĘ
+  ODWRÓCIĆ", a **każde usunięte QSO wypisane w pliku logu** (znak, stacja, kod,
+  klucz). Po usunięciu poziom potwierdzenia zjeżdża do zera, więc następne
+  odrzucenie znów zapala plakietkę. Sprawdzone w oknie, z zatwierdzeniem
+  okienka: 4 QSO zniknęły, w logu został pełny ślad.
 - **Tryb próbny podpisywał QSO jako „wysłane"** — bez numeru akcji, choć nic nie
   opuszczało komputera. Zauważone przez operatora na liście zdarzeń („dlaczego
   trzy ostatnie nie mają numeru akcji?"). Teraz osobny rodzaj zdarzenia

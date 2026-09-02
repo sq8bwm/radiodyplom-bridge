@@ -33,6 +33,7 @@ const cfg = {
 
 let api;
 let acked = 0;
+let discarded = 0;
 
 before(async () => {
   api = new StatusApi({
@@ -44,6 +45,7 @@ before(async () => {
         lastErrorCode: 'NOT_SAVED', lastError: 'brak akcji' }],
       unackedFailed: () => 3,
       ackFailed() { acked += 1; return 3; },
+      discardFailed() { discarded += 1; return { removed: 4, calls: ['SP1AAA'] }; },
     },
     listener: { host: '127.0.0.1', port: 12778, multicastGroups: [], stats: { received: 0, bySource: {} } },
     worker: {
@@ -110,6 +112,16 @@ describe('API stanu — każda trasa odpowiada', () => {
     assert.equal(acked, before + 1, 'store musi zostać naprawdę wywołany');
   });
 
+  test('POST /api/failed/discard', async () => {
+    const before = discarded;
+    const r = await post('/api/failed/discard');
+    assert.equal(r.status, 200);
+    const body = await r.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.removed, 4);
+    assert.equal(discarded, before + 1, 'store musi zostać naprawdę wywołany');
+  });
+
   test('GET /api/config', async () => {
     const r = await get('/api/config');
     assert.equal(r.status, 200);
@@ -120,7 +132,7 @@ describe('API stanu — każda trasa odpowiada', () => {
     // Sedno: wyjątek w uchwycie objawia się piątką, a nie brakiem trasy.
     for (const [m, p] of [['GET', '/api/status'], ['GET', '/api/log'], ['GET', '/api/config'],
       ['POST', '/api/pause'], ['POST', '/api/resume'], ['POST', '/api/requeue'],
-      ['POST', '/api/problems/ack']]) {
+      ['POST', '/api/problems/ack'], ['POST', '/api/failed/discard']]) {
       const r = await fetch(base + p, { method: m });
       assert.ok(r.status < 500, `${m} ${p} → ${r.status}`);
     }

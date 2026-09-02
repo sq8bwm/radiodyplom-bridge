@@ -102,7 +102,8 @@ Kasowanie jest **ręczne**, dwiema drogami: kliknięciem plakietki (z pytaniem
 o potwierdzenie, żeby przypadkowe trafienie w nagłówek nie gubiło ostrzeżenia)
 albo przyciskiem „Wyczyść sygnalizację problemów" w panelu Odrzucone. Kasowanie
 dotyczy **tylko sygnalizacji**: odrzucone QSO zostają w kolejce, w liście
-zdarzeń i dają się ponowić.
+zdarzeń i dają się ponowić. Do trwałego usunięcia błędnych łączności służy
+osobny przycisk — patrz [Kolejka i log](kolejka.md).
 
 Poziom potwierdzenia jest przycinany w dół, gdy `failed/` się opróżni — po
 „Ponów odrzucone" albo po ręcznym sprzątnięciu katalogu. Bez tego arytmetyka

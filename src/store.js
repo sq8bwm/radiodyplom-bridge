@@ -206,6 +206,43 @@ export class Store {
     return had;
   }
 
+  /**
+   * Trwale usuwa odrzucone QSO z failed/. Do użycia, gdy są to łączności
+   * błędne i nie ma czego ratować — na przykład testowe albo z pomyłkowym
+   * znakiem.
+   *
+   * Każde usunięte QSO trafia do LOGU. Ciche kasowanie łączności byłoby wbrew
+   * całej zasadzie tego programu: jeśli QSO ma zniknąć, musi po nim zostać
+   * ślad w pliku logu.
+   *
+   * @returns {{removed:number, calls:string[]}}
+   */
+  discardFailed() {
+    const items = this.listFailed();
+    const calls = [];
+    let removed = 0;
+    for (const item of items) {
+      const call = item.payload?.callsign || '?';
+      const station = item.payload?.station_callsign || '?';
+      try {
+        unlinkSync(item._file);
+        removed += 1;
+        calls.push(call);
+        log.warn(`USUNIĘTE odrzucone QSO: ${call} → ${station}`, {
+          code: item.lastErrorCode || null, error: item.lastError || null, key: item.key,
+        });
+      } catch (err) {
+        log.error(`Nie mogę usunąć ${item._file}: ${err.message}`);
+      }
+    }
+    if (removed) {
+      this.ackedFailed = this.counts().failed;
+      this._persistState();
+      log.warn(`Usunięto trwale ${removed} odrzuconych QSO`, { calls });
+    }
+    return { removed, calls };
+  }
+
   /** Sukces: usuń z kolejki, zapisz klucz jako obsłużony. */
   complete(item) {
     this.sentCount += 1;

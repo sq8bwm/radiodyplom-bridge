@@ -377,6 +377,13 @@ $('btnPause').onclick = async () => {
   refresh();
 };
 $('btnRequeue').onclick = async () => {
+  const s = await window.bridge.status();
+  // PUŁAPKA: w trybie próbnym przywrócone QSO przejdą „na sucho" i zostaną
+  // zamknięte w deduplikacji — czyli ponowienie po cichu je WYRZUCA, choć
+  // klika się je właśnie po to, żeby je uratować. Pytamy wprost.
+  if (s?.radiodyplom?.dryRun && (s.queue?.failed ?? 0) > 0) {
+    if (!window.confirm(t('confirm.requeueDryRun'))) return;
+  }
   // Bez tej informacji „nic się nie stało" było nieodróżnialne od zepsutego
   // przycisku — i realnie tak wyglądało.
   const n = await window.bridge.requeue();

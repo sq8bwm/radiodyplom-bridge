@@ -107,6 +107,12 @@ i QSO utknęłoby w kolejce, odrzucane jako duplikat.
 > nie do odróżnienia od zepsutego. Teraz przy każdym kliknięciu widać, ile QSO
 > wróciło do kolejki, albo że nie było czego przywracać.
 
+**Uwaga na tryb próbny.** Przy włączonym trybie próbnym przywrócone QSO przejdą
+„na sucho": nie zostaną wysłane, a mimo to znikną z kolejki i zostaną zamknięte
+w deduplikacji — czyli ponowienie **wyrzuci je**, choć klika się je właśnie po to,
+żeby je uratować. Program pyta o to wprost, zanim cokolwiek ruszy. Chcesz je
+naprawdę wysłać — najpierw wyłącz tryb próbny.
+
 ### „Wyczyść sygnalizację problemów"
 
 Gasi plakietkę. QSO zostają. Pokazuje się tylko wtedy, gdy są niepotwierdzone.

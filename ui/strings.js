@@ -88,6 +88,10 @@ const DICT = {
     'hint.requeue': '„Ponów odrzucone" wraca do kolejki WSZYSTKIE odrzucone — także te, '
       + 'które serwer odrzucił wcześniej. Ma to sens po poprawieniu uprawnień '
       + 'w Managerze; QSO naprawdę błędne wrócą tu z tym samym błędem.',
+    'confirm.requeueDryRun': 'TRYB PRÓBNY JEST WŁĄCZONY.\n\nPrzywrócone QSO przejdą '
+      + 'próbnie, czyli NIE zostaną wysłane na serwer — i znikną z kolejki '
+      + 'na dobre.\n\nJeśli chcesz je naprawdę wysłać, najpierw wyłącz tryb '
+      + 'próbny w Konfiguracji.\n\nPonowić mimo to?',
     'hint.requeued': 'Przywrócono do kolejki QSO:',
     'hint.requeuedNone': 'Nie było czego przywracać.',
     'hint.acked': 'Wyczyszczono sygnalizację. Niepotwierdzonych było:',
@@ -249,6 +253,10 @@ const DICT = {
     'hint.requeue': '“Retry rejected” puts ALL rejected QSOs back in the queue, including '
       + 'those the server refused earlier. That makes sense after fixing permissions '
       + 'in the Manager; genuinely bad QSOs will come back with the same error.',
+    'confirm.requeueDryRun': 'DRY RUN IS ON.\n\nThe restored QSOs will pass through '
+      + 'as a dry run — they will NOT be sent to the server, and they will be '
+      + 'gone from the queue for good.\n\nTo actually send them, turn dry run '
+      + 'off in Configuration first.\n\nRetry anyway?',
     'hint.requeued': 'QSOs put back in the queue:',
     'hint.requeuedNone': 'Nothing to put back.',
     'hint.acked': 'Indicator cleared. Unacknowledged count was:',

@@ -100,6 +100,49 @@ wartością z konfiguracji, zamiast tekstem od operatora.
 
 ## Funkcjonalne
 
+### Powrót PIN-u per operator (i może bazy użytkowników)
+Na jutro (2026-09-02). **Uwaga: to była już raz zbudowana i usunięta funkcja** —
+zaczynać od faktów poniżej, nie od zera.
+
+Co wiemy z pomiaru na prawdziwym serwerze (szczegóły i tabela w
+`docs/konfiguracja.md`):
+- PIN API to **konto**, a konto ma w Managerze **listę znaków stacji**;
+- serwer sprawdza **`station_callsign`**, pola `operator` **nie sprawdza wcale**;
+- dlatego jeden PIN wystarcza dla wszystkich stacji z listy konta — i właśnie
+  tak rozwiązaliśmy przypadek `SQ8BWA` (dopisanie stacji do listy).
+
+Kiedy własny PIN przy celu **nadal** ma sens: gdy nie da się (albo nie chce)
+dopisać cudzej stacji do swojego konta — wtedy kopia musi polecieć PIN-em
+właściciela tej stacji.
+
+Stan wyjściowy: pole `pin` przy celu **nigdy nie zostało usunięte z rdzenia**
+(`src/fanout.js`), działa i jest zachowywane przy zapisie z okna — brakuje
+tylko sposobu wpisania go w interfejsie. To jest najtańsza wersja tej zmiany.
+
+Jeśli wraca baza użytkowników, to **kluczowana po znaku STACJI**, nie po
+operatorze — poprzednia wersja myliła te dwa pola. I **nie wracamy** do
+lokalnego odrzucania QSO (`NO_OPERATOR_PIN`): pomiar pokazał, że serwer
+takie QSO normalnie przyjmuje, więc odrzucaliśmy poprawne łączności.
+
+Pamiętać o maskowaniu: PIN-y nigdy nie opuszczają procesu jawne, a wartość
+zamaskowana przy zapisie znaczy „zostaw dotychczasowy".
+
+### Przepisanie historii commitów — do rozważenia
+Na jutro (2026-09-02). Śmieci `.swp` **są już usunięte** z historii
+(`git filter-branch`, 2026-09-02) i `main` jest czysty. Do przemyślenia zostaje
+głębsze przepisanie: żeby cała historia była od początku na GPL, bez śladu po
+okresie ISC.
+
+Argument przeciw, ten sam co poprzednio: 30 commitów niesie **uzasadnienia
+decyzji** — kolizja `rowid` gubiąca QSO, zmierzony model uprawnień, dwie
+przebudowy w złą stronę i powód powrotu. Już z tego korzystaliśmy. Zgniecenie
+do jednego commita kupuje czystość, a kosztuje pamięć projektu.
+
+Warto też pamiętać: przepisanie **nie usuwa** starych obiektów z GitHuba —
+sprawdzone dziś, blob był pobieralny po SHA mimo wymuszonego wypchnięcia.
+Gwarancję daje tylko skasowanie i odtworzenie repozytorium albo zgłoszenie
+do GitHub Support.
+
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.
 Nieobsłużone (własne protokoły, **specyfikacji nie weryfikowałam**):
@@ -156,6 +199,13 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **Cały łańcuch obsługi odrzuconych potwierdzony w prawdziwej pracy** (2026-09-02,
+  0.1.7): QSO na stację `SQ8BWA` wróciło jako odrzucone i było to widoczne od razu
+  — czerwony wiersz w zdarzeniach i plakietka. Po dopisaniu stacji do listy konta
+  w Managerze i kliknięciu „Ponów odrzucone" łączności przeszły. Czyli: sygnalizacja
+  pokazała problem, komunikat wskazał przyczynę, a ponowienie odzyskało QSO.
+- **PIN konta SQ8BWA wygenerowany od nowa** (2026-09-02) po znalezieniu starego
+  w plikach `.swp` w historii gita. Stary PIN jest bezwartościowy, sprawa zamknięta.
 - **„Ponów odrzucone" w trybie próbnym po cichu wyrzucało QSO** — przechodziły
   „na sucho", nie leciały na serwer, a mimo to znikały z kolejki i wracały do
   deduplikacji. Czyli przycisk, którym się ratuje łączności, kasował je.

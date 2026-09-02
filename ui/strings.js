@@ -66,6 +66,7 @@ const DICT = {
     'label.opName': 'Opis (opcjonalnie)',
     'label.opPin': 'PIN API',
     'opt.pickOperator': '— wybierz operatora —',
+    'opt.missingOperator': 'brak w bazie',
     'opt.ownPin': 'własny PIN z pliku',
     'label.language': 'Język interfejsu',
 
@@ -194,6 +195,7 @@ const DICT = {
     'label.opName': 'Description (optional)',
     'label.opPin': 'API PIN',
     'opt.pickOperator': '— pick an operator —',
+    'opt.missingOperator': 'not in the book',
     'opt.ownPin': 'own PIN from the file',
     'label.language': 'Interface language',
 

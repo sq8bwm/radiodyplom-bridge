@@ -185,11 +185,14 @@ function renderOperators(list) {
   $('operators').querySelectorAll('.o-del').forEach((b) => {
     b.onclick = () => { b.closest('.op-row').remove(); syncOperatorPickers(); };
   });
-  $('operators').querySelectorAll('.o-call').forEach((i) => {
-    forceUpper(i);
-    // Poprawiony znak musi natychmiast trafić do list wyboru w fan-oucie,
-    // inaczej wybór wskazywałby na nieistniejącego już operatora.
-    i.onchange = syncOperatorPickers;
+  $('operators').querySelectorAll('.o-call').forEach(forceUpper);
+  // Znak ORAZ opis muszą trafiać do list wyboru na bieżąco. Wcześniej odświeżał
+  // je tylko znak, więc świeżo dopisany opis nie pojawiał się przy operatorze —
+  // znak wpisuje się przed opisem, czyli w momencie odświeżenia opisu jeszcze
+  // nie było. `input`, a nie `change`: gdyby czekać na opuszczenie pola, listy
+  // przebudowywałyby się dokładnie wtedy, gdy użytkownik klika w tę listę.
+  $('operators').querySelectorAll('.o-call, .o-name').forEach((i) => {
+    i.addEventListener('input', syncOperatorPickers);
   });
 }
 
@@ -217,30 +220,45 @@ function operatorChoices() {
 
 /** Buduje <option> listy operatorów dla jednego celu. */
 function operatorOptions(selected, hasOwnPin) {
+  const want = String(selected || '').toUpperCase();
+  const choices = operatorChoices();
   const opts = [`<option value="">${esc(t('opt.pickOperator'))}</option>`];
-  for (const o of operatorChoices()) {
-    const sel = o.call === String(selected || '').toUpperCase() ? ' selected' : '';
+  for (const o of choices) {
+    const sel = o.call === want ? ' selected' : '';
     opts.push(`<option value="${esc(o.call)}"${sel}>${esc(o.label)}</option>`);
+  }
+  // Wybór wskazujący na kogoś, kogo (już) nie ma w bazie, zostaje widoczny
+  // i oznaczony. Ciche zresetowanie go do „wybierz operatora" gubiłoby wybór
+  // za każdym razem, gdy ktoś poprawia znak w bazie litera po literze.
+  if (want && !choices.some((o) => o.call === want)) {
+    opts.push(`<option value="${esc(want)}" selected>${esc(want)} — ${esc(t('opt.missingOperator'))}</option>`);
   }
   // Cel z PIN-em wpisanym wprost w config.json działa dalej, choć nie wskazuje
   // nikogo z bazy. Musi mieć swoją pozycję, inaczej zapis z interfejsu
   // po cichu skasowałby działający PIN.
-  if (hasOwnPin && !selected) {
+  if (hasOwnPin && !want) {
     opts.push(`<option value="__own" selected>${esc(t('opt.ownPin'))}</option>`);
   }
   return opts.join('');
 }
 
+/** Czy dana wartość listy wyboru jest wskazaniem, z którym da się wysyłać? */
+function pickUsable(value) {
+  if (value === '__own') return true;                 // PIN wpisany wprost w pliku
+  return operatorChoices().some((o) => o.call === String(value || '').toUpperCase());
+}
+
 /** Odświeża listy wyboru po zmianie bazy, zachowując dotychczasowe wybory. */
 function syncOperatorPickers() {
-  const choices = operatorChoices().map((o) => o.call);
   $('targets').querySelectorAll('.t-op').forEach((sel) => {
     const keep = sel.value;
     const own = sel.dataset.own === '1';
-    sel.innerHTML = operatorOptions(choices.includes(keep) ? keep : '', own);
-    sel.value = choices.includes(keep) ? keep : (own ? '__own' : '');
+    sel.innerHTML = operatorOptions(keep === '__own' ? '' : keep, own);
+    sel.value = keep;
+    if (sel.value !== keep) sel.value = own ? '__own' : '';
+    sel.classList.toggle('invalid', !pickUsable(sel.value));
   });
-  const none = choices.length === 0;
+  const none = operatorChoices().length === 0;
   $('fanoutNoOps').hidden = !(none && $('targets').querySelectorAll('.three').length > 0);
 }
 
@@ -290,9 +308,12 @@ function collectTargets({ validate = true } = {}) {
     const station = stationEl.value.trim().toUpperCase();
     const pick = opEl.value;
     if (validate) {
+      // Sam fakt, że coś jest wybrane, nie wystarcza: wskazanie na kogoś spoza
+      // bazy skończyłoby się wysyłką PIN-em głównym i cichym NOT_SAVED.
+      const okPick = pickUsable(pick);
       stationEl.classList.toggle('invalid', !station);
-      opEl.classList.toggle('invalid', !pick);
-      if (!station || !pick) bad = true;
+      opEl.classList.toggle('invalid', !okPick);
+      if (!station || !okPick) bad = true;
     }
     return {
       station_callsign: station,

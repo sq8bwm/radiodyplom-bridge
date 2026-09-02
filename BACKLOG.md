@@ -141,6 +141,7 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   liście konta. **Jeden PIN wystarcza.** Pomiar i tabela w `docs/konfiguracja.md`.
   Kosztowało to 7 testowych QSO w akcji 295 — w tym 5 przez błąd w sondzie,
   która miała nie zapisywać nic (`band` wymaga nasz mapper, nie API).
+  Wszystkie usunięte przez operatora w Managerze (2026-09-02).
 - **Baza operatorów: zbudowana i usunięta.** Powstała pod błędny model
   (osobne PIN-y per operator), z lokalnym odrzucaniem QSO operatorów spoza
   bazy. Pomiar pokazał, że takie QSO serwer normalnie przyjmuje, więc kod

@@ -150,7 +150,11 @@ const DICT = {
       + 'zamknięte w deduplikacji i NIE poleci po wyłączeniu trybu próbnego. '
       + 'Jeśli chcesz tylko przytrzymać QSO na później, użyj „Wstrzymaj”.',
     'badge.problems': 'PROBLEMY:',
-    'hint.problemBadge': 'Kliknij, aby zobaczyć odrzucone QSO.',
+    'hint.problemBadge': 'Kliknij, aby wyczyścić sygnalizację. Odrzucone QSO zostają '
+      + 'w kolejce — zobaczysz je na zakładce Kolejka.',
+    'confirm.ackProblems': 'Wyczyścić sygnalizację problemów?\n\nOdrzucone QSO zostaną '
+      + 'w kolejce i nadal będzie można je ponowić. Sygnalizacja zapali się '
+      + 'ponownie przy następnym odrzuconym QSO.',
     'hint.ackProblems': 'Kasuje samą sygnalizację. Odrzucone QSO zostają w kolejce.',
     'ev.sent': 'wysłane',
     'ev.dryrun': 'próbnie — NIE wysłane',
@@ -297,7 +301,11 @@ const DICT = {
       + 'is marked as handled and will NOT be sent after you turn dry run off. '
       + 'To merely hold QSOs for later, use “Pause”.',
     'badge.problems': 'PROBLEMS:',
-    'hint.problemBadge': 'Click to see the rejected QSOs.',
+    'hint.problemBadge': 'Click to clear the indicator. Rejected QSOs stay in the queue '
+      + '— you will find them on the Queue tab.',
+    'confirm.ackProblems': 'Clear the problem indicator?\n\nRejected QSOs stay in the queue '
+      + 'and can still be retried. The indicator will light up again on the next '
+      + 'rejected QSO.',
     'hint.ackProblems': 'Clears the indicator only. Rejected QSOs stay in the queue.',
     'ev.sent': 'sent',
     'ev.dryrun': 'dry run — NOT sent',

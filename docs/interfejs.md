@@ -89,14 +89,24 @@ z tym ostrzeżeniem wisi na plakietce DRY-RUN.
 Gdy QSO **nie trafi na serwer** — odrzucone trwale albo porzucone po wyczerpaniu
 prób — w nagłówku, obok plakietki DRY-RUN, zapala się czerwone **„PROBLEMY: n"**.
 
-Rzecz istotna: licznik żyje w **rdzeniu**, nie w oknie. QSO bywa odrzucane przy
-zamkniętym oknie, a wtedy informacja „coś nie doszło" nie może przepaść razem
-z oknem. Dlatego plakietka trwa, dopóki jej nie potwierdzisz.
+Rzecz istotna, bo pierwsza wersja robiła to **źle**: liczba nie jest licznikiem
+w pamięci, a **różnicą** między zawartością `data/failed/` i trwale zapisanym
+poziomem potwierdzenia (pole `ackedFailed` w `seen.json`).
 
-Kasowanie jest **ręczne**: przycisk „Wyczyść sygnalizację problemów" w panelu
-Odrzucone. Kliknięcie samej plakietki tam prowadzi — celowo nie kasuje, żeby
-przypadkowe trafienie w nagłówek nie gubiło ostrzeżenia. Kasowanie dotyczy
-**tylko sygnalizacji**: odrzucone QSO zostają w kolejce i w liście zdarzeń.
+Licznik w pamięci nie miał sensu: w spakowanej aplikacji rdzeń żyje w tym samym
+procesie co okno, więc zamknięcie programu kasowało sygnalizację, choć odrzucone
+QSO zostawały na dysku. Plakietka znikała, a problem trwał. Teraz przeżywa
+restart — i potwierdzenie też.
+
+Kasowanie jest **ręczne**, dwiema drogami: kliknięciem plakietki (z pytaniem
+o potwierdzenie, żeby przypadkowe trafienie w nagłówek nie gubiło ostrzeżenia)
+albo przyciskiem „Wyczyść sygnalizację problemów" w panelu Odrzucone. Kasowanie
+dotyczy **tylko sygnalizacji**: odrzucone QSO zostają w kolejce, w liście
+zdarzeń i dają się ponowić.
+
+Poziom potwierdzenia jest przycinany w dół, gdy `failed/` się opróżni — po
+„Ponów odrzucone" albo po ręcznym sprzątnięciu katalogu. Bez tego arytmetyka
+przemilczałaby następne odrzucenie (potwierdzone 4, potem 1 nowe → 1−4 = 0).
 
 Zwykłe ponowienia **nie** zapalają plakietki — naprawiają się same, a inaczej
 świeciłaby przy każdym mignięciu sieci.

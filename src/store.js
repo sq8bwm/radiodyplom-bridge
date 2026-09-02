@@ -24,6 +24,11 @@ export class Store {
     // trwałe odrzucenia — pokazywanie jego rozmiaru jako „wysłane" zawyżało
     // licznik przy każdym odrzuceniu i mówiło użytkownikowi, że QSO doszło.
     this.sentCount = 0;
+    // Ile odrzuconych QSO użytkownik już zobaczył i potwierdził. Sygnalizacja
+    // problemów wynika z RÓŻNICY między zawartością failed/ a tą liczbą —
+    // nie z licznika w pamięci. Pierwsza wersja trzymała to w workerze
+    // i przepadało przy restarcie, choć odrzucone QSO zostawały na dysku.
+    this.ackedFailed = 0;
   }
 
   init() {
@@ -42,6 +47,7 @@ export class Store {
         } else if (data && Array.isArray(data.seen)) {
           this.seen = new Set(data.seen);
           this.sentCount = Number.isFinite(data.sent) ? data.sent : data.seen.length;
+          this.ackedFailed = Number.isFinite(data.ackedFailed) ? data.ackedFailed : 0;
         }
       } catch (err) {
         log.warn('Nie mogę wczytać seen.json, startuję z pustym', err.message);
@@ -49,6 +55,7 @@ export class Store {
     }
     // Odbuduj pendingKeys z plików w kolejce
     for (const item of this.list()) this.pendingKeys.add(item.key);
+
     log.info('Kolejka zainicjowana', {
       pending: this.pendingKeys.size, seen: this.seen.size,
     });
@@ -159,7 +166,44 @@ export class Store {
 
   _markSeen(key) {
     this.seen.add(key);
-    this._atomicWrite(this.seenFile, { seen: [...this.seen], sent: this.sentCount });
+    this._persistState();
+  }
+
+  _persistState() {
+    this._atomicWrite(this.seenFile, {
+      seen: [...this.seen],
+      sent: this.sentCount,
+      ackedFailed: this.ackedFailed,
+    });
+  }
+
+  /**
+   * Ile odrzuconych QSO czeka na uwagę użytkownika.
+   * Liczone z zawartości failed/, więc przeżywa restart programu.
+   */
+  unackedFailed() {
+    const failed = this.counts().failed;
+    // Poziom potwierdzenia nie może zostać wyżej niż stan faktyczny. Inaczej
+    // po przywróceniu odrzuconych („Ponów odrzucone") albo po ręcznym
+    // opróżnieniu failed/ NOWE odrzucenie byłoby przemilczane — a to najgorszy
+    // możliwy błąd w czymś, co ma ostrzegać.
+    if (this.ackedFailed > failed) {
+      this.ackedFailed = failed;
+      this._persistState();
+    }
+    return Math.max(0, failed - this.ackedFailed);
+  }
+
+  /**
+   * Potwierdza obejrzenie odrzuconych. Nie usuwa ich — zostają w failed/
+   * i dalej da się je ponowić.
+   * @returns {number} ile było niepotwierdzonych
+   */
+  ackFailed() {
+    const had = this.unackedFailed();
+    this.ackedFailed = this.counts().failed;
+    this._persistState();
+    return had;
   }
 
   /** Sukces: usuń z kolejki, zapisz klucz jako obsłużony. */

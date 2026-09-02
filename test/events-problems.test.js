@@ -3,9 +3,8 @@
 
 // Lista ostatnich zdarzeń i sygnalizacja problemów.
 //
-// Sens sygnalizacji: QSO bywa odrzucane przy zamkniętym oknie. Licznik musi
-// więc żyć w rdzeniu i trwać, aż użytkownik go potwierdzi — inaczej
-// informacja „coś nie doszło" przepada razem z oknem.
+// Sygnalizacja problemów ma własny plik testów (problems.test.js), bo wynika
+// z zawartości katalogu odrzuconych, a nie z licznika w workerze.
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -17,9 +16,11 @@ setLevel('error');
 function fakeStore() {
   return {
     items: [],
+    completed: 0,
+    failed: 0,
     list() { return this.items; },
-    complete() { this.items = []; },
-    fail() { this.items = []; },
+    complete() { this.completed += 1; this.items = []; },
+    fail() { this.failed += 1; this.items = []; },
     update() {},
   };
 }
@@ -68,10 +69,14 @@ describe('bufor ostatnich zdarzeń', () => {
     assert.equal(w2.recentEvents().at(-1).kind, 'dryrun');
   });
 
-  test('tryb próbny nie zapala sygnalizacji problemów', async () => {
+  test('tryb próbny NIE odkłada QSO do odrzuconych', async () => {
+    // Sygnalizacja problemów wynika z zawartości failed/, więc przejście
+    // próbne nie może tam nic wrzucić — inaczej plakietka świeciłaby
+    // po każdym teście mapowania pól.
     const w2 = makeWorker(fakeClient({ ok: true, dryRun: true }));
     await w2._process(makeItem());
-    assert.equal(w2.problems.count, 0);
+    assert.equal(w2.store.failed, 0);
+    assert.equal(w2.store.completed, 1);
   });
 
   test('duplikat jest osobnym rodzajem, nie sukcesem', async () => {
@@ -124,78 +129,5 @@ describe('bufor ostatnich zdarzeń', () => {
     assert.equal(w.recentEvents(0).length, 1);
     assert.ok(w.recentEvents(100000).length <= EVENT_RING);
     assert.ok(w.recentEvents('bzdura').length >= 1);
-  });
-});
-
-describe('sygnalizacja problemów', () => {
-  let w;
-  beforeEach(() => { w = makeWorker(fakeClient({ ok: true })); });
-
-  test('sukces nie zapala sygnalizacji', async () => {
-    await w._process(makeItem());
-    assert.equal(w.problems.count, 0);
-  });
-
-  test('duplikat też nie — to nie jest problem', async () => {
-    const d = makeWorker(fakeClient({ ok: true, duplicate: true }));
-    await d._process(makeItem());
-    assert.equal(d.problems.count, 0);
-  });
-
-  test('ponowienie NIE jest problemem – naprawia się samo', async () => {
-    const r = makeWorker(fakeClient({ ok: false, permanent: false, error: 'timeout' }));
-    await r._process(makeItem());
-    assert.equal(r.problems.count, 0, 'inaczej plakietka świeciłaby przy każdym mignięciu sieci');
-  });
-
-  test('odrzucenie trwałe zapala i pamięta szczegóły', async () => {
-    const b = makeWorker(fakeClient({ ok: false, permanent: true, code: 'NOT_SAVED', error: 'brak akcji' }));
-    await b._process(makeItem('SP1AAA'));
-    assert.equal(b.problems.count, 1);
-    assert.equal(b.problems.last.code, 'NOT_SAVED');
-    assert.equal(b.problems.last.callsign, 'SP1AAA');
-    assert.ok(b.problems.firstAt);
-    assert.ok(b.problems.lastAt);
-  });
-
-  test('wyczerpanie prób też zapala', async () => {
-    const b = makeWorker(fakeClient({ ok: false, permanent: false, error: 'sieć' }), { maxAttempts: 1 });
-    await b._process(makeItem());
-    assert.equal(b.problems.count, 1);
-  });
-
-  test('kolejne problemy zwiększają licznik, pierwsza chwila się nie zmienia', async () => {
-    const b = makeWorker(fakeClient({ ok: false, permanent: true, code: 'NOT_SAVED', error: 'x' }));
-    await b._process(makeItem('SP1AAA'));
-    const first = b.problems.firstAt;
-    await b._process(makeItem('SP2BBB'));
-    assert.equal(b.problems.count, 2);
-    assert.equal(b.problems.firstAt, first);
-    assert.equal(b.problems.last.callsign, 'SP2BBB');
-  });
-
-  test('potwierdzenie kasuje sygnalizację i zwraca, ile jej było', async () => {
-    const b = makeWorker(fakeClient({ ok: false, permanent: true, code: 'NOT_SAVED', error: 'x' }));
-    await b._process(makeItem('SP1AAA'));
-    await b._process(makeItem('SP2BBB'));
-    assert.equal(b.ackProblems(), 2);
-    assert.equal(b.problems.count, 0);
-    assert.equal(b.problems.last, null);
-  });
-
-  test('potwierdzenie NIE czyści listy zdarzeń', async () => {
-    // Zdarzenia to historia; sygnalizacja to wezwanie do działania.
-    const b = makeWorker(fakeClient({ ok: false, permanent: true, code: 'NOT_SAVED', error: 'x' }));
-    await b._process(makeItem());
-    b.ackProblems();
-    assert.equal(b.recentEvents().length, 1);
-  });
-
-  test('po potwierdzeniu nowy problem zapala od nowa', async () => {
-    const b = makeWorker(fakeClient({ ok: false, permanent: true, code: 'NOT_SAVED', error: 'x' }));
-    await b._process(makeItem('SP1AAA'));
-    b.ackProblems();
-    await b._process(makeItem('SP2BBB'));
-    assert.equal(b.problems.count, 1);
   });
 });

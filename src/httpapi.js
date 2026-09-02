@@ -140,8 +140,24 @@ export class StatusApi {
       // Lista ostatnich zdarzeń; ile ich pokazać, decyduje konfiguracja.
       recentEvents: this.worker.recentEvents(this.cfg.ui?.recentEvents ?? 20),
       recentEventsMax: this.cfg.ui?.recentEvents ?? 20,
-      // Sygnalizacja problemów: trwa, dopóki użytkownik jej nie potwierdzi.
-      problems: this.worker.problems,
+      // Sygnalizacja problemów. Liczona z zawartości failed/, nie z licznika
+      // w pamięci — dzięki temu przeżywa restart programu, a to był cały sens:
+      // QSO bywa odrzucane, gdy nikt nie patrzy.
+      problems: (() => {
+        const count = this.store.unackedFailed();
+        if (!count) return { count: 0, last: null };
+        const items = this.store.listFailed();
+        const newest = items[items.length - 1];
+        return {
+          count,
+          last: newest ? {
+            callsign: newest.payload?.callsign || null,
+            station: newest.payload?.station_callsign || null,
+            code: newest.lastErrorCode || null,
+            error: newest.lastError || null,
+          } : null,
+        };
+      })(),
     };
   }
 
@@ -173,7 +189,7 @@ export class StatusApi {
         return send(200, { ok: true, paused: false });
       }
       if (req.method === 'POST' && url.pathname === '/api/problems/ack') {
-        return send(200, { ok: true, cleared: this.worker.ackProblems() });
+        return send(200, { ok: true, cleared: this.store.ackFailed() });
       }
       if (req.method === 'POST' && url.pathname === '/api/requeue') {
         const n = this.requeue ? this.requeue() : 0;

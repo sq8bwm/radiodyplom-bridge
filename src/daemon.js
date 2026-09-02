@@ -98,7 +98,7 @@ export async function startDaemon(cfg, opts = {}) {
     pause: () => worker.pause(),
     resume: () => worker.resume(),
     requeue: () => requeueFailed(store).restored,
-    ackProblems: () => worker.ackProblems(),
+    ackProblems: () => store.ackFailed(),
     /** Natychmiastowe sprawdzenie klucza (np. zaraz po jego zmianie w UI). */
     async refreshPing() {
       handle.lastPing = await client.ping();

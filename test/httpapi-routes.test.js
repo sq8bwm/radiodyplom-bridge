@@ -37,7 +37,14 @@ let acked = 0;
 before(async () => {
   api = new StatusApi({
     cfg,
-    store: { counts: () => ({ pending: 0, failed: 0, sent: 0, skipped: 0 }), list: () => [], listFailed: () => [] },
+    store: {
+      counts: () => ({ pending: 0, failed: 4, sent: 0, skipped: 0 }),
+      list: () => [],
+      listFailed: () => [{ payload: { callsign: 'SP1AAA', station_callsign: 'SN0LPU' },
+        lastErrorCode: 'NOT_SAVED', lastError: 'brak akcji' }],
+      unackedFailed: () => 3,
+      ackFailed() { acked += 1; return 3; },
+    },
     listener: { host: '127.0.0.1', port: 12778, multicastGroups: [], stats: { received: 0, bySource: {} } },
     worker: {
       paused: false,
@@ -45,11 +52,9 @@ before(async () => {
       counters: { sent: 0, duplicates: 0, failed: 0, retries: 0 },
       lastSent: null,
       lastError: null,
-      problems: { count: 3, firstAt: 'a', lastAt: 'b', last: { callsign: 'SP1AAA', station: 'SN0LPU', code: 'NOT_SAVED', error: 'x' } },
       recentEvents: (n) => Array.from({ length: n }, (_, i) => ({ kind: 'sent', callsign: `SP${i}` })),
       pause() { this.paused = true; },
       resume() { this.paused = false; },
-      ackProblems() { acked += 1; return 3; },
     },
     pkg: { name: 'radiodyplom-bridge', version: '9.9.9', license: 'GPL-3.0-or-later' },
     getPing: () => ({ ok: true, operator: 'SQ8BWM' }),
@@ -73,7 +78,8 @@ describe('API stanu — każda trasa odpowiada', () => {
     const s = await r.json();
     assert.equal(s.version, '9.9.9');
     assert.equal(s.license, 'GPL-3.0-or-later');
-    assert.equal(s.problems.count, 3);
+    assert.equal(s.problems.count, 3, 'liczba z katalogu odrzuconych, nie z pamięci');
+    assert.equal(s.problems.last.code, 'NOT_SAVED', 'szczegóły z najnowszego odrzuconego');
     assert.equal(s.recentEventsMax, 7);
     assert.equal(s.recentEvents.length, 7, 'liczba zdarzeń idzie z konfiguracji');
   });
@@ -101,7 +107,7 @@ describe('API stanu — każda trasa odpowiada', () => {
     const body = await r.json();
     assert.equal(body.ok, true);
     assert.equal(body.cleared, 3);
-    assert.equal(acked, before + 1, 'worker musi zostać naprawdę wywołany');
+    assert.equal(acked, before + 1, 'store musi zostać naprawdę wywołany');
   });
 
   test('GET /api/config', async () => {

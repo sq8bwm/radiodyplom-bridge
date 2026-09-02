@@ -144,12 +144,19 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   w rdzeniu, liczba wierszy z konfiguracji (`ui.recentEvents`, 5–200, domyślnie 20,
   przycinana po obu stronach). Wiersze z problemem czerwone, ponowienia żółte,
   duplikaty wyblakłe.
-- **Sygnalizacja problemów** — plakietka „PROBLEMY: n" obok DRY-RUN, gdy QSO nie
-  trafiło na serwer. Licznik w RDZENIU, nie w oknie: QSO bywa odrzucane przy
-  zamkniętym oknie, a informacja nie może przepaść razem z oknem. Kasowanie
-  ręczne, przyciskiem w panelu Odrzucone; kliknięcie plakietki tylko tam
-  prowadzi. Ponowienia świadomie nie zapalają — inaczej świeciłaby przy każdym
-  mignięciu sieci. 17 testów.
+- **Sygnalizacja problemów** — plakietka „PROBLEMY: n" obok DRY-RUN, gdy są
+  odrzucone QSO, których użytkownik jeszcze nie potwierdził. Wynika z RÓŻNICY
+  między zawartością `data/failed/` i trwale zapisanym `ackedFailed`
+  w `seen.json`, więc przeżywa restart. Kasowanie kliknięciem plakietki
+  (z potwierdzeniem) albo przyciskiem w panelu Odrzucone; kasuje samą
+  sygnalizację, QSO zostają. 10 testów.
+- **Pierwsza wersja sygnalizacji trzymała licznik w pamięci workera** — i to był
+  błąd wprost przeciwny jej celowi: w spakowanej aplikacji rdzeń żyje w tym samym
+  procesie co okno, więc zamknięcie programu kasowało ostrzeżenie, choć odrzucone
+  QSO zostawały na dysku. Zgłoszone przez operatora: „w dymku jest 4 odrzucone
+  QSO, a nie ma odrzuconych; nie da się na to kliknąć i zresetować". Przy okazji
+  domknięta pułapka arytmetyki: po „Ponów odrzucone" poziom potwierdzenia musi
+  zostać przycięty w dół, inaczej następne odrzucenie byłoby przemilczane.
 - **Trasy lokalnego API nie miały testów** — `/api/problems/ack` rzucała
   „json is not defined" i cały zestaw przeszedł, bo żaden test nie dotykał
   warstwy HTTP. Doszło 8 testów przechodzących po wszystkich trasach.

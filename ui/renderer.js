@@ -363,10 +363,13 @@ $('btnPause').onclick = async () => {
 };
 $('btnRequeue').onclick = async () => { await window.bridge.requeue(); refresh(); };
 $('btnAckProblems').onclick = async () => { await window.bridge.ackProblems(); refresh(); };
-// Plakietka prowadzi tam, gdzie problemy widać — a nie kasuje ich jednym
-// przypadkowym kliknięciem w nagłówek.
-$('probBadge').onclick = () => {
-  document.querySelector('nav button[data-tab="kolejka"]').click();
+// Plakietka kasuje sygnalizację po potwierdzeniu — bo właśnie po nią sięga
+// ręka, gdy chce się „odkliknąć" ostrzeżenie. Potwierdzenie chroni przed
+// przypadkowym trafieniem w nagłówek.
+$('probBadge').onclick = async () => {
+  if (!window.confirm(t('confirm.ackProblems'))) return;
+  await window.bridge.ackProblems();
+  refresh();
 };
 $('btnOpenLog').onclick = () => window.bridge.openLog();
 

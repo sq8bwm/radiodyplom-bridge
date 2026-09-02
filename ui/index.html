@@ -79,9 +79,15 @@
      a skrypt podmienia samą wartość pola — inaczej widok i treść by się rozjechały. */
   input.callsign { text-transform:uppercase; }
   input.invalid { border-color:var(--err); }
+  /* Wysokość ustawia skrypt (fitLogBox) na podstawie FAKTYCZNEGO położenia
+     pola. Wpisana na sztywno rozjeżdżała się przy zawiniętym nagłówku,
+     a `flex` na całym układzie powodował przewijanie strony zamiast logu. */
   pre#logbox { background:var(--bg); border:1px solid var(--line); border-radius:6px;
-       padding:10px; font-size:12px; max-height:460px; overflow:auto; margin:0;
-       font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; }
+       padding:10px; font-size:12px; overflow:auto; margin:0; min-height:120px;
+       font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap;
+       /* Ładunki JSON nie mają spacji, więc samo pre-wrap ich nie złamie
+          i log wymaga przewijania w bok. Łamiemy gdziekolwiek. */
+       overflow-wrap:anywhere; }
   .lvl-warn{color:var(--warn)} .lvl-error{color:var(--err)}
   .hint { font-size:12px; color:var(--muted); margin-top:6px; }
   /* Pary „etykieta: wartość" w zakładce O programie. */
@@ -247,6 +253,9 @@
   <section id="log">
     <div class="row" style="margin-bottom:10px">
       <button class="act sec" id="btnOpenLog" data-i18n="btn.openLog"></button>
+      <button class="act sec" id="btnLogEnd" hidden data-i18n="btn.logEnd"></button>
+      <span class="hint" id="logFollow" style="margin:0"></span>
+      <span class="grow"></span>
       <span class="hint" id="logPath" style="margin:0"></span>
     </div>
     <pre id="logbox"></pre>

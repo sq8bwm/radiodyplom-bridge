@@ -28,6 +28,7 @@ const DICT = {
     'btn.remove': 'Usuń',
     'btn.quit': 'Zakończ',
     'btn.openLog': 'Pokaż plik logu',
+    'btn.logEnd': 'Na koniec',
     'btn.licenseText': 'Pełny tekst licencji',
     'btn.repo': 'Repozytorium',
     'btn.releases': 'Wydania',
@@ -72,6 +73,8 @@ const DICT = {
 
     'hint.pin': 'Zostaw zamaskowany, żeby nie zmieniać. Wpisz nowy, aby podmienić.',
     'hint.multicast': 'puste = brak',
+    'hint.logFollowing': 'nadąża za logiem',
+    'hint.logPaused': 'przewinięte w górę — nowe wpisy dochodzą na dole',
     'about.program': 'Program',
     'about.version': 'Wersja',
     'about.author': 'Autor',
@@ -192,6 +195,7 @@ const DICT = {
     'btn.remove': 'Remove',
     'btn.quit': 'Quit',
     'btn.openLog': 'Show log file',
+    'btn.logEnd': 'To the end',
     'btn.licenseText': 'Full license text',
     'btn.repo': 'Repository',
     'btn.releases': 'Releases',
@@ -236,6 +240,8 @@ const DICT = {
 
     'hint.pin': 'Leave it masked to keep the current PIN. Type a new one to replace it.',
     'hint.multicast': 'empty = none',
+    'hint.logFollowing': 'following the log',
+    'hint.logPaused': 'scrolled up — new entries keep arriving at the bottom',
     'about.program': 'Program',
     'about.version': 'Version',
     'about.author': 'Author',

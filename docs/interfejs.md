@@ -57,7 +57,12 @@ Pięć zakładek:
   różnią się stacją *i* operatorem, więc bez tej kolumny nie odróżnisz ich od siebie.
 - **Konfiguracja** — PIN, tryb próbny, adres i port nasłuchu, grupy multicast,
   liczba pokazywanych zdarzeń, cele rozmnażania QSO.
-- **Log** — bieżące zdarzenia.
+- **Log** — bieżące zdarzenia. Pole zajmuje całą wysokość okna (liczoną
+  z faktycznego położenia, więc zawinięcie nagłówka nic nie psuje) i przewija
+  się **samo**, nie razem ze stroną. Widok skacze za nowymi wpisami tylko
+  wtedy, gdy jest już na końcu logu; po przewinięciu w górę zostaje na miejscu,
+  a pasek nad logiem mówi „przewinięte w górę" i pokazuje przycisk „Na koniec".
+  Długie ładunki JSON są łamane, więc nie ma przewijania w bok.
 - **O programie** — wersja, autor, licencja i zdanie o braku gwarancji, plus
   odnośniki do pełnego tekstu licencji, repozytorium i wydań.
 

@@ -42,7 +42,18 @@ document.querySelectorAll('nav button').forEach((b) => {
     b.classList.add('active');
     $(b.dataset.tab).classList.add('active');
     if (b.dataset.tab === 'konfig') loadConfig();
-    if (b.dataset.tab === 'log') refreshLog();
+    if (b.dataset.tab === 'log') {
+      // Wejście w zakładkę zawsze pokazuje najnowsze wpisy.
+      lastLogHtml = '';
+      // Dwa kroki: najpierw treść i wysokość, POTEM skok na koniec. Odwrotnie
+      // scrollHeight jest jeszcze sprzed układu i skok trafia w próżnię.
+      refreshLog().then(() => requestAnimationFrame(() => {
+        fitLogBox();
+        const el = $('logbox');
+        el.scrollTop = el.scrollHeight;
+        updateLogFollow();
+      }));
+    }
   };
 });
 
@@ -248,14 +259,61 @@ $('btnReleases').onclick = () => {
 };
 
 // ---------- log ----------
+/**
+ * Dopasowuje wysokość pola logu do okna. Liczona z faktycznego położenia
+ * pola, a nie z wpisanej z góry liczby — nagłówek potrafi się zawinąć
+ * i każde sztywne odejmowanie rozjeżdża się przy innej szerokości okna.
+ */
+function fitLogBox() {
+  const el = $('logbox');
+  if (!el.offsetParent) return;                  // zakładka niewidoczna
+  const top = el.getBoundingClientRect().top;
+  const h = Math.max(120, Math.floor(window.innerHeight - top - 16));
+  el.style.height = `${h}px`;
+}
+window.addEventListener('resize', () => { fitLogBox(); updateLogFollow(); });
+
+/**
+ * Czy pole logu jest przewinięte na sam dół (z tolerancją na zaokrąglenia).
+ * Od tego zależy, czy wolno je przewijać za nowymi wpisami.
+ */
+function logAtBottom() {
+  const el = $('logbox');
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+}
+
+let lastLogHtml = '';
+
 async function refreshLog() {
+  const el = $('logbox');
   const entries = await window.bridge.log(200);
-  $('logbox').innerHTML = entries.map((e) => {
+  const html = entries.map((e) => {
     const time = e.ts.slice(11, 19);
     const extra = e.extra ? ' ' + esc(e.extra) : '';
     return `<span class="lvl-${e.level}">${time} ${esc(e.msg)}${extra}</span>`;
   }).join('\n');
-  $('logbox').scrollTop = $('logbox').scrollHeight;
+
+  // Nic się nie zmieniło — nie ruszamy DOM-u. Bez tego samo przerysowanie
+  // co 2 s szarpało widokiem podczas czytania, choć log stał w miejscu.
+  if (html !== lastLogHtml) {
+    // Przewijamy za logiem TYLKO wtedy, gdy użytkownik jest na jego końcu.
+    // Wcześniej skok na dół był bezwarunkowy, więc nie dało się nic przeczytać:
+    // każde odświeżenie wyrywało widok z powrotem.
+    const follow = logAtBottom();
+    const keep = el.scrollTop;
+    el.innerHTML = html;
+    lastLogHtml = html;
+    el.scrollTop = follow ? el.scrollHeight : keep;
+  }
+  fitLogBox();
+  updateLogFollow();
+}
+
+/** Mówi wprost, czy widok nadąża za logiem — inaczej wygląda jak zawieszony. */
+function updateLogFollow() {
+  const bottom = logAtBottom();
+  $('btnLogEnd').hidden = bottom;
+  $('logFollow').textContent = bottom ? t('hint.logFollowing') : t('hint.logPaused');
 }
 
 // ---------- konfiguracja ----------
@@ -411,6 +469,12 @@ $('probBadge').onclick = () => {
   document.querySelector('nav button[data-tab="kolejka"]').click();
 };
 $('btnOpenLog').onclick = () => window.bridge.openLog();
+$('btnLogEnd').onclick = () => {
+  const el = $('logbox');
+  el.scrollTop = el.scrollHeight;
+  updateLogFollow();
+};
+$('logbox').addEventListener('scroll', updateLogFollow);
 
 $('btnQuit').onclick = async () => {
   // Potwierdzenie, bo zamknięcie przerywa przekazywanie QSO.

@@ -199,6 +199,15 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **Okno logu: nie dało się czytać ani nie rosło z oknem.** Skok na koniec był
+  bezwarunkowy, więc każde odświeżenie (co 2 s) wyrywało widok z powrotem;
+  wysokość pola była wpisana na sztywno (460 px). Teraz: przewijanie za logiem
+  tylko wtedy, gdy widok JEST na końcu, plus wskaźnik stanu i przycisk „Na
+  koniec"; przy niezmienionej treści DOM nie jest ruszany wcale. Wysokość
+  liczona z faktycznego położenia pola (`fitLogBox`), bo `flex` na całym
+  układzie powodował przewijanie strony zamiast logu, a sztywne odejmowanie
+  rozjeżdżało się przy zawiniętym nagłówku. Długie linie JSON łamane
+  (`overflow-wrap:anywhere`) — koniec z poziomym paskiem.
 - **Cały łańcuch obsługi odrzuconych potwierdzony w prawdziwej pracy** (2026-09-02,
   0.1.7): QSO na stację `SQ8BWA` wróciło jako odrzucone i było to widoczne od razu
   — czerwony wiersz w zdarzeniach i plakietka. Po dopisaniu stacji do listy konta

@@ -37,6 +37,14 @@
   .badge.st-warn  { color:var(--warn); border-color:var(--warn); background:color-mix(in srgb, var(--warn) 12%, transparent); }
   .badge.st-error { color:var(--err);  border-color:var(--err);  background:color-mix(in srgb, var(--err) 12%, transparent); }
   select.lang { width:auto; font-size:12px; padding:3px 6px; }
+  /* Przyciski zawijają się CAŁĄ GRUPĄ, nie pojedynczo. Przy wąskim oknie
+     „Zakończ" trafiał inaczej dokładnie pod plakietki na górze — a to jedyny
+     przycisk w nagłówku, który przerywa przekazywanie QSO. */
+  .hdr-actions { display:flex; align-items:center; gap:8px; flex:none;
+                 /* Do prawej krawędzi także po zawinięciu — dzięki temu
+                    „Zakończ" nigdy nie stoi pod plakietkami z lewej. */
+                 margin-left:auto; }
+  .hdr-sep { width:1px; height:22px; background:var(--line); flex:none; }
   nav { display:flex; gap:4px; padding:8px 16px 0; }
   nav button { background:none; border:none; border-bottom:2px solid transparent; color:var(--muted);
                padding:6px 12px; cursor:pointer; font-size:13px; }
@@ -102,10 +110,13 @@
   <span class="badge dry" id="dryBadge" hidden>DRY-RUN</span>
   <span class="badge st-error" id="probBadge" hidden style="cursor:pointer"></span>
   <span class="grow"></span>
-  <select class="lang" id="langPick" title="Język / Language"></select>
-  <button class="act sec" id="btnPause" data-i18n="btn.pause">Wstrzymaj</button>
-  <button class="act sec" id="btnRequeue" data-i18n="btn.requeue">Ponów odrzucone</button>
-  <button class="act sec danger" id="btnQuit" data-i18n="btn.quit" title=""></button>
+  <div class="hdr-actions">
+    <select class="lang" id="langPick" title="Język / Language"></select>
+    <button class="act sec" id="btnPause" data-i18n="btn.pause">Wstrzymaj</button>
+    <button class="act sec" id="btnRequeue" data-i18n="btn.requeue">Ponów odrzucone</button>
+    <span class="hdr-sep"></span>
+    <button class="act sec danger" id="btnQuit" data-i18n="btn.quit" title=""></button>
+  </div>
 </header>
 
 <div class="note" id="restartNote" hidden style="margin:10px 16px 0;border-left-color:var(--warn)"></div>

@@ -133,6 +133,11 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **„Zakończ" lądował pod plakietkami w nagłówku** przy wąskim oknie i dało się
+  go trafić, celując w plakietkę problemów — co realnie się stało przy próbach.
+  Przyciski nagłówka są teraz jedną grupą (zawijają się razem, nie pojedynczo)
+  i po zawinięciu trzymają się prawej krawędzi, a „Zakończ" jest odcięty
+  separatorem. Sprawdzone zrzutami przy 920 i 1200 px.
 - **Usuwanie odrzuconych QSO** — przycisk w panelu Odrzucone, na wypadek gdy są
   to łączności błędne i nie ma czego ratować. Jedyna akcja w programie, która
   trwale niszczy dane, więc: potwierdzenie z liczbą i zdaniem „TEGO NIE DA SIĘ

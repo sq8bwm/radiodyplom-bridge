@@ -86,17 +86,38 @@ describe('Store — kolejka', () => {
     s.release();
   });
 
-  test('requeueFailed przywraca tylko to, co da się jeszcze wysłać', () => {
+  test('requeueFailed przywraca WSZYSTKO z odrzuconych', () => {
+    // ZMIANA REGUŁY (2026-09-02). Wcześniej pomijaliśmy QSO odrzucone przez
+    // serwer „na zawsze", bo są w zbiorze deduplikacji. W praktyce znaczyło to,
+    // że przycisk „Ponów odrzucone" nie robił NIC i nic o tym nie mówił — a to
+    // najczęstszy przypadek: NOT_SAVED z powodu znaku stacji poza listą konta
+    // przestaje być prawdą, gdy poprawisz uprawnienia w Managerze.
     const s = new Store(paths()); s.init();
     s.enqueue(item('trwaly')); s.fail(s.list().find((i) => i.key === 'trwaly'), true);
     s.enqueue(item('siec'));   s.fail(s.list().find((i) => i.key === 'siec'), false);
     assert.equal(s.counts().failed, 2);
+    assert.equal(s.seen.has('trwaly'), true, 'trwałe odrzucenie zamyka klucz');
 
     const r = requeueFailed(s);
-    assert.equal(r.restored, 1, 'wraca tylko awaria sieci');
-    assert.equal(r.skipped, 1);
-    assert.equal(s.counts().pending, 1);
+    assert.equal(r.restored, 2, 'wracają oba, także odrzucone przez serwer');
+    assert.equal(s.counts().pending, 2);
+    assert.equal(s.counts().failed, 0);
+    assert.equal(s.seen.has('trwaly'), false, 'klucz musi zostać uwolniony');
     s.release();
+  });
+
+  test('uwolnienie klucza jest trwałe', () => {
+    // Bez zapisu na dysk restart przywróciłby blokadę i QSO utknęłoby
+    // w kolejce, odrzucane jako duplikat.
+    const cfg = paths();
+    const s1 = new Store(cfg); s1.init();
+    s1.enqueue(item('trwaly')); s1.fail(s1.list()[0], true);
+    requeueFailed(s1);
+    s1.release();
+
+    const s2 = new Store(cfg); s2.init();
+    assert.equal(s2.seen.has('trwaly'), false);
+    s2.release();
   });
 
   // REGRESJA: nazwa pliku była wyciągana przez split('/'), co na Windows
@@ -357,15 +378,25 @@ describe('odzyskiwanie QSO odrzuconego lokalnie', () => {
     s.release();
   });
 
-  test('QSO zamknięte jako obsłużone NIE wraca', () => {
-    // Odwrotny biegun: odrzucenie przez serwer (zły znak) ma zostać odrzucone.
+  test('QSO odrzucone przez serwer TEŻ wraca po kliknięciu', () => {
+    // Kliknięcie „Ponów odrzucone" jest jawnym poleceniem użytkownika.
+    // Najgorsze, co się stanie przy QSO naprawdę błędnym, to jedno zmarnowane
+    // żądanie i powrót do failed/ — a to znacznie lepsze niż przycisk,
+    // który udaje, że działa.
     const s = new Store(paths());
     s.init();
     s.enqueue(item('k2', 'SP4DDD'));
     s.fail(s.list()[0], true);
 
-    assert.equal(requeueFailed(s).restored, 0);
-    assert.equal(s.counts().failed, 1);
+    assert.equal(requeueFailed(s).restored, 1);
+    assert.equal(s.counts().failed, 0);
+    assert.equal(s.counts().pending, 1);
+    s.release();
+  });
+
+  test('na pustych odrzuconych ponowienie nic nie robi i mówi to wprost', () => {
+    const s = new Store(paths()); s.init();
+    assert.deepEqual(requeueFailed(s), { restored: 0, skipped: 0, calls: [] });
     s.release();
   });
 });

@@ -85,11 +85,36 @@ Liczy **realnie wysłane** QSO. Trwałe odrzucenia trafiają do zbioru
 deduplikacji, ale nie do tego licznika — wcześniej był nim rozmiar tego zbioru,
 więc rósł przy każdym odrzuceniu i sugerował, że QSO doszło.
 
-## Usuwanie odrzuconych QSO
+## Trzy przyciski w panelu Odrzucone
+
+Wszystkie akcje dotyczące odrzuconych QSO są w jednym miejscu — na zakładce
+**Kolejka**, pod tabelą odrzuconych. Kliknięcie plakietki „PROBLEMY: n"
+w nagłówku prowadzi właśnie tam.
+
+### „Ponów odrzucone"
+
+Wraca do kolejki **wszystkie** odrzucone, także te, które serwer odrzucił
+wcześniej „na zawsze". Ma to sens po poprawieniu uprawnień w Managerze:
+`NOT_SAVED` z powodu znaku stacji poza listą konta przestaje być prawdą, gdy
+tylko dopiszesz tam ten znak.
+
+Wymaga **uwolnienia klucza z deduplikacji**, bo trwałe odrzucenie go zamyka.
+Uwolnienie jest zapisywane na dysk — bez tego restart przywróciłby blokadę
+i QSO utknęłoby w kolejce, odrzucane jako duplikat.
+
+> Wcześniejsza wersja pomijała odrzucone przez serwer. Brzmiało to rozsądnie,
+> ale w praktyce znaczyło, że przycisk **nie robił nic i nic o tym nie mówił** —
+> nie do odróżnienia od zepsutego. Teraz przy każdym kliknięciu widać, ile QSO
+> wróciło do kolejki, albo że nie było czego przywracać.
+
+### „Wyczyść sygnalizację problemów"
+
+Gasi plakietkę. QSO zostają. Pokazuje się tylko wtedy, gdy są niepotwierdzone.
+
+### „Usuń odrzucone QSO"
 
 Gdy odrzucone łączności są po prostu **błędne** — testowe, z pomyłkowym znakiem,
-z nieistniejącej stacji — nie ma czego ratować. Przycisk **„Usuń odrzucone QSO"**
-w panelu Odrzucone opróżnia `data/failed/`.
+z nieuprawnionej stacji — i nie ma czego ratować. Opróżnia `data/failed/`.
 
 Zabezpieczenia, bo to jedyna w programie akcja, która trwale niszczy dane:
 

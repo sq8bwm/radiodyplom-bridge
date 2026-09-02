@@ -85,8 +85,12 @@ const DICT = {
     'hint.targetIncomplete': 'NIE ZAPISANO — każda pozycja wymaga znaku stacji.',
     'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Każdy znak stacji musi '
       + 'być na liście stacji Twojego konta w Managerze — inaczej serwer nie zapisze kopii.',
-    'hint.requeue': '„Ponów odrzucone" wraca do kolejki tylko te, które padły z powodu '
-      + 'awarii łączności. Odrzucone przez serwer (zły znak, brak uprawnień) zostają.',
+    'hint.requeue': '„Ponów odrzucone" wraca do kolejki WSZYSTKIE odrzucone — także te, '
+      + 'które serwer odrzucił wcześniej. Ma to sens po poprawieniu uprawnień '
+      + 'w Managerze; QSO naprawdę błędne wrócą tu z tym samym błędem.',
+    'hint.requeued': 'Przywrócono do kolejki QSO:',
+    'hint.requeuedNone': 'Nie było czego przywracać.',
+    'hint.acked': 'Wyczyszczono sygnalizację. Niepotwierdzonych było:',
     'hint.saved': 'Zapisano i zastosowano.',
     'hint.savedRestart': 'Zapisano. Wymaga restartu: ',
     'hint.saveFailed': 'NIE ZAPISANO —',
@@ -156,11 +160,8 @@ const DICT = {
       + 'zamknięte w deduplikacji i NIE poleci po wyłączeniu trybu próbnego. '
       + 'Jeśli chcesz tylko przytrzymać QSO na później, użyj „Wstrzymaj”.',
     'badge.problems': 'PROBLEMY:',
-    'hint.problemBadge': 'Kliknij, aby wyczyścić sygnalizację. Odrzucone QSO zostają '
-      + 'w kolejce — zobaczysz je na zakładce Kolejka.',
-    'confirm.ackProblems': 'Wyczyścić sygnalizację problemów?\n\nOdrzucone QSO zostaną '
-      + 'w kolejce i nadal będzie można je ponowić. Sygnalizacja zapali się '
-      + 'ponownie przy następnym odrzuconym QSO.',
+    'hint.problemBadge': 'Kliknij, aby przejść do zakładki Kolejka — tam są odrzucone QSO '
+      + 'i przyciski: ponowienie, wyczyszczenie sygnalizacji, usunięcie.',
     'hint.ackProblems': 'Kasuje samą sygnalizację. Odrzucone QSO zostają w kolejce.',
     'ev.sent': 'wysłane',
     'ev.dryrun': 'próbnie — NIE wysłane',
@@ -245,8 +246,12 @@ const DICT = {
     'hint.fanout': 'Empty = one QSO with the station callsign from the logger. Every station '
       + 'callsign must be on your account\'s station list in the Manager — otherwise the '
       + 'server will not store that copy.',
-    'hint.requeue': '“Retry rejected” only requeues QSOs that failed due to connectivity. '
-      + 'Those rejected by the server (bad callsign, no permission) stay.',
+    'hint.requeue': '“Retry rejected” puts ALL rejected QSOs back in the queue, including '
+      + 'those the server refused earlier. That makes sense after fixing permissions '
+      + 'in the Manager; genuinely bad QSOs will come back with the same error.',
+    'hint.requeued': 'QSOs put back in the queue:',
+    'hint.requeuedNone': 'Nothing to put back.',
+    'hint.acked': 'Indicator cleared. Unacknowledged count was:',
     'hint.saved': 'Saved and applied.',
     'hint.savedRestart': 'Saved. Restart required for: ',
     'hint.saveFailed': 'NOT SAVED —',
@@ -313,11 +318,8 @@ const DICT = {
       + 'is marked as handled and will NOT be sent after you turn dry run off. '
       + 'To merely hold QSOs for later, use “Pause”.',
     'badge.problems': 'PROBLEMS:',
-    'hint.problemBadge': 'Click to clear the indicator. Rejected QSOs stay in the queue '
-      + '— you will find them on the Queue tab.',
-    'confirm.ackProblems': 'Clear the problem indicator?\n\nRejected QSOs stay in the queue '
-      + 'and can still be retried. The indicator will light up again on the next '
-      + 'rejected QSO.',
+    'hint.problemBadge': 'Click to open the Queue tab — the rejected QSOs are there, with '
+      + 'buttons to retry, clear the indicator, or delete them.',
     'hint.ackProblems': 'Clears the indicator only. Rejected QSOs stay in the queue.',
     'ev.sent': 'sent',
     'ev.dryrun': 'dry run — NOT sent',

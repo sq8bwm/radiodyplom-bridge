@@ -98,12 +98,11 @@ procesie co okno, więc zamknięcie programu kasowało sygnalizację, choć odrz
 QSO zostawały na dysku. Plakietka znikała, a problem trwał. Teraz przeżywa
 restart — i potwierdzenie też.
 
-Kasowanie jest **ręczne**, dwiema drogami: kliknięciem plakietki (z pytaniem
-o potwierdzenie, żeby przypadkowe trafienie w nagłówek nie gubiło ostrzeżenia)
-albo przyciskiem „Wyczyść sygnalizację problemów" w panelu Odrzucone. Kasowanie
-dotyczy **tylko sygnalizacji**: odrzucone QSO zostają w kolejce, w liście
-zdarzeń i dają się ponowić. Do trwałego usunięcia błędnych łączności służy
-osobny przycisk — patrz [Kolejka i log](kolejka.md).
+Kliknięcie plakietki prowadzi na zakładkę **Kolejka**, gdzie stoją wszystkie
+trzy przyciski: ponowienie, wyczyszczenie sygnalizacji i usunięcie odrzuconych
+(patrz [Kolejka i log](kolejka.md)). Sama plakietka niczego nie kasuje —
+w nagłówku obok stoi „Zakończ", więc nie może tam być akcji działającej
+od jednego kliknięcia.
 
 Poziom potwierdzenia jest przycinany w dół, gdy `failed/` się opróżni — po
 „Ponów odrzucone" albo po ręcznym sprzątnięciu katalogu. Bez tego arytmetyka

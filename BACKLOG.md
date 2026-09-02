@@ -133,6 +133,19 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **„Ponów odrzucone" nic nie robiło** — pomijało QSO odrzucone przez serwer,
+  bo są w zbiorze deduplikacji, i milczało o tym. Zgłoszone jako „nie reaguje
+  na kliknięcie". Teraz przywraca WSZYSTKO, uwalniając klucze (trwale, bo
+  restart przywróciłby blokadę), i mówi, ile wróciło albo że nie było czego.
+  Sens: NOT_SAVED z powodu znaku poza listą konta przestaje być prawdą po
+  poprawieniu uprawnień w Managerze. Dwa testy z odwróconą regułą, jeden
+  na trwałość uwolnienia klucza.
+- **Trzy przyciski odrzuconych w jednym miejscu** (zakładka Kolejka): ponowienie,
+  wyczyszczenie sygnalizacji, usunięcie. „Ponów odrzucone" zeszło z nagłówka —
+  tam zostały tylko język, „Wstrzymaj" i „Zakończ". Plakietka „PROBLEMY" znów
+  tylko przenosi na Kolejkę: w nagłówku obok stoi „Zakończ", więc nie może tam
+  być akcji działającej od jednego kliknięcia. Komunikat o wyniku akcji gaśnie
+  po 12 s, żeby po czasie nie wprowadzał w błąd.
 - **„Zakończ" lądował pod plakietkami w nagłówku** przy wąskim oknie i dało się
   go trafić, celując w plakietkę problemów — co realnie się stało przy próbach.
   Przyciski nagłówka są teraz jedną grupą (zawijają się razem, nie pojedynczo)

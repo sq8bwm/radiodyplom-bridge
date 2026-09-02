@@ -177,7 +177,8 @@ function renderProblems(s) {
   // Usuwanie zależy od tego, czy COKOLWIEK leży w odrzuconych — także wtedy,
   // gdy sygnalizacja jest już potwierdzona.
   $('btnDiscardFailed').hidden = !s.queue.failed;
-  $('ackHint').textContent = p.count ? t('hint.ackProblems') : '';
+  // Podpowiedzi nie nadpisujemy w pętli odświeżania — pokazuje wynik ostatniej
+  // akcji i gaśnie sama (patrz flashHint).
 }
 
 /** Powód stanu tłumaczymy w UI; rdzeń podaje sam kod stanu. */
@@ -196,6 +197,17 @@ function fillTable(tbodyId, emptyId, items, cols) {
 
 async function refresh() {
   try { renderStatus(await window.bridge.status()); } catch { /* rdzeń wstaje */ }
+}
+
+/**
+ * Pokazuje wynik akcji i gasi go po chwili. Bez gaszenia „Przywrócono 3"
+ * wisiałoby w oknie godzinami i po czasie wprowadzało w błąd.
+ */
+let hintTimer = null;
+function flashHint(text) {
+  $('ackHint').textContent = text;
+  if (hintTimer) clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => { $('ackHint').textContent = ''; }, 12000);
 }
 
 // ---------- o programie ----------
@@ -364,8 +376,18 @@ $('btnPause').onclick = async () => {
   await (s.queue.paused ? window.bridge.resume() : window.bridge.pause());
   refresh();
 };
-$('btnRequeue').onclick = async () => { await window.bridge.requeue(); refresh(); };
-$('btnAckProblems').onclick = async () => { await window.bridge.ackProblems(); refresh(); };
+$('btnRequeue').onclick = async () => {
+  // Bez tej informacji „nic się nie stało" było nieodróżnialne od zepsutego
+  // przycisku — i realnie tak wyglądało.
+  const n = await window.bridge.requeue();
+  flashHint(n > 0 ? `${t('hint.requeued')} ${n}` : t('hint.requeuedNone'));
+  refresh();
+};
+$('btnAckProblems').onclick = async () => {
+  const n = await window.bridge.ackProblems();
+  flashHint(`${t('hint.acked')} ${n}`);
+  refresh();
+};
 $('btnDiscardFailed').onclick = async () => {
   // Trwałe usunięcie łączności – pytamy z podaniem liczby i bez owijania.
   const s = await window.bridge.status();
@@ -373,16 +395,13 @@ $('btnDiscardFailed').onclick = async () => {
   if (!n) return;
   if (!window.confirm(t('confirm.discardFailed').replace('{n}', n))) return;
   const r = await window.bridge.discardFailed();
-  $('ackHint').textContent = `${t('hint.discarded')} ${r.removed}`;
+  flashHint(`${t('hint.discarded')} ${r.removed}`);
   refresh();
 };
-// Plakietka kasuje sygnalizację po potwierdzeniu — bo właśnie po nią sięga
-// ręka, gdy chce się „odkliknąć" ostrzeżenie. Potwierdzenie chroni przed
-// przypadkowym trafieniem w nagłówek.
-$('probBadge').onclick = async () => {
-  if (!window.confirm(t('confirm.ackProblems'))) return;
-  await window.bridge.ackProblems();
-  refresh();
+// Plakietka prowadzi tam, gdzie problemy widać i gdzie stoją wszystkie trzy
+// przyciski: ponowienie, wyciszenie, usunięcie.
+$('probBadge').onclick = () => {
+  document.querySelector('nav button[data-tab="kolejka"]').click();
 };
 $('btnOpenLog').onclick = () => window.bridge.openLog();
 

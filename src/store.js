@@ -243,6 +243,20 @@ export class Store {
     return { removed, calls };
   }
 
+  /**
+   * Uwalnia klucze z deduplikacji, żeby dało się te QSO wysłać jeszcze raz.
+   * Potrzebne przy ręcznym ponawianiu odrzuconych: serwer odrzucił je „na
+   * zawsze", ale po poprawieniu uprawnień w Managerze przestaje to być prawdą,
+   * a bez uwolnienia klucza kolejka by ich nie przyjęła.
+   * @returns {number} ile kluczy zwolniono
+   */
+  forgetKeys(keys) {
+    let n = 0;
+    for (const k of keys) if (this.seen.delete(k)) n += 1;
+    if (n) this._persistState();
+    return n;
+  }
+
   /** Sukces: usuń z kolejki, zapisz klucz jako obsłużony. */
   complete(item) {
     this.sentCount += 1;

@@ -6,7 +6,7 @@
 import { Store } from './store.js';
 import { RadiodyplomClient } from './radiodyplom.js';
 import { LoggerListener } from './udp.js';
-import { resolveTargetPin } from './operators.js';
+import { resolveOperatorPin, targetOperator } from './operators.js';
 import { Worker } from './worker.js';
 import { StatusApi } from './httpapi.js';
 import { requeueFailed } from './requeue.js';
@@ -55,6 +55,10 @@ export async function startDaemon(cfg, opts = {}) {
 
   const worker = new Worker({
     store, client, queue: cfg.queue, rateLimit: cfg.rateLimit,
+    operators: cfg.operators,
+    // Getter, a nie wartość: profil poznajemy z PING-a, więc na starcie
+    // może go jeszcze nie być, a worker musi widzieć wersję bieżącą.
+    getProfile: () => handle.profile,
   });
 
   const listener = new LoggerListener({
@@ -154,16 +158,24 @@ export async function startDaemon(cfg, opts = {}) {
   }, pingEveryMs);
   handle.pingTimer.unref?.();
 
-  // PIN autoryzuje tylko własny profil – ostrzeż, zanim wyjdzie to na pierwszym QSO.
+  // PIN należy do operatora – ostrzeż o celach, których operatora nie ma
+  // w bazie, zanim wyjdzie to na pierwszym QSO.
   if (handle.lastPing.ok) {
     for (const t of cfg.forward.targets || []) {
+      if (t.pin) continue;                       // własny PIN w celu: decyzja użytkownika
       const station = String(t.station_callsign).toUpperCase();
-      // Cel z własnym PIN-em albo ze wskazaniem na operatora z bazy jest w porządku.
-      const { pin } = resolveTargetPin(t, cfg.operators);
-      if (!pin && station !== String(handle.lastPing.operator || '').toUpperCase()) {
+      const { problem, operator } = resolveOperatorPin(
+        targetOperator(t), cfg.operators, handle.lastPing.operator,
+      );
+      if (problem) {
         log.warn(
-          `Cel fan-outu ${station} nie ma własnego PIN-u, a PIN główny należy do ${handle.lastPing.operator}. `
-          + 'Ta kopia najpewniej wróci jako NOT_SAVED – wskaż operatora z bazy albo dodaj go do bazy.',
+          `Cel fan-outu ${station} wskazuje operatora ${operator}, którego nie ma w bazie. `
+          + 'Te QSO będą odrzucane lokalnie, dopóki go nie dopiszesz.',
+        );
+      } else if (!operator) {
+        log.warn(
+          `Cel fan-outu ${station} nie wskazuje operatora – kopie polecą PIN-em głównym `
+          + `(profil ${handle.lastPing.operator}).`,
         );
       }
     }

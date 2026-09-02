@@ -286,3 +286,83 @@ describe('Konfiguracja', () => {
     assert.throws(() => loadConfig(), /wymaga station_callsign/);
   });
 });
+
+describe('licznik wysłanych jest osobny od deduplikacji', () => {
+  // REGRESJA: `sent` był rozmiarem zbioru `seen`, a `seen` obejmuje też trwałe
+  // odrzucenia. Licznik „WYSŁANE" rósł więc przy każdym odrzuceniu i mówił
+  // użytkownikowi, że QSO doszło do radiodyplom.
+  test('trwałe odrzucenie NIE zwiększa licznika wysłanych', () => {
+    const s = new Store(paths());
+    s.init();
+    s.enqueue(item('a', 'SP1AAA'));
+    s.enqueue(item('b', 'SP2BBB'));
+    const [i1, i2] = s.list();
+
+    s.complete(i1);
+    s.fail(i2, true);                 // odrzucone trwale – trafia do seen
+
+    const c = s.counts();
+    assert.equal(c.sent, 1, 'wysłane liczymy tylko po sukcesie');
+    assert.equal(c.failed, 1);
+    assert.equal(s.seen.size, 2, 'a dedup nadal zna oba klucze');
+    s.release();
+  });
+
+  test('licznik przeżywa restart', () => {
+    const cfg = paths();
+    const s = new Store(cfg);
+    s.init();
+    s.enqueue(item('x', 'SP3CCC'));
+    s.complete(s.list()[0]);
+    s.release();
+
+    const s2 = new Store(cfg);
+    s2.init();
+    assert.equal(s2.counts().sent, 1);
+    s2.release();
+  });
+
+  test('starszy seen.json (tablica) jest wczytywany bez utraty statystyki', () => {
+    const cfg = paths();
+    mkdirSync(join(dir, 'data'), { recursive: true });
+    writeFileSync(cfg.seenFile, JSON.stringify(['k1', 'k2', 'k3']));
+    const s = new Store(cfg);
+    s.init();
+    assert.equal(s.seen.size, 3, 'klucze deduplikacji zachowane');
+    assert.equal(s.counts().sent, 3, 'i dotychczasowa liczba, żeby jej nie wyzerować');
+    s.release();
+  });
+});
+
+describe('odzyskiwanie QSO odrzuconego lokalnie', () => {
+  // Cała droga powrotna: brak operatora w bazie → odrzucenie → dopisanie
+  // operatora → „Ponów odrzucone" → QSO znów w kolejce.
+  test('requeueFailed przywraca QSO, którego nie wysłaliśmy', () => {
+    const s = new Store(paths());
+    s.init();
+    s.enqueue(item('k1', 'SP3CCC'));
+    const it = s.list()[0];
+
+    s.fail(it, false);                        // tak odkłada je worker
+    assert.equal(s.counts().failed, 1);
+    assert.equal(s.seen.has('k1'), false, 'klucz nie może być zamknięty');
+
+    const r = requeueFailed(s);
+    assert.equal(r.restored, 1);
+    assert.equal(s.counts().pending, 1);
+    assert.equal(s.counts().failed, 0);
+    s.release();
+  });
+
+  test('QSO zamknięte jako obsłużone NIE wraca', () => {
+    // Odwrotny biegun: odrzucenie przez serwer (zły znak) ma zostać odrzucone.
+    const s = new Store(paths());
+    s.init();
+    s.enqueue(item('k2', 'SP4DDD'));
+    s.fail(s.list()[0], true);
+
+    assert.equal(requeueFailed(s).restored, 0);
+    assert.equal(s.counts().failed, 1);
+    s.release();
+  });
+});

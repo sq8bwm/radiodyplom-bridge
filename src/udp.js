@@ -116,7 +116,7 @@ export class LoggerListener {
     this.stats.bySource[decoder.name] = (this.stats.bySource[decoder.name] || 0) + 1;
 
     // Jedno QSO z loggera może dać kilka wpisów – po jednym na znak stacji.
-    const copies = expandTargets(mapped.payload, this.targets, result.key, this.operators);
+    const copies = expandTargets(mapped.payload, this.targets, result.key);
     for (const c of copies) {
       this.onQSO({
         key: c.key,
@@ -124,6 +124,9 @@ export class LoggerListener {
         meta: {
           ...result.meta,
           station: c.station,
+          // Znacznik dla workera: PIN tej kopii pochodzi wprost z konfiguracji
+          // celu, więc baza operatorów nie ma go nadpisywać.
+          pinExplicit: c.pinExplicit,
           fanout: copies.length > 1 ? `${copies.length} kopii` : undefined,
           from: `${rinfo.address}:${rinfo.port}`,
         },

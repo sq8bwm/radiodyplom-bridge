@@ -11,7 +11,7 @@
     "timeoutMs": 10000,
     "dryRun": true
   },
-  "_operators_komentarz": "Baza operatorow: znak + PIN API. Cel fan-outu wskazuje operatora polem operator - to on wyznacza pole OPERATOR w QSO i PIN, ktorym kopia leci.",
+  "_operators_komentarz": "Baza operatorow: znak + PIN API. PIN nalezy do OPERATORA, wiec jest uzywany takze bez rozgalezienia - operator z loggera jest szukany w bazie. Operator spoza bazy = QSO odrzucone lokalnie (NO_OPERATOR_PIN).",
   "operators": [],
   "forward": {
     "operations": [

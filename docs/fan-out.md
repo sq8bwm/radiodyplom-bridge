@@ -17,9 +17,35 @@ operatora po znaku, więc PIN nie powtarza się przy każdej stacji:
 ]
 ```
 
-- `call` — wymagany. To po nim cel wskazuje operatora; wielkość liter bez znaczenia.
+- `call` — wymagany. To po nim dopasowujemy operatora; wielkość liter bez znaczenia.
 - `name` — opcjonalny opis, widoczny tylko na liście wyboru w interfejsie.
 - `pin` — PIN API z profilu tej osoby.
+
+**PIN należy do operatora, nie do stacji.** Dlatego baza jest używana także dla
+QSO idących **bez rozgałęziania**: operator z loggera jest szukany w bazie i to
+jego PIN autoryzuje wysyłkę.
+
+Rozstrzyganie PIN-u dla każdego QSO, w tej kolejności:
+
+| Sytuacja | PIN |
+|---|---|
+| operator jest w bazie i ma PIN | jego PIN |
+| QSO bez operatora (logger nie podał) | PIN główny |
+| operator to właściciel PIN-u głównego | PIN główny — nie trzeba dopisywać samego siebie |
+| profil nieznany (PING się jeszcze nie udał) | PIN główny — z niewiedzy nie odrzucamy |
+| **operator spoza bazy** | **QSO odrzucone lokalnie**, patrz niżej |
+
+### Operator, którego nie ma w bazie
+
+Takiego QSO serwer i tak nie zapisze, więc **nie wysyłamy go wcale**. Ląduje
+w „Odrzuconych" z kodem `NO_OPERATOR_PIN` i nazwą operatora w treści błędu.
+
+Odzyskanie: dopisz operatora w zakładce Konfiguracja i kliknij
+**„Ponów odrzucone"**. PIN jest rozstrzygany dopiero w chwili wysyłki, więc
+poprawiona baza działa od razu — bez restartu programu.
+
+Lokalne odrzucenie **nie zużywa limitu** 9 wysyłek na minutę i **nie gasi**
+wskaźnika łączności: to problem z danymi, nie z siecią.
 
 W zakładce **Konfiguracja** jest do tego panel „Operatorzy", a przy każdym celu
 rozmnażania — lista wyboru **Operator**. Interfejs pokazuje PIN-y zamaskowane

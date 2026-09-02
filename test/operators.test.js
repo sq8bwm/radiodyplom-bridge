@@ -6,7 +6,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { normalizeOperators, findOperator, resolveTargetPin, targetOperator } from '../src/operators.js';
+import {
+  normalizeOperators, findOperator, resolveTargetPin, targetOperator,
+  resolveOperatorPin, NO_OPERATOR_PIN,
+} from '../src/operators.js';
 import { expandTargets } from '../src/fanout.js';
 
 const BOOK = [
@@ -110,41 +113,74 @@ describe('resolveTargetPin', () => {
   });
 });
 
-describe('fan-out z bazą operatorów', () => {
-  test('każda kopia dostaje PIN swojego operatora', () => {
-    const targets = [
-      { station_callsign: 'SQ8BWM', operator: 'SQ8BWM' },
-      { station_callsign: 'SP4OIK', operator: 'SP4OIK' },
-    ];
-    const copies = expandTargets(PAYLOAD, targets, 'k', BOOK);
-    assert.deepEqual(copies.map((c) => c.payload.api_key), ['AAAA-1111', 'BBBB-2222']);
+describe('resolveOperatorPin — PIN należy do operatora', () => {
+  test('operator z bazy daje swój PIN', () => {
+    const r = resolveOperatorPin('SP4OIK', BOOK, 'SQ8BWM');
+    assert.equal(r.pin, 'BBBB-2222');
+    assert.equal(r.problem, null);
   });
 
-  test('operator trafia zarazem do pola OPERATOR w QSO', () => {
-    // Jeden wybór, dwa skutki: kto pracował i czyim PIN-em to leci.
-    const copies = expandTargets(PAYLOAD,
-      [{ station_callsign: 'SP0XYZ', operator: 'SP4OIK' }], 'k', BOOK);
-    assert.equal(copies[0].payload.operator, 'SP4OIK');
-    assert.equal(copies[0].payload.api_key, 'BBBB-2222');
+  test('brak operatora w QSO = PIN główny, bez odrzucenia', () => {
+    // Logger nie podał operatora – nie ma czego szukać w bazie.
+    const r = resolveOperatorPin('', BOOK, 'SQ8BWM');
+    assert.equal(r.pin, null);
+    assert.equal(r.problem, null);
   });
 
-  test('znak stacji zostaje znakiem stacji, nie operatorem', () => {
-    // Praca pod znakiem SES: to dwa różne pola i nie wolno ich zlepić.
+  test('właściciel PIN-u głównego nie musi być w bazie', () => {
+    // Inaczej każdy jednoosobowy operator musiałby dopisać samego siebie.
+    const r = resolveOperatorPin('SP9SOLO', [], 'SP9SOLO');
+    assert.equal(r.pin, null);
+    assert.equal(r.problem, null);
+  });
+
+  test('operator spoza bazy jest ODRZUCANY, nie wysyłany cudzym PIN-em', () => {
+    const r = resolveOperatorPin('SP9ZZZ', BOOK, 'SQ8BWM');
+    assert.equal(r.problem, NO_OPERATOR_PIN);
+    assert.equal(r.operator, 'SP9ZZZ');
+  });
+
+  test('operator w bazie bez PIN-u też jest odrzucany', () => {
+    const r = resolveOperatorPin('SP1NOPIN', [{ call: 'SP1NOPIN' }], 'SQ8BWM');
+    assert.equal(r.problem, NO_OPERATOR_PIN);
+  });
+
+  test('nieznany profil nie odrzuca – z niewiedzy nie wolno', () => {
+    // PING jeszcze się nie udał, więc nie wiemy, czy to nie my sami.
+    const r = resolveOperatorPin('SP9ZZZ', BOOK, null);
+    assert.equal(r.problem, null);
+    assert.equal(r.pin, null);
+  });
+
+  test('wielkość liter nie ma znaczenia', () => {
+    assert.equal(resolveOperatorPin('sp4oik', BOOK, 'SQ8BWM').pin, 'BBBB-2222');
+    assert.equal(resolveOperatorPin('sp9solo', [], 'SP9SOLO').problem, null);
+  });
+});
+
+describe('fan-out rozdziela kopie, PIN-u już nie rozstrzyga', () => {
+  test('operator celu trafia do pola OPERATOR', () => {
     const copies = expandTargets(PAYLOAD,
-      [{ station_callsign: 'SP0XYZ', operator: 'SQ8BWM' }], 'k', BOOK);
+      [{ station_callsign: 'SP0XYZ', operator: 'SP4OIK' }], 'k');
     assert.equal(copies[0].payload.station_callsign, 'SP0XYZ');
-    assert.equal(copies[0].payload.operator, 'SQ8BWM');
-  });
-
-  test('cel bez wskazania zostaje na PIN-ie głównym', () => {
-    const copies = expandTargets(PAYLOAD, [{ station_callsign: 'SP0XYZ' }], 'k', BOOK);
+    assert.equal(copies[0].payload.operator, 'SP4OIK');
+    // PIN zostaje główny – właściwy podstawi worker, przy wysyłce.
     assert.equal(copies[0].payload.api_key, 'MAIN-0000');
+    assert.equal(copies[0].pinExplicit, false);
   });
 
-  test('brak bazy nie wywraca fan-outu', () => {
-    const copies = expandTargets(PAYLOAD, [{ station_callsign: 'SP0XYZ', operator: 'SQ8BWM' }], 'k');
+  test('PIN wpisany wprost w cel jest oznaczany', () => {
+    // Bez tego znacznika baza operatorów nadpisałaby wybór użytkownika.
+    const copies = expandTargets(PAYLOAD,
+      [{ station_callsign: 'SP0XYZ', operator: 'SP0OPER', pin: 'WPROST-9' }], 'k');
+    assert.equal(copies[0].payload.api_key, 'WPROST-9');
+    assert.equal(copies[0].pinExplicit, true);
+  });
+
+  test('bez celów jedna kopia, bez znacznika', () => {
+    const copies = expandTargets(PAYLOAD, [], 'k');
     assert.equal(copies.length, 1);
-    assert.equal(copies[0].payload.api_key, 'MAIN-0000');
+    assert.equal(copies[0].pinExplicit, false);
   });
 
   test('klucze kopii nadal są różne', () => {
@@ -152,7 +188,7 @@ describe('fan-out z bazą operatorów', () => {
     const copies = expandTargets(PAYLOAD, [
       { station_callsign: 'SQ8BWM', operator: 'SQ8BWM' },
       { station_callsign: 'SP4OIK', operator: 'SP4OIK' },
-    ], 'k', BOOK);
+    ], 'k');
     assert.equal(new Set(copies.map((c) => c.key)).size, 2);
   });
 });

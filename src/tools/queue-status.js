@@ -18,8 +18,12 @@ function read(dir) {
 
 const pending = read(cfg.queue.dir);
 const failed = read(cfg.queue.failedDir);
-const seen = existsSync(cfg.queue.seenFile)
-  ? JSON.parse(readFileSync(cfg.queue.seenFile, 'utf8')).length
+// seen.json ma dwa formaty: tablica (starszy) albo {seen, sent}.
+const seenData = existsSync(cfg.queue.seenFile)
+  ? JSON.parse(readFileSync(cfg.queue.seenFile, 'utf8'))
+  : null;
+const seen = seenData
+  ? (Array.isArray(seenData) ? seenData.length : (seenData.seen || []).length)
   : 0;
 
 console.log(`Wysłane (seen): ${seen}`);

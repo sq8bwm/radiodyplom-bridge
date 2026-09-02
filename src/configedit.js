@@ -181,6 +181,9 @@ export function applyConfig(daemon, patch) {
   daemon.listener.pin = cfg.radiodyplom.pin;
   daemon.listener.targets = cfg.forward.targets || [];
   daemon.listener.operators = cfg.operators || [];
+  // Worker musi widzieć nową bazę od razu — po dopisaniu operatora „Ponów
+  // odrzucone" ma zadziałać bez restartu.
+  daemon.worker.operators = cfg.operators || [];
   daemon.listener.operations = new Set(cfg.forward.operations || ['insert']);
   daemon.worker.maxPerMinute = cfg.rateLimit.maxPerMinute;
   daemon.worker.minSpacingMs = cfg.rateLimit.minSpacingMs;

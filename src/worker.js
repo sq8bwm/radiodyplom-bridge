@@ -1,11 +1,18 @@
 // Worker kolejki: bierze elementy gotowe do wysyłki, respektuje rate limit,
 // ponawia z wykładniczym backoffem, trwałe błędy odkłada do failed/.
 import { log } from './log.js';
+import { resolveOperatorPin, NO_OPERATOR_PIN } from './operators.js';
 
 export class Worker {
-  constructor({ store, client, queue, rateLimit, tickMs = 1000 }) {
+  constructor({ store, client, queue, rateLimit, operators, getProfile, tickMs = 1000 }) {
     this.store = store;
     this.client = client;
+    // Baza operatorów i znak właściciela PIN-u głównego. Czytane DOPIERO przy
+    // wysyłce, nie przy kolejkowaniu — inaczej „Ponów odrzucone" po dopisaniu
+    // operatora do bazy wracałoby z tym samym błędem, bo element w kolejce
+    // pamiętałby stare rozstrzygnięcie.
+    this.operators = operators || [];
+    this.getProfile = getProfile || (() => null);
     this.maxAttempts = queue.maxAttempts;
     this.baseDelayMs = queue.baseDelayMs;
     this.maxDelayMs = queue.maxDelayMs;
@@ -79,12 +86,54 @@ export class Worker {
     }
   }
 
+  /**
+   * PIN dla tego QSO. Zwraca kod problemu, gdy operatora nie ma w bazie —
+   * wtedy wysyłka nie ma sensu, bo serwer takiego QSO nie zapisze.
+   */
+  _applyPin(item) {
+    // PIN wpisany wprost w cel fan-outu jest decyzją użytkownika i wygrywa.
+    if (item.meta?.pinExplicit) return null;
+
+    const r = resolveOperatorPin(item.payload.operator, this.operators, this.getProfile());
+    if (r.problem) return r;
+    if (r.pin && item.payload.api_key !== r.pin) {
+      item.payload.api_key = r.pin;
+      log.debug(`QSO ${item.payload.callsign}: PIN operatora ${r.operator} z bazy`);
+    }
+    return null;
+  }
+
   async _process(item) {
+    const call = item.payload.callsign;
+
+    // Odrzucenie lokalne, PRZED zajęciem okna rate limitu: nie wysyłamy nic,
+    // więc nie ma po co zużywać limitu 9/min.
+    const bad = this._applyPin(item);
+    if (bad) {
+      item.attempts += 1;
+      item.lastErrorCode = NO_OPERATOR_PIN;
+      item.lastError = `Operatora ${bad.operator} nie ma w bazie operatorów`;
+      this.counters.failed += 1;
+      this.lastError = {
+        callsign: call, error: item.lastError, code: NO_OPERATOR_PIN,
+        at: new Date().toISOString(),
+      };
+      // markSeen=false, i to jest istotne: tego QSO NIE wysłaliśmy, więc nie
+      // wolno go zamknąć. Klucz zostaje wolny, dzięki czemu „Ponów odrzucone"
+      // je zabierze (pomija wszystko, co jest w `seen`), a przelogowanie tej
+      // samej łączności w loggerze też przejdzie.
+      this.store.fail(item, false);
+      log.error(
+        `QSO ${call} (operator ${bad.operator}) NIE wysłane – tego operatora nie ma w bazie, `
+        + 'więc nie znamy jego PIN-u. Dopisz go w Konfiguracji i użyj „Ponów odrzucone".',
+      );
+      return;
+    }
+
     const now = Date.now();
     this.window.push(now);
     this.lastSendAt = now;
 
-    const call = item.payload.callsign;
     const res = await this.client.upload(item.payload);
 
     if (res.ok) {

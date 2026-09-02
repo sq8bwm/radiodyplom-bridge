@@ -77,3 +77,40 @@ export function resolveTargetPin(target, operators) {
   if (!op.pin) return { pin: null, from: ref, missing: ref };
   return { pin: op.pin, from: op.call, missing: null };
 }
+
+/** Kod odrzucenia: operatora QSO nie ma w bazie, więc nie znamy jego PIN-u. */
+export const NO_OPERATOR_PIN = 'NO_OPERATOR_PIN';
+
+/**
+ * PIN dla konkretnego QSO, na podstawie jego operatora.
+ *
+ * PIN należy do OPERATORA, nie do stacji — to on autoryzuje wysyłkę na swoim
+ * profilu. Dlatego dopasowujemy po polu OPERATOR, także dla QSO idących bez
+ * rozgałęziania (wtedy operator pochodzi wprost z loggera).
+ *
+ * Rozstrzygnięcia świadome:
+ *  - brak operatora w QSO → PIN główny; logger go nie podał, nie ma czego szukać,
+ *  - operator to właściciel PIN-u głównego → PIN główny, żeby nie trzeba było
+ *    dopisywać samego siebie do bazy,
+ *  - profil nieznany (PING jeszcze się nie udał) → PIN główny; z niewiedzy nie
+ *    wolno odrzucać, a nieudana wysyłka i tak wróci z błędem,
+ *  - operator spoza bazy → `problem`, czyli odrzucenie LOKALNE. Serwer i tak
+ *    nie zapisze takiego QSO, a lokalny błąd mówi wprost, co poprawić.
+ *
+ * @param {string|null} operator  pole OPERATOR z QSO
+ * @param {Array} operators  baza
+ * @param {string|null} profileCall  znak właściciela PIN-u głównego (z PING-a)
+ * @returns {{pin:string|null, problem:string|null, operator:string|null}}
+ */
+export function resolveOperatorPin(operator, operators, profileCall) {
+  const op = String(operator || '').trim().toUpperCase();
+  if (!op) return { pin: null, problem: null, operator: null };
+
+  const entry = findOperator(operators, op);
+  if (entry?.pin) return { pin: entry.pin, problem: null, operator: op };
+
+  const profile = String(profileCall || '').trim().toUpperCase();
+  if (!profile || op === profile) return { pin: null, problem: null, operator: op };
+
+  return { pin: null, problem: NO_OPERATOR_PIN, operator: op };
+}

@@ -8,19 +8,18 @@
 // w aktywnej akcji — inaczej serwer odpowie success:true z pustym savedTo
 // i QSO przepadnie (obsługiwane w radiodyplom.js jako błąd NOT_SAVED).
 import { log } from './log.js';
-import { resolveTargetPin, targetOperator } from './operators.js';
+import { targetOperator } from './operators.js';
 
 /**
  * @param {object} payload  ładunek po zmapowaniu (mapper.js)
  * @param {Array}  targets  cfg.forward.targets
  * @param {string} baseKey  klucz deduplikacji QSO źródłowego
- * @param {Array}  operators  cfg.operators – baza znak → PIN
- * @returns {Array<{key:string, payload:object, station:string}>}
+ * @returns {Array<{key:string, payload:object, station:string, pinExplicit:boolean}>}
  */
-export function expandTargets(payload, targets, baseKey, operators = []) {
+export function expandTargets(payload, targets, baseKey) {
   // Brak celów → zachowanie jak dotąd: jedno QSO, stacja z loggera.
   if (!Array.isArray(targets) || targets.length === 0) {
-    return [{ key: baseKey, payload, station: payload.station_callsign }];
+    return [{ key: baseKey, payload, station: payload.station_callsign, pinExplicit: false }];
   }
 
   const out = [];
@@ -46,23 +45,19 @@ export function expandTargets(payload, targets, baseKey, operators = []) {
     const op = targetOperator(t);
     if (op) p.operator = op;
 
-    // PIN bierze się z operatora wskazanego w celu albo – w starszych
-    // konfiguracjach – z pola `pin` wpisanego wprost. Brak jednego i drugiego
-    // znaczy „PIN główny z profilu".
-    const { pin, missing } = resolveTargetPin(t, operators);
-    if (pin) p.api_key = pin;
-    if (missing) {
-      // Głośno, bo skutkiem byłaby wysyłka cudzym PIN-em i ciche NOT_SAVED.
-      log.warn(
-        `Cel ${station} wskazuje operatora ${missing}, którego nie ma w bazie `
-        + '(albo nie ma on PIN-u). Kopia poleci PIN-em głównym i najpewniej '
-        + 'wróci jako NOT_SAVED – popraw bazę operatorów.',
-      );
+    // PIN rozstrzyga się dopiero przy wysyłce, na podstawie operatora i bazy
+    // (worker.js). Tutaj tylko starsza droga: PIN wpisany wprost w cel. Musi
+    // być oznaczony, bo inaczej nie da się go odróżnić od PIN-u głównego
+    // i baza operatorów by go nadpisała.
+    let pinExplicit = false;
+    if (t.pin) {
+      p.api_key = String(t.pin).trim();
+      pinExplicit = true;
     }
 
     // Klucz musi być różny dla każdej kopii, inaczej nasza deduplikacja
     // przepuściłaby tylko pierwszą z nich.
-    out.push({ key: `${baseKey}|${station}`, payload: p, station });
+    out.push({ key: `${baseKey}|${station}`, payload: p, station, pinExplicit });
   }
 
   return out;

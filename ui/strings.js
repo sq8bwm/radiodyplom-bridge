@@ -128,6 +128,9 @@ const DICT = {
 
     // Kody błędów z API — komunikat serwera przychodzi po polsku, więc dla
     // interfejsu angielskiego tłumaczymy po kodzie, a treść serwera zostaje w tle.
+    'err.NO_OPERATOR_PIN': 'Operatora tego QSO nie ma w bazie operatorów, więc nie znamy '
+      + 'jego PIN-u. QSO nie zostało wysłane. Dopisz operatora w Konfiguracji '
+      + 'i użyj „Ponów odrzucone".',
     'err.INVALID_CALLSIGN': 'Nieprawidłowy znak korespondenta',
     'err.INVALID_API_KEY': 'Nieprawidłowy PIN API albo konto nieaktywne',
     'err.MISSING_API_KEY': 'Brak PIN-u API',
@@ -255,6 +258,9 @@ const DICT = {
     'tray.openLog': 'Show log file',
     'tray.quit': 'Quit',
 
+    'err.NO_OPERATOR_PIN': "This QSO's operator is not in the operator book, so their PIN "
+      + 'is unknown. The QSO was not sent. Add the operator in Configuration '
+      + 'and use “Retry rejected”.',
     'err.INVALID_CALLSIGN': 'Invalid worked callsign',
     'err.INVALID_API_KEY': 'Invalid API PIN or inactive account',
     'err.MISSING_API_KEY': 'API PIN missing',

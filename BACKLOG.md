@@ -133,6 +133,23 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **PIN należy do operatora, nie do stacji.** Baza `operators` jest używana także
+  dla QSO bez rozgałęziania: operator z loggera jest szukany w bazie i to jego PIN
+  autoryzuje wysyłkę. Rozstrzygane DOPIERO przy wysyłce, nie przy kolejkowaniu —
+  inaczej poprawiona baza nie działałaby dla QSO już leżących w kolejce.
+  Operator spoza bazy = odrzucenie LOKALNE (`NO_OPERATOR_PIN`), bez marnowania
+  wysyłki, bez zużycia limitu 9/min i bez gaszenia wskaźnika łączności.
+  Sprawdzone end-to-end: odrzucenie → dopisanie operatora → „Ponów odrzucone" →
+  QSO wysłane właściwym PIN-em.
+- **Odrzucone lokalnie QSO było nie do odzyskania** — pierwsza wersja oznaczała
+  je jako obsłużone (`markSeen=true`), a „Ponów odrzucone" pomija wszystko, co
+  jest w `seen`. Wyszło na próbie na żywo, nie w testach. QSO nigdy nie zostało
+  wysłane, więc klucz musi zostać wolny; przy okazji przelogowanie tej samej
+  łączności w loggerze też znów przechodzi. Dwa testy drogi powrotnej.
+- **Licznik „wysłane" zawyżał** — był rozmiarem zbioru deduplikacji, a ten
+  obejmuje też trwałe odrzucenia, więc rósł przy każdym odrzuceniu i sugerował,
+  że QSO doszło. Teraz osobny licznik w `seen.json` (format `{seen, sent}`,
+  starsza tablica nadal wczytywana bez utraty statystyki).
 - **Baza operatorów** (`operators`: znak + opis + PIN). Cel rozmnażania to teraz
   dwa wymagane pola: `station_callsign` i `operator` — ten drugi wskazuje osobę
   z bazy i wyznacza zarazem pole OPERATOR w QSO oraz PIN, którym kopia leci.

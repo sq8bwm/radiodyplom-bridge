@@ -14,9 +14,13 @@ export class Store {
     this.dir = dir;
     this.failedDir = failedDir;
     this.seenFile = seenFile;
-    this.seen = new Set();        // klucze już wysłane (albo trwale odrzucone)
+    this.seen = new Set();        // klucze obsłużone: wysłane ALBO trwale odrzucone
     this.pendingKeys = new Set(); // klucze aktualnie w kolejce
     this.skipped = 0;             // ile QSO pominięto jako już znane
+    // Licznik REALNIE wysłanych. Osobny od `seen`, bo `seen` obejmuje też
+    // trwałe odrzucenia — pokazywanie jego rozmiaru jako „wysłane" zawyżało
+    // licznik przy każdym odrzuceniu i mówiło użytkownikowi, że QSO doszło.
+    this.sentCount = 0;
   }
 
   init() {
@@ -26,8 +30,16 @@ export class Store {
     // Wczytaj seen
     if (existsSync(this.seenFile)) {
       try {
-        const arr = JSON.parse(readFileSync(this.seenFile, 'utf8'));
-        if (Array.isArray(arr)) this.seen = new Set(arr);
+        const data = JSON.parse(readFileSync(this.seenFile, 'utf8'));
+        if (Array.isArray(data)) {
+          // Format z wersji bez licznika. Przyjmujemy dotychczasową liczbę,
+          // żeby nie wyzerować użytkownikowi statystyki przy aktualizacji.
+          this.seen = new Set(data);
+          this.sentCount = data.length;
+        } else if (data && Array.isArray(data.seen)) {
+          this.seen = new Set(data.seen);
+          this.sentCount = Number.isFinite(data.sent) ? data.sent : data.seen.length;
+        }
       } catch (err) {
         log.warn('Nie mogę wczytać seen.json, startuję z pustym', err.message);
       }
@@ -119,7 +131,7 @@ export class Store {
     };
     return {
       pending: count(this.dir), failed: count(this.failedDir),
-      sent: this.seen.size, skipped: this.skipped,
+      sent: this.sentCount, skipped: this.skipped,
     };
   }
 
@@ -144,11 +156,12 @@ export class Store {
 
   _markSeen(key) {
     this.seen.add(key);
-    this._atomicWrite(this.seenFile, [...this.seen]);
+    this._atomicWrite(this.seenFile, { seen: [...this.seen], sent: this.sentCount });
   }
 
   /** Sukces: usuń z kolejki, zapisz klucz jako obsłużony. */
   complete(item) {
+    this.sentCount += 1;
     this._markSeen(item.key);
     this.pendingKeys.delete(item.key);
     try { unlinkSync(item._file); } catch { /* już usunięty */ }

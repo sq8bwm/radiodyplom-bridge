@@ -168,10 +168,16 @@ export class Worker {
         source: item.meta?.source || null,
         at: new Date().toISOString(),
       };
-      this._event(res.duplicate ? 'duplicate' : 'sent', item, { savedTo: res.savedTo || null });
-      log.info(res.duplicate ? `QSO ${call} już było na serwerze (duplikat)` : `QSO ${call} zapisane`, {
-        akcje: res.savedTo, source: item.meta?.source,
-      });
+      // Tryb próbny MUSI być odróżniony od wysyłki. Wiersz „wysłane" bez numeru
+      // akcji, przy QSO które nigdy nie opuściło komputera, to dokładnie ten
+      // rodzaj mylącego komunikatu, który już raz kosztował nas gubione QSO.
+      const kind = res.dryRun ? 'dryrun' : (res.duplicate ? 'duplicate' : 'sent');
+      this._event(kind, item, { savedTo: res.savedTo || null });
+      log.info(
+        res.dryRun ? `QSO ${call} przeszło próbnie – NIE wysłane na serwer`
+          : (res.duplicate ? `QSO ${call} już było na serwerze (duplikat)` : `QSO ${call} zapisane`),
+        { akcje: res.savedTo, source: item.meta?.source },
+      );
       return;
     }
 

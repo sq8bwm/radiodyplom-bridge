@@ -71,6 +71,19 @@ Odnośniki otwierają się w **przeglądarce systemowej**, przez IPC `openUrl`,
 nie w oknie aplikacji. Uchwyt w procesie głównym przepuszcza wyłącznie adresy
 `https://` — `shell.openExternal` wykonałby też `file:` czy `mailto:`.
 
+### Tryb próbny a deduplikacja
+
+W trybie próbnym wiersz zdarzenia mówi **„próbnie — NIE wysłane"**, a licznik
+zmienia etykietę na **„Wysłane (próbnie)"**. Wcześniej pisał „wysłane" bez
+numeru akcji, co przy QSO, które nigdy nie opuściło komputera, było zwykłym
+kłamstwem.
+
+Rzecz, o której trzeba wiedzieć: QSO przepuszczone próbnie zostaje **zamknięte
+w deduplikacji** i **nie poleci** po wyłączeniu trybu próbnego. Tryb próbny
+służy do sprawdzenia mapowania pól, nie do przechowywania QSO na później —
+do tego jest przycisk **„Wstrzymaj"**, który trzyma je w kolejce. Podpowiedź
+z tym ostrzeżeniem wisi na plakietce DRY-RUN.
+
 ### Sygnalizacja problemów
 
 Gdy QSO **nie trafi na serwer** — odrzucone trwale albo porzucone po wyczerpaniu

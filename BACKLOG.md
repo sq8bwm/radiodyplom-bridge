@@ -133,6 +133,13 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **Tryb próbny podpisywał QSO jako „wysłane"** — bez numeru akcji, choć nic nie
+  opuszczało komputera. Zauważone przez operatora na liście zdarzeń („dlaczego
+  trzy ostatnie nie mają numeru akcji?"). Teraz osobny rodzaj zdarzenia
+  („próbnie — NIE wysłane", żółty) i etykieta licznika „Wysłane (próbnie)".
+  Przy okazji podpisana pułapka: QSO przepuszczone próbnie zostaje zamknięte
+  w deduplikacji i NIE poleci po wyłączeniu trybu — do przytrzymania QSO służy
+  „Wstrzymaj". Podpowiedź na plakietce DRY-RUN i sekcja w docs/interfejs.md.
 - **Lista ostatnich zdarzeń** zamiast dwóch pojedynczych linii: bufor 200 zdarzeń
   w rdzeniu, liczba wierszy z konfiguracji (`ui.recentEvents`, 5–200, domyślnie 20,
   przycinana po obu stronach). Wiersze z problemem czerwone, ponowienia żółte,

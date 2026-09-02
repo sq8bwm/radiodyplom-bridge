@@ -74,9 +74,15 @@ function renderStatus(s) {
   if (pend.length) $('restartNote').textContent = t('restart.banner') + pend.join(', ');
 
   $('dryBadge').hidden = !s.radiodyplom.dryRun;
+  // Podpowiedź, bo to nieoczywiste i kosztowne: QSO przepuszczone próbnie
+  // jest zamknięte w deduplikacji i NIE poleci po wyłączeniu trybu próbnego.
+  $('dryBadge').title = t('hint.dryRun');
   $('btnPause').textContent = paused ? t('btn.resume') : t('btn.pause');
 
   $('cSent').textContent = s.queue.sent;
+  // W trybie próbnym nic nie poleciało, więc sama etykieta „wysłane" myli.
+  document.querySelector('[data-i18n="card.sent"]').textContent =
+    s.radiodyplom.dryRun ? `${t('card.sent')} ${t('card.sentDry')}` : t('card.sent');
   $('cPending').textContent = s.queue.pending;
   $('cFailed').textContent = s.queue.failed;
   $('cRecv').textContent = s.listener.stats.received;
@@ -114,6 +120,9 @@ function describeEvent(e) {
     case 'sent':
       return { cls: '', text: `${t('ev.sent')} ${who}${op}`
         + (e.savedTo?.length ? ` — ${t('msg.action')}${esc(e.savedTo.join(', '))}` : '') };
+    case 'dryrun':
+      // Osobny wiersz i osobny kolor: nic nie poleciało na serwer.
+      return { cls: 'warn', text: `${t('ev.dryrun')} ${who}${op}` };
     case 'duplicate':
       return { cls: 'dup', text: `${t('ev.duplicate')} ${who}${op}` };
     case 'retry':

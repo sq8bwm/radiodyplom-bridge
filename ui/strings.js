@@ -145,10 +145,15 @@ const DICT = {
     'panel.view': 'Widok',
     'label.recentEvents': 'Ile ostatnich zdarzeń pokazywać',
     'hint.recentEvents': 'Od 5 do 200. Dotyczy panelu „Ostatnie zdarzenia" na zakładce Stan.',
+    'card.sentDry': '(próbnie)',
+    'hint.dryRun': 'Nic nie leci na serwer. Uwaga: QSO przepuszczone próbnie zostaje '
+      + 'zamknięte w deduplikacji i NIE poleci po wyłączeniu trybu próbnego. '
+      + 'Jeśli chcesz tylko przytrzymać QSO na później, użyj „Wstrzymaj”.',
     'badge.problems': 'PROBLEMY:',
     'hint.problemBadge': 'Kliknij, aby zobaczyć odrzucone QSO.',
     'hint.ackProblems': 'Kasuje samą sygnalizację. Odrzucone QSO zostają w kolejce.',
     'ev.sent': 'wysłane',
+    'ev.dryrun': 'próbnie — NIE wysłane',
     'ev.duplicate': 'duplikat',
     'ev.retry': 'ponowię',
     'ev.rejected': 'ODRZUCONE',
@@ -287,10 +292,15 @@ const DICT = {
     'panel.view': 'View',
     'label.recentEvents': 'How many recent events to show',
     'hint.recentEvents': 'Between 5 and 200. Applies to the “Recent events” panel on the Status tab.',
+    'card.sentDry': '(dry run)',
+    'hint.dryRun': 'Nothing is sent to the server. Note: a QSO passed through in dry run '
+      + 'is marked as handled and will NOT be sent after you turn dry run off. '
+      + 'To merely hold QSOs for later, use “Pause”.',
     'badge.problems': 'PROBLEMS:',
     'hint.problemBadge': 'Click to see the rejected QSOs.',
     'hint.ackProblems': 'Clears the indicator only. Rejected QSOs stay in the queue.',
     'ev.sent': 'sent',
+    'ev.dryrun': 'dry run — NOT sent',
     'ev.duplicate': 'duplicate',
     'ev.retry': 'will retry',
     'ev.rejected': 'REJECTED',

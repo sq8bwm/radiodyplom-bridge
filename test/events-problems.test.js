@@ -59,6 +59,21 @@ describe('bufor ostatnich zdarzeń', () => {
     assert.deepEqual(e.savedTo, ['295']);
   });
 
+  test('tryb próbny NIE jest oznaczany jako wysłane', async () => {
+    // REGRESJA: wiersz „wysłane" bez numeru akcji, przy QSO które nigdy nie
+    // opuściło komputera. Dokładnie ten rodzaj mylącego komunikatu, który
+    // już raz kosztował nas gubione QSO.
+    const w2 = makeWorker(fakeClient({ ok: true, dryRun: true }));
+    await w2._process(makeItem());
+    assert.equal(w2.recentEvents().at(-1).kind, 'dryrun');
+  });
+
+  test('tryb próbny nie zapala sygnalizacji problemów', async () => {
+    const w2 = makeWorker(fakeClient({ ok: true, dryRun: true }));
+    await w2._process(makeItem());
+    assert.equal(w2.problems.count, 0);
+  });
+
   test('duplikat jest osobnym rodzajem, nie sukcesem', async () => {
     const w = makeWorker(fakeClient({ ok: true, duplicate: true }));
     await w._process(makeItem());

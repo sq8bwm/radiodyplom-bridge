@@ -88,12 +88,23 @@ Do rozstrzygnięcia przy robocie, żeby nie zgadywać na miejscu:
   do `/api/status` (rdzeń zna ją z `package.json`) albo przez IPC w preload.
   **Ta sama liczba musi zgadzać się z nazwą pliku instalatora** — inaczej
   zakładka będzie kłamać po ręcznym podniesieniu wersji.
-- **Autor i licencja** są w `package.json` (`author`, `license: ISC`).
-  Nie wpisywać ich drugi raz na sztywno w UI.
+- **Autor i licencja** są w `package.json` (`author`, `license: GPL-3.0-or-later`).
+  Nie wpisywać ich drugi raz na sztywno w UI. Zakładka ma podać wersję licencji
+  i **zdanie o braku gwarancji** — dla GPL to właściwe miejsce w programie
+  z interfejsem graficznym. Warto dać odnośnik do pełnego tekstu (`LICENSE`
+  jest w paczce: w AppImage w katalogu głównym, w `.deb` obok aplikacji).
 - Teksty przez `ui/strings.js` w obu językach, jak resztę interfejsu.
 - Warto dołożyć odnośnik do repozytorium i do wydań — przy braku
   automatycznych aktualizacji to jedyna droga, żeby użytkownik sprawdził,
   czy ma najnowszą wersję.
+
+### Nagłówki licencyjne w plikach źródłowych
+Do rozważenia po zmianie na GPL. Zalecana praktyka GNU to krótki nagłówek
+w każdym pliku (kto, jaka licencja, brak gwarancji). U nas to 25 plików,
+z których każdy zaczyna się już blokiem komentarza wyjaśniającego — więc
+zmiana jest mechaniczna, ale hałaśliwa w diffie. Sama licencja obowiązuje
+bez tych nagłówków; to kwestia wygody kogoś, kto dostanie jeden plik
+w oderwaniu od repozytorium.
 
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.

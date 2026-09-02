@@ -1,6 +1,6 @@
 appId: pl.radiodyplom.bridge
 productName: RadioDyplom Bridge
-copyright: Mostek logger → radiodyplom.pl
+copyright: © 2026 SQ8BWM. Licencja GPL-3.0-or-later.
 
 directories:
   buildResources: build
@@ -84,3 +84,10 @@ linux:
       # nawet gdy ktoś nie wie, w której gałęzi menu szukać.
       Keywords: krótkofalarstwo;krotkofalarstwo;hamradio;ham;radio;QSO;log;logger;QLog;N1MM;WSJT-X;JTDX;MSHV;ADIF;dyplom;radiodyplom;
       StartupNotify: 'true'
+
+appImage:
+  # `license` jest opcją WYŁĄCZNIE AppImage'a (sprawdzone w schemacie
+  # electron-buildera) – w sekcji `linux` byłby po cichu ignorowany.
+  # Do .deb licencja trafia przez pole "license" z package.json,
+  # widoczne w `apt show` i `dpkg -I`.
+  license: LICENSE

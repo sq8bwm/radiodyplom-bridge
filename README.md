@@ -125,4 +125,8 @@ Node.js ≥ 18, zero zależności runtime.
 
 ---
 
-Autor: **SQ8BWM** · licencja ISC
+Autor: **SQ8BWM** · licencja **GPL-3.0-or-later** ([pełny tekst](LICENSE))
+
+To wolne oprogramowanie: możesz je rozpowszechniać i modyfikować na warunkach
+Powszechnej Licencji Publicznej GNU w wersji 3 albo dowolnej późniejszej.
+Program jest udostępniany **bez żadnej gwarancji**.

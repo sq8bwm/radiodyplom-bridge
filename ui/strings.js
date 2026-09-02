@@ -21,7 +21,6 @@ const DICT = {
     'btn.requeue': 'Ponów odrzucone',
     'btn.save': 'Zapisz',
     'btn.addTarget': 'Dodaj stację',
-    'btn.addOperator': 'Dodaj operatora',
     'btn.remove': 'Usuń',
     'btn.quit': 'Zakończ',
     'btn.openLog': 'Pokaż plik logu',
@@ -43,7 +42,6 @@ const DICT = {
     'panel.rejected': 'Odrzucone',
     'panel.connection': 'Połączenie z radiodyplom',
     'panel.udp': 'Nasłuch UDP',
-    'panel.operators': 'Operatorzy (znak i PIN API)',
     'panel.fanout': 'Rozmnażanie QSO na wiele stacji',
     'panel.language': 'Język',
 
@@ -61,24 +59,13 @@ const DICT = {
     'label.multicast': 'Grupy multicast (po przecinku, np. 224.0.0.222)',
     'label.stationCall': 'Znak stacji',
     'label.operator': 'Operator (opcjonalnie)',
-    'label.targetOperator': 'Operator (z bazy)',
-    'label.opCall': 'Znak',
-    'label.opName': 'Opis (opcjonalnie)',
-    'label.opPin': 'PIN API',
-    'opt.pickOperator': '— wybierz operatora —',
-    'opt.missingOperator': 'brak w bazie',
-    'opt.ownPin': 'własny PIN z pliku',
     'label.language': 'Język interfejsu',
 
     'hint.pin': 'Zostaw zamaskowany, żeby nie zmieniać. Wpisz nowy, aby podmienić.',
     'hint.multicast': 'puste = brak',
-    'hint.targetIncomplete': 'NIE ZAPISANO — każda stacja wymaga znaku i operatora z bazy.',
-    'hint.operators': 'Lista do wyboru przy rozmnażaniu QSO. PIN wpisuje się tu raz, '
-      + 'a nie przy każdej stacji. Zostaw zamaskowany, żeby go nie zmieniać.',
-    'note.noOperators': 'Baza operatorów jest pusta, więc wszystkie kopie polecą PIN-em '
-      + 'głównym. Kopia ze znakiem innym niż Twój profil wróci wtedy jako NOT_SAVED.',
-    'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Każda stacja wymaga '
-      + 'znaku i operatora z bazy — to operator wyznacza PIN, którym poleci ta kopia.',
+    'hint.targetIncomplete': 'NIE ZAPISANO — każda pozycja wymaga znaku stacji.',
+    'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Każdy znak stacji musi '
+      + 'być na liście stacji Twojego konta w Managerze — inaczej serwer nie zapisze kopii.',
     'hint.requeue': '„Ponów odrzucone" wraca do kolejki tylko te, które padły z powodu '
       + 'awarii łączności. Odrzucone przez serwer (zły znak, brak uprawnień) zostają.',
     'hint.saved': 'Zapisano i zastosowano.',
@@ -128,9 +115,6 @@ const DICT = {
 
     // Kody błędów z API — komunikat serwera przychodzi po polsku, więc dla
     // interfejsu angielskiego tłumaczymy po kodzie, a treść serwera zostaje w tle.
-    'err.NO_OPERATOR_PIN': 'Operatora tego QSO nie ma w bazie operatorów, więc nie znamy '
-      + 'jego PIN-u. QSO nie zostało wysłane. Dopisz operatora w Konfiguracji '
-      + 'i użyj „Ponów odrzucone".',
     'err.INVALID_CALLSIGN': 'Nieprawidłowy znak korespondenta',
     'err.INVALID_API_KEY': 'Nieprawidłowy PIN API albo konto nieaktywne',
     'err.MISSING_API_KEY': 'Brak PIN-u API',
@@ -153,7 +137,6 @@ const DICT = {
     'btn.requeue': 'Retry rejected',
     'btn.save': 'Save',
     'btn.addTarget': 'Add station',
-    'btn.addOperator': 'Add operator',
     'btn.remove': 'Remove',
     'btn.quit': 'Quit',
     'btn.openLog': 'Show log file',
@@ -175,7 +158,6 @@ const DICT = {
     'panel.rejected': 'Rejected',
     'panel.connection': 'radiodyplom connection',
     'panel.udp': 'UDP listener',
-    'panel.operators': 'Operators (callsign and API PIN)',
     'panel.fanout': 'Duplicate QSO to several stations',
     'panel.language': 'Language',
 
@@ -193,25 +175,14 @@ const DICT = {
     'label.multicast': 'Multicast groups (comma separated, e.g. 224.0.0.222)',
     'label.stationCall': 'Station callsign',
     'label.operator': 'Operator (optional)',
-    'label.targetOperator': 'Operator (from the book)',
-    'label.opCall': 'Callsign',
-    'label.opName': 'Description (optional)',
-    'label.opPin': 'API PIN',
-    'opt.pickOperator': '— pick an operator —',
-    'opt.missingOperator': 'not in the book',
-    'opt.ownPin': 'own PIN from the file',
     'label.language': 'Interface language',
 
     'hint.pin': 'Leave it masked to keep the current PIN. Type a new one to replace it.',
     'hint.multicast': 'empty = none',
-    'hint.targetIncomplete': 'NOT SAVED — every station needs a callsign and an operator from the book.',
-    'hint.operators': 'The list you pick from when duplicating QSOs. Each PIN is entered '
-      + 'here once instead of on every station. Leave it masked to keep it.',
-    'note.noOperators': 'The operator book is empty, so every copy will use the main PIN. '
-      + 'A copy with a callsign other than your own profile will come back as NOT_SAVED.',
+    'hint.targetIncomplete': 'NOT SAVED — every row needs a station callsign.',
     'hint.fanout': 'Empty = one QSO with the station callsign from the logger. Every station '
-      + 'needs a callsign and an operator from the book — the operator decides which PIN '
-      + 'that copy is sent with.',
+      + 'callsign must be on your account\'s station list in the Manager — otherwise the '
+      + 'server will not store that copy.',
     'hint.requeue': '“Retry rejected” only requeues QSOs that failed due to connectivity. '
       + 'Those rejected by the server (bad callsign, no permission) stay.',
     'hint.saved': 'Saved and applied.',
@@ -258,9 +229,6 @@ const DICT = {
     'tray.openLog': 'Show log file',
     'tray.quit': 'Quit',
 
-    'err.NO_OPERATOR_PIN': "This QSO's operator is not in the operator book, so their PIN "
-      + 'is unknown. The QSO was not sent. Add the operator in Configuration '
-      + 'and use “Retry rejected”.',
     'err.INVALID_CALLSIGN': 'Invalid worked callsign',
     'err.INVALID_API_KEY': 'Invalid API PIN or inactive account',
     'err.MISSING_API_KEY': 'API PIN missing',

@@ -133,33 +133,24 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
-- **PIN należy do operatora, nie do stacji.** Baza `operators` jest używana także
-  dla QSO bez rozgałęziania: operator z loggera jest szukany w bazie i to jego PIN
-  autoryzuje wysyłkę. Rozstrzygane DOPIERO przy wysyłce, nie przy kolejkowaniu —
-  inaczej poprawiona baza nie działałaby dla QSO już leżących w kolejce.
-  Operator spoza bazy = odrzucenie LOKALNE (`NO_OPERATOR_PIN`), bez marnowania
-  wysyłki, bez zużycia limitu 9/min i bez gaszenia wskaźnika łączności.
-  Sprawdzone end-to-end: odrzucenie → dopisanie operatora → „Ponów odrzucone" →
-  QSO wysłane właściwym PIN-em.
-- **Odrzucone lokalnie QSO było nie do odzyskania** — pierwsza wersja oznaczała
-  je jako obsłużone (`markSeen=true`), a „Ponów odrzucone" pomija wszystko, co
-  jest w `seen`. Wyszło na próbie na żywo, nie w testach. QSO nigdy nie zostało
-  wysłane, więc klucz musi zostać wolny; przy okazji przelogowanie tej samej
-  łączności w loggerze też znów przechodzi. Dwa testy drogi powrotnej.
+- **Model uprawnień radiodyplom — zmierzony 2026-09-02, poprzedni wniosek był zły.**
+  PIN to konto, a konto ma w Managerze listę znaków stacji, na które wolno mu
+  logować. Serwer sprawdza `station_callsign`; pola `operator` **nie sprawdza
+  wcale** (przechodzi nawet znak nieistniejący). Wcześniejsze „N stacji wymaga
+  N PIN-ów" wynikało z jednego pomiaru, w którym stacji po prostu nie było na
+  liście konta. **Jeden PIN wystarcza.** Pomiar i tabela w `docs/konfiguracja.md`.
+  Kosztowało to 7 testowych QSO w akcji 295 — w tym 5 przez błąd w sondzie,
+  która miała nie zapisywać nic (`band` wymaga nasz mapper, nie API).
+- **Baza operatorów: zbudowana i usunięta.** Powstała pod błędny model
+  (osobne PIN-y per operator), z lokalnym odrzucaniem QSO operatorów spoza
+  bazy. Pomiar pokazał, że takie QSO serwer normalnie przyjmuje, więc kod
+  odrzucał poprawne łączności — usunięty w całości. Zostały z tego trzy
+  rzeczy niezależne od modelu: wielkie litery w polach znaku, licznik
+  „wysłane" i zapis konfiguracji bez wycinania nieznanych sekcji.
 - **Licznik „wysłane" zawyżał** — był rozmiarem zbioru deduplikacji, a ten
   obejmuje też trwałe odrzucenia, więc rósł przy każdym odrzuceniu i sugerował,
   że QSO doszło. Teraz osobny licznik w `seen.json` (format `{seen, sent}`,
   starsza tablica nadal wczytywana bez utraty statystyki).
-- **Baza operatorów** (`operators`: znak + opis + PIN). Cel rozmnażania to teraz
-  dwa wymagane pola: `station_callsign` i `operator` — ten drugi wskazuje osobę
-  z bazy i wyznacza zarazem pole OPERATOR w QSO oraz PIN, którym kopia leci.
-  PIN wpisuje się raz, a nie przy każdej stacji. Zgodność: `pin` wprost w celu
-  nadal działa i ma pierwszeństwo, a interfejs kasuje go tylko wtedy, gdy wybrany
-  operator ma PIN w bazie (czyli gdy jest czym go zastąpić) — inaczej zapis
-  konfiguracji odsyłałby QSO na cudze konto. Wskazanie na kogoś spoza bazy nie
-  zatrzymuje programu, ale ostrzega trzy razy (wczytanie, start, każde QSO).
-  Sprawdzone end-to-end na atrapie serwera: trzy kopie, trzy różne PIN-y, plus
-  poprawny odwrót do PIN-u głównego. Pola znaków wpisują wielkimi literami.
 - **Zapis z UI gubił sekcje, których nie zna** — `writeConfigFile` budował plik od
   zera z ustalonej listy kluczy, więc każdy zapis wycinał `logFile`
   i `radiodyplom.pingIntervalMs`. Teraz nadpisuje tylko to, czym zarządza

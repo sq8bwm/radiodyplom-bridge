@@ -11,13 +11,11 @@
     "timeoutMs": 10000,
     "dryRun": true
   },
-  "_operators_komentarz": "Baza operatorow: znak + PIN API. PIN nalezy do OPERATORA, wiec jest uzywany takze bez rozgalezienia - operator z loggera jest szukany w bazie. Operator spoza bazy = QSO odrzucone lokalnie (NO_OPERATOR_PIN).",
-  "operators": [],
   "forward": {
     "operations": [
       "insert"
     ],
-    "_targets_komentarz": "Pusta lista = jedno QSO ze stacja z loggera. Podaj cele, aby rozmnozyc jedno QSO na kilka wpisow. Kazdy cel wymaga station_callsign i operator (znak z listy operators).",
+    "_targets_komentarz": "Pusta lista = jedno QSO ze stacja z loggera. Podaj cele, aby rozmnozyc jedno QSO na kilka wpisow. station_callsign wymagany i MUSI byc na liscie stacji Twojego konta w Managerze; operator opcjonalny (serwer go nie sprawdza).",
     "targets": []
   },
   "queue": {

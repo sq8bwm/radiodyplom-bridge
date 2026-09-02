@@ -152,7 +152,6 @@ async function loadConfig() {
   $('fHost').value = cfg.udp.host;
   $('fPort').value = cfg.udp.port;
   $('fMulticast').value = (cfg.udp.multicastGroups || []).join(', ');
-  renderOperators(cfg.operators || []);
   renderTargets(cfg.forward.targets || []);
 }
 
@@ -173,118 +172,18 @@ function forceUpper(input) {
   });
 }
 
-// ---------- baza operatorów ----------
-function renderOperators(list) {
-  $('operators').innerHTML = list.map((o) => `
-    <div class="op-row">
-      <div><label>${t('label.opCall')}</label><input type="text" class="o-call" value="${esc(o.call || '')}" placeholder="SP0ABC"></div>
-      <div><label>${t('label.opName')}</label><input type="text" class="o-name" value="${esc(o.name || '')}"></div>
-      <div><label>${t('label.opPin')}</label><input type="text" class="o-pin" value="${esc(o.pin || '')}" placeholder="ABCD-1234"></div>
-      <button class="act sec o-del">${t('btn.remove')}</button>
-    </div>`).join('');
-  $('operators').querySelectorAll('.o-del').forEach((b) => {
-    b.onclick = () => { b.closest('.op-row').remove(); syncOperatorPickers(); };
-  });
-  $('operators').querySelectorAll('.o-call').forEach(forceUpper);
-  // Znak ORAZ opis muszą trafiać do list wyboru na bieżąco. Wcześniej odświeżał
-  // je tylko znak, więc świeżo dopisany opis nie pojawiał się przy operatorze —
-  // znak wpisuje się przed opisem, czyli w momencie odświeżenia opisu jeszcze
-  // nie było. `input`, a nie `change`: gdyby czekać na opuszczenie pola, listy
-  // przebudowywałyby się dokładnie wtedy, gdy użytkownik klika w tę listę.
-  $('operators').querySelectorAll('.o-call, .o-name').forEach((i) => {
-    i.addEventListener('input', syncOperatorPickers);
-  });
-}
-
-function collectOperators() {
-  return [...$('operators').querySelectorAll('.op-row')].map((row) => ({
-    call: row.querySelector('.o-call').value.trim().toUpperCase(),
-    name: row.querySelector('.o-name').value.trim(),
-    pin: row.querySelector('.o-pin').value.trim(),
-  })).filter((x) => x.call);
-}
-
-$('btnAddOperator').onclick = () => {
-  const current = collectOperators();
-  current.push({ call: '', name: '', pin: '' });
-  renderOperators(current);
-};
-
-/** Znaki z bazy, w postaci gotowej na listę wyboru. */
-function operatorChoices() {
-  return collectOperators().map((o) => ({
-    call: o.call,
-    label: o.name ? `${o.call} — ${o.name}` : o.call,
-  }));
-}
-
-/** Buduje <option> listy operatorów dla jednego celu. */
-function operatorOptions(selected, hasOwnPin) {
-  const want = String(selected || '').toUpperCase();
-  const choices = operatorChoices();
-  const opts = [`<option value="">${esc(t('opt.pickOperator'))}</option>`];
-  for (const o of choices) {
-    const sel = o.call === want ? ' selected' : '';
-    opts.push(`<option value="${esc(o.call)}"${sel}>${esc(o.label)}</option>`);
-  }
-  // Wybór wskazujący na kogoś, kogo (już) nie ma w bazie, zostaje widoczny
-  // i oznaczony. Ciche zresetowanie go do „wybierz operatora" gubiłoby wybór
-  // za każdym razem, gdy ktoś poprawia znak w bazie litera po literze.
-  if (want && !choices.some((o) => o.call === want)) {
-    opts.push(`<option value="${esc(want)}" selected>${esc(want)} — ${esc(t('opt.missingOperator'))}</option>`);
-  }
-  // Cel z PIN-em wpisanym wprost w config.json działa dalej, choć nie wskazuje
-  // nikogo z bazy. Musi mieć swoją pozycję, inaczej zapis z interfejsu
-  // po cichu skasowałby działający PIN.
-  if (hasOwnPin && !want) {
-    opts.push(`<option value="__own" selected>${esc(t('opt.ownPin'))}</option>`);
-  }
-  return opts.join('');
-}
-
-/** Czy dana wartość listy wyboru jest wskazaniem, z którym da się wysyłać? */
-function pickUsable(value) {
-  if (value === '__own') return true;                 // PIN wpisany wprost w pliku
-  return operatorChoices().some((o) => o.call === String(value || '').toUpperCase());
-}
-
-/** Odświeża listy wyboru po zmianie bazy, zachowując dotychczasowe wybory. */
-function syncOperatorPickers() {
-  $('targets').querySelectorAll('.t-op').forEach((sel) => {
-    const keep = sel.value;
-    const own = sel.dataset.own === '1';
-    sel.innerHTML = operatorOptions(keep === '__own' ? '' : keep, own);
-    sel.value = keep;
-    if (sel.value !== keep) sel.value = own ? '__own' : '';
-    sel.classList.toggle('invalid', !pickUsable(sel.value));
-  });
-  const none = operatorChoices().length === 0;
-  $('fanoutNoOps').hidden = !(none && $('targets').querySelectorAll('.three').length > 0);
-}
-
 // ---------- cele fan-outu ----------
 function renderTargets(list) {
   $('targets').innerHTML = list.map((x) => `
     <div class="three" style="margin-bottom:8px">
       <div><label>${t('label.stationCall')}</label><input type="text" class="t-station" value="${esc(x.station_callsign)}" placeholder="SN0ABC"></div>
-      <div><label>${t('label.targetOperator')}</label>
-        <select class="t-op" data-own="${x.pinSet && !x.operator ? '1' : '0'}">${operatorOptions(x.operator, x.pinSet)}</select></div>
+      <div><label>${t('label.operator')}</label><input type="text" class="t-op" value="${esc(x.operator || '')}" placeholder="SQ8BWM"></div>
       <button class="act sec t-del">${t('btn.remove')}</button>
     </div>`).join('');
-  $('targets').querySelectorAll('.t-station').forEach(forceUpper);
+  $('targets').querySelectorAll('.t-station, .t-op').forEach(forceUpper);
   $('targets').querySelectorAll('.t-del').forEach((b) => {
-    b.onclick = () => { b.closest('.three').remove(); syncOperatorPickers(); };
+    b.onclick = () => { b.closest('.three').remove(); };
   });
-  // Wybór operatora podpowiada znak stacji, gdy pole jest jeszcze puste —
-  // najczęstszy przypadek to jedna osoba pracująca własnym znakiem.
-  $('targets').querySelectorAll('.t-op').forEach((sel) => {
-    sel.onchange = () => {
-      sel.classList.remove('invalid');
-      const station = sel.closest('.three').querySelector('.t-station');
-      if (!station.value.trim() && sel.value && sel.value !== '__own') station.value = sel.value;
-    };
-  });
-  syncOperatorPickers();
 }
 
 $('btnAddTarget').onclick = () => {
@@ -294,32 +193,24 @@ $('btnAddTarget').onclick = () => {
 };
 
 /**
- * Czyta cele z formularza. Znak stacji i operator są OBA wymagane, więc przy
- * validate:true brakujące pola są zaznaczane i zwracany jest null. Ciche
- * pomijanie niepełnego wiersza byłoby najgorsze: użytkownik widziałby go
- * w oknie, a QSO by tam nie leciały.
+ * Czyta cele z formularza. Znak stacji jest wymagany, więc przy validate:true
+ * brakujące pole jest zaznaczane i zwracany jest null. Ciche pomijanie
+ * niepełnego wiersza byłoby najgorsze: użytkownik widziałby stację w oknie,
+ * a QSO by tam nie leciały.
  */
 function collectTargets({ validate = true } = {}) {
   const rows = [...$('targets').querySelectorAll('.three')];
   let bad = false;
   const out = rows.map((row) => {
     const stationEl = row.querySelector('.t-station');
-    const opEl = row.querySelector('.t-op');
     const station = stationEl.value.trim().toUpperCase();
-    const pick = opEl.value;
     if (validate) {
-      // Sam fakt, że coś jest wybrane, nie wystarcza: wskazanie na kogoś spoza
-      // bazy skończyłoby się wysyłką PIN-em głównym i cichym NOT_SAVED.
-      const okPick = pickUsable(pick);
       stationEl.classList.toggle('invalid', !station);
-      opEl.classList.toggle('invalid', !okPick);
-      if (!station || !okPick) bad = true;
+      if (!station) bad = true;
     }
     return {
       station_callsign: station,
-      // '__own' = zostaw PIN wpisany wprost w pliku; rdzeń rozpozna to po tym,
-      // że nie przysyłamy ani operatora, ani nowego PIN-u.
-      operator: pick === '__own' ? '' : pick,
+      operator: row.querySelector('.t-op').value.trim().toUpperCase(),
     };
   });
   if (validate && bad) return null;
@@ -352,7 +243,6 @@ async function saveFromForm() {
       port: Number($('fPort').value),
       multicastGroups: $('fMulticast').value.split(',').map((x) => x.trim()).filter(Boolean),
     },
-    operators: collectOperators(),
     forward: { targets },
   });
   $('saveInfo').textContent = r.restartRequired.length

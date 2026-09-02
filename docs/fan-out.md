@@ -5,59 +5,6 @@ Jak wysłać jedną łączność jako kilka odrębnych wpisów.
 [← powrót do README](../README.md)
 
 
-## Baza operatorów
-
-PIN-y mieszkają w jednym miejscu — na liście `operators`. Cel rozmnażania wskazuje
-operatora po znaku, więc PIN nie powtarza się przy każdej stacji:
-
-```json
-"operators": [
-  { "call": "SQ8BWM", "name": "Marek", "pin": "AAAA-1111" },
-  { "call": "SP4OIK", "pin": "BBBB-2222" }
-]
-```
-
-- `call` — wymagany. To po nim dopasowujemy operatora; wielkość liter bez znaczenia.
-- `name` — opcjonalny opis, widoczny tylko na liście wyboru w interfejsie.
-- `pin` — PIN API z profilu tej osoby.
-
-**PIN należy do operatora, nie do stacji.** Dlatego baza jest używana także dla
-QSO idących **bez rozgałęziania**: operator z loggera jest szukany w bazie i to
-jego PIN autoryzuje wysyłkę.
-
-Rozstrzyganie PIN-u dla każdego QSO, w tej kolejności:
-
-| Sytuacja | PIN |
-|---|---|
-| operator jest w bazie i ma PIN | jego PIN |
-| QSO bez operatora (logger nie podał) | PIN główny |
-| operator to właściciel PIN-u głównego | PIN główny — nie trzeba dopisywać samego siebie |
-| profil nieznany (PING się jeszcze nie udał) | PIN główny — z niewiedzy nie odrzucamy |
-| **operator spoza bazy** | **QSO odrzucone lokalnie**, patrz niżej |
-
-### Operator, którego nie ma w bazie
-
-Takiego QSO serwer i tak nie zapisze, więc **nie wysyłamy go wcale**. Ląduje
-w „Odrzuconych" z kodem `NO_OPERATOR_PIN` i nazwą operatora w treści błędu.
-
-Odzyskanie: dopisz operatora w zakładce Konfiguracja i kliknij
-**„Ponów odrzucone"**. PIN jest rozstrzygany dopiero w chwili wysyłki, więc
-poprawiona baza działa od razu — bez restartu programu.
-
-Lokalne odrzucenie **nie zużywa limitu** 9 wysyłek na minutę i **nie gasi**
-wskaźnika łączności: to problem z danymi, nie z siecią.
-
-W zakładce **Konfiguracja** jest do tego panel „Operatorzy", a przy każdym celu
-rozmnażania — lista wyboru **Operator**. Interfejs pokazuje PIN-y zamaskowane
-(`AAAA-****`); zostawienie maski znaczy „nie zmieniaj". Wybór operatora podpowiada
-też znak stacji, gdy pole jest jeszcze puste.
-
-Zmiana bazy działa **od razu**, bez restartu.
-
-> Zmiana PIN-u to teraz jedna poprawka w jednym miejscu. Wcześniej PIN siedział
-> w każdym celu z osobna i przeoczenie jednego kończyło się cichym `NOT_SAVED`.
-
-
 ## Fan-out: jedno QSO → kilka wpisów
 
 To samo QSO z loggera można wysłać jako **kilka odrębnych łączności**, każdą z innym
@@ -73,28 +20,26 @@ znakiem stacji. Konfiguruje się to listą celów:
 }
 ```
 
-Cel opisują **dwa pola i oba są wymagane**:
+Cel opisują dwa pola:
 
-- `station_callsign` — znak stacji. **Nadpisuje** znak podany przez logger.
-- `operator` — znak z listy `operators`. Jeden wybór, dwa skutki: trafia do pola
-  `OPERATOR` w wysyłanym QSO **i** wyznacza PIN, którym ta kopia leci.
+- `station_callsign` — **wymagany**. Znak stacji; **nadpisuje** znak z loggera.
+  To jedyne pole, które serwer sprawdza — musi być na liście stacji Twojego konta.
+- `operator` — opcjonalny. Trafia do pola `OPERATOR` w QSO; serwer go **nie
+  weryfikuje** (sprawdzone: przechodzi nawet znak nieistniejący). Bez niego
+  zostaje operator z loggera.
 
 Znak stacji i operator to **dwa różne pola** i celowo nie podstawiamy jednego pod
 drugie: przy pracy pod znakiem okolicznościowym stacja to `SP0DEF`, a operator
 to konkretna osoba.
 
 - **Pusta lista (domyślnie)** → jedno QSO ze znakiem stacji z loggera. Zero zmian.
-- `pin` — PIN wpisany wprost w cel. Nadal działa i **ma pierwszeństwo**; starsze
-  konfiguracje nie wymagają przepisywania.
+- `pin` — PIN wpisany wprost w cel, żeby wysłać kopię z **innego konta**. Droga
+  z 0.1.x, nadal działa, nie ma jej w interfejsie. Przy jednym koncie z listą
+  stacji nie jest potrzebna.
 
-Wskazanie na kogoś, kogo nie ma w bazie (albo kto nie ma tam PIN-u), **nie zatrzymuje
-programu** — musi dać się to poprawić w interfejsie. Ale jest głośne: ostrzeżenie
-leci przy wczytaniu konfiguracji, na starcie i przy każdym takim QSO, bo kopia
-poleci wtedy PIN-em głównym i najpewniej wróci jako `NOT_SAVED`.
-
-> **Zgodność z 0.1.x.** Cel z własnym `pin` działa dalej, a interfejs go nie kasuje —
-> stary PIN jest usuwany tylko wtedy, gdy wybrany operator **ma** PIN w bazie, czyli
-> gdy jest czym go zastąpić. Inaczej zapis konfiguracji odsyłałby QSO na cudze konto.
+**Jeden PIN wystarcza na wszystkie stacje**, które masz na liście stacji swojego
+konta w Managerze (patrz [Model uprawnień](konfiguracja.md)). Znak spoza tej
+listy wraca jako `NOT_SAVED` — daemon mówi o tym też na starcie.
 
 Pozostałe pola (data, czas, znak korespondenta, pasmo, emisja, raporty, `freq`,
 komentarz) są w każdej kopii identyczne.
@@ -113,9 +58,9 @@ status — awaria jednej nie blokuje pozostałych.
 > (Nie przeszło jeszcze testu end-to-end na dwóch stacjach, bo wymaga dwóch
 > znaków uprawnionych w akcji.)
 >
-> **Fan-out na inny znak stacji wymaga własnego PIN-u** — patrz „Model uprawnień".
-> Daemon ostrzega o tym na starcie, porównując znak celu z profilem PIN-u.
-> Cel ze wskazanym operatorem z bazy jest w porządku i ostrzeżenia nie wywołuje.
+> **Fan-out na inny znak stacji NIE wymaga drugiego PIN-u** — wymaga, żeby ten
+> znak był na liście stacji Twojego konta. Wcześniejsza wersja tej dokumentacji
+> twierdziła inaczej; sprostowanie i pomiar w „Model uprawnień".
 
 **Uwaga na przepustowość:** trzy cele to trzy żądania na jedno QSO, a limit wynosi
 10/min. Przy trzech celach realna przepustowość to ok. 3 QSO/min; nadmiar czeka

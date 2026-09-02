@@ -8,14 +8,13 @@ import { log } from './log.js';
 import { acquireLock, releaseLock, udpLockPath } from './lock.js';
 
 export class LoggerListener {
-  constructor({ host, port, multicastGroups, operations, pin, targets, operators, onQSO }) {
+  constructor({ host, port, multicastGroups, operations, pin, targets, onQSO }) {
     this.host = host;
     this.port = port;
     this.multicastGroups = multicastGroups || [];
     this.operations = new Set(operations || ['insert']);
     this.pin = pin;
     this.targets = targets || [];
-    this.operators = operators || [];
     this.onQSO = onQSO;
     this.socket = null;
     this.stats = { received: 0, accepted: 0, skipped: 0, invalid: 0, unknown: 0, bySource: {} };
@@ -124,9 +123,6 @@ export class LoggerListener {
         meta: {
           ...result.meta,
           station: c.station,
-          // Znacznik dla workera: PIN tej kopii pochodzi wprost z konfiguracji
-          // celu, więc baza operatorów nie ma go nadpisywać.
-          pinExplicit: c.pinExplicit,
           fanout: copies.length > 1 ? `${copies.length} kopii` : undefined,
           from: `${rinfo.address}:${rinfo.port}`,
         },

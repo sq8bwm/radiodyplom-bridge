@@ -79,19 +79,6 @@ wyjściu z procesu. Log ma kilka linii na QSO, więc koszt jest bez znaczenia.
 
 Wyłączenie: `"logFile": { "enabled": false }`.
 
-## Odrzucenie bez wysyłki: `NO_OPERATOR_PIN`
-
-Jedyny błąd, który powstaje **u nas**, a nie na serwerze. Gdy operatora QSO nie
-ma w bazie operatorów, nie znamy jego PIN-u, a serwer takiego QSO nie zapisze —
-więc wysyłka jest pomijana, a QSO idzie od razu do `data/failed/`.
-
-Skutki uboczne są świadomie inne niż przy błędzie serwera: odrzucenie **nie
-zużywa** limitu wysyłek i **nie gasi** wskaźnika łączności.
-
-Naprawa: dopisz operatora w Konfiguracji i użyj „Ponów odrzucone". PIN jest
-rozstrzygany przy każdej próbie wysyłki, nie zapamiętywany w kolejce, więc
-poprawiona baza działa bez restartu.
-
 ## Licznik „wysłane"
 
 Liczy **realnie wysłane** QSO. Trwałe odrzucenia trafiają do zbioru

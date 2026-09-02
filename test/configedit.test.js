@@ -19,7 +19,6 @@ const BASE = () => ({
     apiUrl: 'https://x/api', pin: 'AAAA-1111', timeoutMs: 1000, dryRun: true,
     pingIntervalMs: 30000,
   },
-  operators: [{ call: 'SQ8BWM', name: 'Marek', pin: 'CCCC-3333' }],
   forward: {
     operations: ['insert'],
     targets: [{ station_callsign: 'SQ8BWA', operator: 'SQ8BWA', pin: 'BBBB-2222' }],
@@ -210,104 +209,7 @@ describe('applyConfig — zapis z interfejsu', () => {
   });
 });
 
-describe('baza operatorów', () => {
-  test('PIN operatora jest zamaskowany w widoku dla interfejsu', () => {
-    const view = mod.editableConfig(cfgMod.loadConfig());
-    assert.equal(view.operators[0].call, 'SQ8BWM');
-    assert.equal(view.operators[0].name, 'Marek');
-    assert.equal(view.operators[0].pin, 'CCCC-****');
-    assert.equal(view.operators[0].pinSet, true);
-    assert.equal(JSON.stringify(view).includes('3333'), false);
-  });
 
-  test('zamaskowany PIN przy zapisie zostawia dotychczasowy', () => {
-    // Najważniejszy przypadek: użytkownik poprawia opis, nie dotyka PIN-u.
-    const cfg = cfgMod.loadConfig();
-    const d = fakeDaemon(cfg);
-    mod.applyConfig(d, { operators: [{ call: 'SQ8BWM', name: 'Marek H.', pin: 'CCCC-****' }] });
-    assert.equal(saved().operators[0].pin, 'CCCC-3333');
-    assert.equal(saved().operators[0].name, 'Marek H.');
-  });
-
-  test('poprawiony znak nie gubi PIN-u (dopasowanie po pozycji)', () => {
-    const cfg = cfgMod.loadConfig();
-    const d = fakeDaemon(cfg);
-    mod.applyConfig(d, { operators: [{ call: 'SQ8BWX', name: 'Marek', pin: 'CCCC-****' }] });
-    assert.equal(saved().operators[0].call, 'SQ8BWX');
-    assert.equal(saved().operators[0].pin, 'CCCC-3333');
-  });
-
-  test('nowy PIN nadpisuje stary', () => {
-    const cfg = cfgMod.loadConfig();
-    mod.applyConfig(fakeDaemon(cfg), { operators: [{ call: 'SQ8BWM', pin: 'DDDD-4444' }] });
-    assert.equal(saved().operators[0].pin, 'DDDD-4444');
-  });
-
-  test('usunięcie operatora znika też z pliku', () => {
-    const cfg = cfgMod.loadConfig();
-    mod.applyConfig(fakeDaemon(cfg), { operators: [] });
-    assert.deepEqual(saved().operators, []);
-  });
-
-  test('baza trafia do listenera od razu, bez restartu', () => {
-    const cfg = cfgMod.loadConfig();
-    const d = fakeDaemon(cfg);
-    const r = mod.applyConfig(d, { operators: [{ call: 'SP1AA', pin: 'EEEE-5555' }] });
-    assert.deepEqual(d.listener.operators, [{ call: 'SP1AA', pin: 'EEEE-5555' }]);
-    assert.deepEqual(r.restartRequired, []);
-  });
-});
-
-describe('cel fan-outu wskazujący operatora', () => {
-  test('znak stacji i operator zapisują się wielkimi literami', () => {
-    const cfg = cfgMod.loadConfig();
-    mod.applyConfig(fakeDaemon(cfg), {
-      forward: { targets: [{ station_callsign: 'sp0xyz', operator: 'sq8bwm' }] },
-    });
-    assert.equal(saved().forward.targets[0].station_callsign, 'SP0XYZ');
-    assert.equal(saved().forward.targets[0].operator, 'SQ8BWM');
-  });
-
-  test('wybór operatora usuwa stary PIN wpisany wprost', () => {
-    // Inaczej wybór z bazy byłby bez efektu: PIN wprost ma pierwszeństwo,
-    // więc kopia dalej leciałaby starym sekretem.
-    const cfg = cfgMod.loadConfig();
-    mod.applyConfig(fakeDaemon(cfg), {
-      forward: { targets: [{ station_callsign: 'SQ8BWA', operator: 'SQ8BWM' }] },
-    });
-    const t0 = saved().forward.targets[0];
-    assert.equal(t0.operator, 'SQ8BWM');
-    assert.equal(t0.pin, undefined);
-  });
-
-  test('cel bez operatora zachowuje swój PIN z pliku', () => {
-    // Wiersz z PIN-em wpisanym wprost (konfiguracja z 0.1.x) nie może stracić
-    // sekretu tylko dlatego, że ktoś zapisał konfigurację z interfejsu.
-    const cfg = cfgMod.loadConfig();
-    mod.applyConfig(fakeDaemon(cfg), {
-      forward: { targets: [{ station_callsign: 'SQ8BWA', operator: '', pin: 'BBBB-****' }] },
-    });
-    assert.equal(saved().forward.targets[0].pin, 'BBBB-2222');
-  });
-
-  test('operator SPOZA bazy nie kasuje PIN-u wpisanego wprost', () => {
-    // Konfiguracja z 0.1.x: cel ma operatora (zwykły znak) i własny PIN.
-    // Skasowanie PIN-u „bo operator jest ustawiony" odesłałoby QSO na cudze konto.
-    const cfg = cfgMod.loadConfig();
-    mod.applyConfig(fakeDaemon(cfg), {
-      forward: { targets: [{ station_callsign: 'SQ8BWA', operator: 'SQ8BWA', pin: 'BBBB-****' }] },
-    });
-    assert.equal(saved().forward.targets[0].pin, 'BBBB-2222');
-    assert.equal(saved().forward.targets[0].operator, 'SQ8BWA');
-  });
-
-  test('widok dla interfejsu podaje operatora także ze starszego pinFrom', () => {
-    const cfg = cfgMod.loadConfig();
-    cfg.forward.targets = [{ station_callsign: 'SP0XYZ', pinFrom: 'SQ8BWM' }];
-    const view = mod.editableConfig(cfg);
-    assert.equal(view.forward.targets[0].operator, 'SQ8BWM');
-  });
-});
 
 describe('zapis nie gubi sekcji, których interfejs nie zna', () => {
   // REGRESJA: plik był budowany od zera z ustalonej listy kluczy, więc każdy
@@ -322,5 +224,25 @@ describe('zapis nie gubi sekcji, których interfejs nie zna', () => {
     const cfg = cfgMod.loadConfig();
     mod.applyConfig(fakeDaemon(cfg), { radiodyplom: { dryRun: false } });
     assert.equal(saved().radiodyplom.pingIntervalMs, 30000);
+  });
+});
+
+describe('cele fan-outu', () => {
+  test('znak stacji i operator zapisują się wielkimi literami', () => {
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), {
+      forward: { targets: [{ station_callsign: 'sn0abc', operator: 'sq8bwm' }] },
+    });
+    assert.equal(saved().forward.targets[0].station_callsign, 'SN0ABC');
+    assert.equal(saved().forward.targets[0].operator, 'SQ8BWM');
+  });
+
+  test('PIN celu z pliku (droga z 0.1.x) nie ginie przy zapisie z okna', () => {
+    // Interfejs tego pola nie pokazuje, ale nie może go po cichu skasować.
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), {
+      forward: { targets: [{ station_callsign: 'SQ8BWA', operator: 'SQ8BWA' }] },
+    });
+    assert.equal(saved().forward.targets[0].pin, 'BBBB-2222');
   });
 });

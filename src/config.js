@@ -9,7 +9,6 @@ import { readFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, isAbsolute, join } from 'node:path';
 import { homedir } from 'node:os';
-import { normalizeOperators, findOperator, targetOperator } from './operators.js';
 import { log } from './log.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -107,15 +106,6 @@ export function loadConfig(opts = {}) {
 
   if (!cfg.udp?.port) throw new Error('Brak config.udp.port.');
 
-  // Baza operatorów (opcjonalna) – znak + PIN do wyboru w celach fan-outu.
-  if (cfg.operators !== undefined && !Array.isArray(cfg.operators)) {
-    throw new Error('config.operators musi być listą.');
-  }
-  cfg.operators = normalizeOperators(cfg.operators);
-  for (const o of cfg.operators) {
-    if (!o.pin) log.warn(`Operator ${o.call} w bazie nie ma PIN-u – nie da się go wskazać w celu.`);
-  }
-
   // Cele fan-outu (opcjonalne)
   cfg.forward = cfg.forward || {};
   const targets = cfg.forward.targets;
@@ -125,23 +115,6 @@ export function loadConfig(opts = {}) {
   for (const t of targets || []) {
     if (!t?.station_callsign || !String(t.station_callsign).trim()) {
       throw new Error('Każdy cel w config.forward.targets wymaga station_callsign.');
-    }
-    // Wskazanie na nieistniejącego operatora NIE jest błędem startu – program
-    // musi wstać, żeby dało się to poprawić w interfejsie. Ale musi być głośne,
-    // bo skutkiem jest wysyłka cudzym PIN-em i ciche NOT_SAVED.
-    const station = String(t.station_callsign).toUpperCase();
-    const op = targetOperator(t);
-    if (op && !t.pin && !findOperator(cfg.operators, op)) {
-      log.warn(`Cel ${station} wskazuje operatora ${op}, którego nie ma w bazie operatorów.`);
-    }
-    // Cel bez operatora to konfiguracja z wersji przed bazą operatorów. Działa
-    // jak dawniej (operator z loggera, PIN główny), ale interfejs wymaga teraz
-    // wskazania osoby, więc mówimy o tym wprost.
-    if (!op && !t.pin) {
-      log.warn(
-        `Cel ${station} nie wskazuje operatora z bazy – kopia poleci PIN-em głównym. `
-        + 'Wybierz operatora w zakładce Konfiguracja.',
-      );
     }
   }
 

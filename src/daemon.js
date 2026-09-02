@@ -6,7 +6,6 @@
 import { Store } from './store.js';
 import { RadiodyplomClient } from './radiodyplom.js';
 import { LoggerListener } from './udp.js';
-import { resolveOperatorPin, targetOperator } from './operators.js';
 import { Worker } from './worker.js';
 import { StatusApi } from './httpapi.js';
 import { requeueFailed } from './requeue.js';
@@ -55,10 +54,6 @@ export async function startDaemon(cfg, opts = {}) {
 
   const worker = new Worker({
     store, client, queue: cfg.queue, rateLimit: cfg.rateLimit,
-    operators: cfg.operators,
-    // Getter, a nie wartość: profil poznajemy z PING-a, więc na starcie
-    // może go jeszcze nie być, a worker musi widzieć wersję bieżącą.
-    getProfile: () => handle.profile,
   });
 
   const listener = new LoggerListener({
@@ -68,7 +63,6 @@ export async function startDaemon(cfg, opts = {}) {
     operations: cfg.forward.operations,
     pin: cfg.radiodyplom.pin,
     targets: cfg.forward.targets,
-    operators: cfg.operators,
     onQSO: (item) => {
       const added = store.enqueue(item);
       if (added) {
@@ -158,24 +152,18 @@ export async function startDaemon(cfg, opts = {}) {
   }, pingEveryMs);
   handle.pingTimer.unref?.();
 
-  // PIN należy do operatora – ostrzeż o celach, których operatora nie ma
-  // w bazie, zanim wyjdzie to na pierwszym QSO.
+  // Uprawnienia są per konto: PIN ma listę znaków stacji, na które wolno mu
+  // logować. Ostrzeż o celu, którego znaku najpewniej na tej liście nie ma —
+  // serwer odpowie wtedy success:true z pustym savedTo (błąd NOT_SAVED).
   if (handle.lastPing.ok) {
     for (const t of cfg.forward.targets || []) {
       if (t.pin) continue;                       // własny PIN w celu: decyzja użytkownika
       const station = String(t.station_callsign).toUpperCase();
-      const { problem, operator } = resolveOperatorPin(
-        targetOperator(t), cfg.operators, handle.lastPing.operator,
-      );
-      if (problem) {
-        log.warn(
-          `Cel fan-outu ${station} wskazuje operatora ${operator}, którego nie ma w bazie. `
-          + 'Te QSO będą odrzucane lokalnie, dopóki go nie dopiszesz.',
-        );
-      } else if (!operator) {
-        log.warn(
-          `Cel fan-outu ${station} nie wskazuje operatora – kopie polecą PIN-em głównym `
-          + `(profil ${handle.lastPing.operator}).`,
+      if (station !== String(handle.lastPing.operator || '').toUpperCase()) {
+        log.info(
+          `Cel fan-outu ${station} to nie znak profilu (${handle.lastPing.operator}). `
+          + 'Upewnij się, że masz go na liście stacji swojego konta w Managerze, '
+          + 'inaczej te kopie wrócą jako NOT_SAVED.',
         );
       }
     }

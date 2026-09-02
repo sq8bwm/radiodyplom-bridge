@@ -7,7 +7,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { writeAtomic } from './atomic.js';
 import { configPath, isPinMissing } from './config.js';
-import { normalizeOperators, targetOperator, findOperator } from './operators.js';
 import { maskPin } from './httpapi.js';
 import { log, setLevel } from './log.js';
 
@@ -31,18 +30,11 @@ export function editableConfig(cfg) {
       timeoutMs: cfg.radiodyplom.timeoutMs,
       dryRun: !!cfg.radiodyplom.dryRun,
     },
-    operators: (cfg.operators || []).map((o) => ({
-      call: o.call,
-      name: o.name || null,
-      pin: o.pin ? maskPin(o.pin) : null,
-      pinSet: !!o.pin,
-    })),
     forward: {
       operations: cfg.forward.operations,
       targets: (cfg.forward.targets || []).map((t) => ({
         station_callsign: t.station_callsign,
-        // Jedno pole: osoba z bazy. Wyznacza i pole OPERATOR, i PIN kopii.
-        operator: targetOperator(t),
+        operator: t.operator || null,
         pin: t.pin ? maskPin(t.pin) : null,
         pinSet: !!t.pin,
       })),
@@ -92,25 +84,6 @@ export function applyConfig(daemon, patch) {
     }
   }
 
-  // --- baza operatorów ---
-  // PIN-y przychodzą zamaskowane, więc „bez zmian" trzeba dopasować do wpisu
-  // sprzed edycji. Dopasowanie po znaku, a gdy znak został właśnie poprawiony —
-  // po pozycji w liście. Bez tego drobna literówka w znaku gubiłaby PIN.
-  if (Array.isArray(patch.operators)) {
-    const previous = cfg.operators || [];
-    cfg.operators = normalizeOperators(patch.operators.map((o, idx) => {
-      const call = String(o?.call || '').trim().toUpperCase();
-      const out = { call, name: o?.name || undefined };
-      if (!keepExisting(o?.pin)) {
-        out.pin = String(o.pin).trim();
-      } else {
-        const prev = previous.find((x) => x.call === call) || previous[idx];
-        if (prev?.pin) out.pin = prev.pin;
-      }
-      return out;
-    }));
-  }
-
   // --- cele fan-outu ---
   if (Array.isArray(patch.forward?.targets)) {
     const previous = cfg.forward.targets || [];
@@ -119,25 +92,15 @@ export function applyConfig(daemon, patch) {
       .map((t) => {
         const station = String(t.station_callsign).trim().toUpperCase();
         const out = { station_callsign: station };
-        // Operator z bazy: pole OPERATOR w QSO i jednocześnie źródło PIN-u.
         if (t.operator) out.operator = String(t.operator).trim().toUpperCase();
         if (!keepExisting(t.pin)) {
           out.pin = String(t.pin).trim();
         } else {
           // Zamaskowany PIN → zachowaj dotychczasowy dla tej samej stacji.
-          //
-          // Wyjątek: gdy wskazany operator MA PIN w bazie, stary PIN wpisany
-          // wprost trzeba usunąć — ma pierwszeństwo w wysyłce, więc wybór
-          // z bazy nigdy by nie zadziałał.
-          //
-          // Ale tylko wtedy. Konfiguracje z 0.1.x mają w celu operatora
-          // (zwykły znak, nie wpis z bazy) i własny PIN; skasowanie go, bo
-          // „operator jest ustawiony", odesłałoby QSO na cudze konto.
-          const fromBook = findOperator(cfg.operators, out.operator);
-          if (!fromBook?.pin) {
-            const prev = previous.find((p) => String(p.station_callsign).toUpperCase() === station);
-            if (prev?.pin) out.pin = prev.pin;
-          }
+          // Pole `pin` w celu jest drogą z 0.1.x i nie ma go w interfejsie,
+          // ale zapis z okna nie może go po cichu skasować.
+          const prev = previous.find((p) => String(p.station_callsign).toUpperCase() === station);
+          if (prev?.pin) out.pin = prev.pin;
         }
         return out;
       });
@@ -180,10 +143,6 @@ export function applyConfig(daemon, patch) {
   daemon.client.timeoutMs = cfg.radiodyplom.timeoutMs;
   daemon.listener.pin = cfg.radiodyplom.pin;
   daemon.listener.targets = cfg.forward.targets || [];
-  daemon.listener.operators = cfg.operators || [];
-  // Worker musi widzieć nową bazę od razu — po dopisaniu operatora „Ponów
-  // odrzucone" ma zadziałać bez restartu.
-  daemon.worker.operators = cfg.operators || [];
   daemon.listener.operations = new Set(cfg.forward.operations || ['insert']);
   daemon.worker.maxPerMinute = cfg.rateLimit.maxPerMinute;
   daemon.worker.minSpacingMs = cfg.rateLimit.minSpacingMs;
@@ -236,7 +195,6 @@ export function writeConfigFile(cfg) {
       timeoutMs: cfg.radiodyplom.timeoutMs,
       dryRun: !!cfg.radiodyplom.dryRun,
     },
-    operators: cfg.operators || [],
     forward: {
       ...(original.forward || {}),
       operations: cfg.forward.operations,

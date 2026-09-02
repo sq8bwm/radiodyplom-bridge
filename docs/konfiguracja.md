@@ -15,12 +15,11 @@ W `config.json` wstaw PIN API z Managera radiodyplom
 
 | Opcja | Znaczenie |
 |---|---|
-| `radiodyplom.pin` | PIN/klucz API akcji dyplomowej (profil główny) |
-| `operators` | baza znak → PIN API, do wyboru w celach rozmnażania |
+| `radiodyplom.pin` | PIN/klucz API konta w radiodyplom |
 | `radiodyplom.dryRun` | `true` = nic nie wysyła, tylko loguje (do testów) |
 | `udp.port` | port nasłuchu (musi zgadzać się z loggerem) |
 | `forward.operations` | które operacje QLog przekazywać (domyślnie `["insert"]`) |
-| `forward.targets[].operator` | znak z `operators`: pole OPERATOR i PIN tej kopii |
+| `forward.targets[].operator` | pole OPERATOR tej kopii (dane, serwer go nie sprawdza) |
 | `queue.maxAttempts` | ile prób przed odłożeniem do `data/failed/` |
 | `rateLimit.maxPerMinute` | limit wysyłek (API dopuszcza 10/min, trzymamy 9) |
 
@@ -90,24 +89,47 @@ Blokada po nieżyjącym procesie (twarde ubicie, restart maszyny) jest przejmowa
 automatycznie. Jeśli świadomie chcesz dwie instancje, daj każdej własny `dataDir`.
 
 
-## Model uprawnień (sprawdzony)
+## Model uprawnień (zmierzony 2026-09-02)
 
-Trzy niezależne poziomy — pomylenie ich prowadzi do cichych porażek:
+Rozstrzygnięte pomiarem na prawdziwym serwerze, po wcześniejszym **błędnym**
+wniosku — dlatego szczegóły są tu zapisane wprost.
 
-1. **PIN jest wydawany per profil użytkownika**, nie per stacja ani per akcja.
-   `GET ?action=PING` zwraca `operator` — to właśnie profil, do którego PIN należy.
-2. **Logowanie przez API włącza się osobno dla użytkownika w danej akcji**
-   (ustawienie w Managerze).
-3. **PIN autoryzuje wyłącznie własny profil.** Wysyłka z `station_callsign` innego
-   profilu kończy się `success:true` z **pustym `savedTo`** — QSO nie powstaje.
+**PIN API to konto**, a konto ma w Managerze **listę znaków stacji**, na które
+wolno mu logować (plus przełączniki: logowanie z zewnątrz przez API, logger
+online, wgrywanie ADIF). Jedno konto może mieć wiele stacji; bywa też
+uprawnienie „Wszystkie stacje".
 
-Potwierdzone testem: po włączeniu logowania przez API dla `SQ8BWA` w akcji, wysyłka
-z `station_callsign: SQ8BWA` przy PIN-ie profilu `SQ8BWM` **nadal** zwracała
-`savedTo:[]` (sprawdzone też po odczekaniu, więc to nie cache). Włączenie dostępu
-dla danego użytkownika uprawnia **jego własny PIN**, a nie cudzy.
+Z tego wynikają dwie rzeczy, obie sprawdzone:
 
-**Wniosek dla fan-outu:** wysyłka na N znaków stacji wymaga **N PIN-ów** — po jednym
-z profilu każdej stacji, z włączonym logowaniem przez API w tej akcji. Dlatego jest
-baza `operators`, a cel wskazuje osobę polem `operator` (patrz [Rozmnażanie QSO](fan-out.md)).
-Daemon sprawdza to na starcie i ostrzega, gdy cel ma inny znak niż profil PIN-u,
-a żadnego własnego PIN-u nie wskazano.
+| Pole | Czy serwer je sprawdza |
+|---|---|
+| `station_callsign` | **tak** — musi być na liście stacji konta, do którego należy PIN |
+| `operator` | **nie** — nie jest w ogóle weryfikowane |
+
+Pomiar, przy PIN-ie konta `SQ8BWM` i stacji `SQ8BWM` (na liście):
+
+| Wysłane | Odpowiedź |
+|---|---|
+| `operator=SQ8BWM` (właściciel konta) | `savedTo [295]` |
+| `operator=SQ8BWA` (inna, istniejąca osoba) | `savedTo [295]` |
+| `operator=SP9ZZZ` (znak nieistniejący) | `savedTo [295]` |
+| `station_callsign=SQ8BWA` (poza listą konta) | `savedTo []` |
+| `station_callsign=SP9ZZZ` (znak nieistniejący) | `savedTo []` |
+
+Komunikat przy `savedTo:[]` jest jednoznaczny: *„QSO odebrane, ale w tym momencie
+brak aktywnych akcji dyplomowych i uprawnień dla podanego znaku."* Daemon
+rozpoznaje to jako trwały błąd `NOT_SAVED` i odkłada QSO do `data/failed/`.
+
+**Wniosek dla fan-outu: wystarczy JEDEN PIN.** Rozmnażanie na kilka znaków
+stacji nie wymaga kilku PIN-ów — wymaga, żeby te znaki były na liście stacji
+Twojego konta. Dodanie tam stacji jest zmianą w Managerze, nie w tym programie.
+
+> Wcześniejsza wersja tej dokumentacji twierdziła, że „wysyłka na N znaków
+> stacji wymaga N PIN-ów". To był zły wniosek z jednego pomiaru: `SQ8BWA` nie
+> działało nie dlatego, że potrzebny był cudzy PIN, ale dlatego, że tego znaku
+> nie było na liście stacji konta. Program przez chwilę miał z tego powodu bazę
+> operatorów z osobnymi PIN-ami — została usunięta jako niepotrzebna.
+
+Pole `pin` przy celu fan-outu (droga z 0.1.x) nadal działa i pozwala wysłać kopię
+z innego konta. Nie ma go w interfejsie i przy jednym koncie z listą stacji nie
+jest potrzebne.

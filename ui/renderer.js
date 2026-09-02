@@ -152,34 +152,120 @@ async function loadConfig() {
   $('fHost').value = cfg.udp.host;
   $('fPort').value = cfg.udp.port;
   $('fMulticast').value = (cfg.udp.multicastGroups || []).join(', ');
+  renderOperators(cfg.operators || []);
   renderTargets(cfg.forward.targets || []);
 }
 
+// ---------- baza operatorów ----------
+function renderOperators(list) {
+  $('operators').innerHTML = list.map((o) => `
+    <div class="op-row">
+      <div><label>${t('label.opCall')}</label><input type="text" class="o-call" value="${esc(o.call || '')}" placeholder="SP0ABC"></div>
+      <div><label>${t('label.opName')}</label><input type="text" class="o-name" value="${esc(o.name || '')}"></div>
+      <div><label>${t('label.opPin')}</label><input type="text" class="o-pin" value="${esc(o.pin || '')}" placeholder="ABCD-1234"></div>
+      <button class="act sec o-del">${t('btn.remove')}</button>
+    </div>`).join('');
+  $('operators').querySelectorAll('.o-del').forEach((b) => {
+    b.onclick = () => { b.closest('.op-row').remove(); syncPinPickers(); };
+  });
+  // Poprawiony znak musi natychmiast trafić do list wyboru w fan-oucie,
+  // inaczej wybór wskazywałby na nieistniejącego już operatora.
+  $('operators').querySelectorAll('.o-call').forEach((i) => { i.onchange = syncPinPickers; });
+}
+
+function collectOperators() {
+  return [...$('operators').querySelectorAll('.op-row')].map((row) => ({
+    call: row.querySelector('.o-call').value.trim(),
+    name: row.querySelector('.o-name').value.trim(),
+    pin: row.querySelector('.o-pin').value.trim(),
+  })).filter((x) => x.call);
+}
+
+$('btnAddOperator').onclick = () => {
+  const current = collectOperators();
+  current.push({ call: '', name: '', pin: '' });
+  renderOperators(current);
+};
+
+/** Znaki z bazy, w postaci gotowej na listę wyboru. */
+function operatorChoices() {
+  return collectOperators().map((o) => ({
+    call: o.call.toUpperCase(),
+    label: o.name ? `${o.call.toUpperCase()} — ${o.name}` : o.call.toUpperCase(),
+  }));
+}
+
+/** Buduje <option> listy PIN-u dla jednego celu. */
+function pinOptions(selected, hasOwnPin) {
+  const opts = [`<option value="">${esc(t('opt.mainPin'))}</option>`];
+  for (const o of operatorChoices()) {
+    const sel = o.call === String(selected || '').toUpperCase() ? ' selected' : '';
+    opts.push(`<option value="${esc(o.call)}"${sel}>${esc(o.label)}</option>`);
+  }
+  // Cel z PIN-em wpisanym wprost w config.json obsługujemy dalej — ale nie
+  // pokazujemy sekretu w interfejsie, tylko informujemy, że taki jest.
+  if (hasOwnPin && !selected) {
+    opts.push(`<option value="__own" selected>${esc(t('opt.ownPin'))}</option>`);
+  }
+  return opts.join('');
+}
+
+/** Odświeża listy wyboru po zmianie bazy, zachowując dotychczasowe wybory. */
+function syncPinPickers() {
+  const choices = operatorChoices().map((o) => o.call);
+  $('targets').querySelectorAll('.t-pinfrom').forEach((sel) => {
+    const keep = sel.value;
+    const own = sel.dataset.own === '1';
+    sel.innerHTML = pinOptions(choices.includes(keep) ? keep : '', own);
+    sel.value = choices.includes(keep) ? keep : (own ? '__own' : '');
+  });
+  const none = choices.length === 0;
+  $('fanoutNoOps').hidden = !(none && $('targets').querySelectorAll('.three').length > 0);
+}
+
+// ---------- cele fan-outu ----------
 function renderTargets(list) {
   $('targets').innerHTML = list.map((x) => `
     <div class="three" style="margin-bottom:8px">
       <div><label>${t('label.stationCall')}</label><input type="text" class="t-station" value="${esc(x.station_callsign)}"></div>
       <div><label>${t('label.operator')}</label><input type="text" class="t-op" value="${esc(x.operator || '')}"></div>
-      <div><label>${t('label.targetPin')}</label><input type="text" class="t-pin" value="${esc(x.pin || '')}" placeholder="${t('hint.targetPin')}"></div>
+      <div><label>${t('label.targetPin')}</label>
+        <select class="t-pinfrom" data-own="${x.pinSet && !x.pinFrom ? '1' : '0'}">${pinOptions(x.pinFrom, x.pinSet)}</select></div>
       <button class="act sec t-del">${t('btn.remove')}</button>
     </div>`).join('');
   $('targets').querySelectorAll('.t-del').forEach((b) => {
-    b.onclick = () => { b.closest('.three').remove(); };
+    b.onclick = () => { b.closest('.three').remove(); syncPinPickers(); };
   });
+  // Wybór operatora podpowiada znak stacji, gdy pole jest jeszcze puste —
+  // najczęstszy przypadek to jedna osoba pracująca własnym znakiem.
+  $('targets').querySelectorAll('.t-pinfrom').forEach((sel) => {
+    sel.onchange = () => {
+      const station = sel.closest('.three').querySelector('.t-station');
+      if (!station.value.trim() && sel.value && sel.value !== '__own') station.value = sel.value;
+    };
+  });
+  syncPinPickers();
 }
 
 $('btnAddTarget').onclick = () => {
   const current = collectTargets();
-  current.push({ station_callsign: '', operator: '', pin: '' });
+  current.push({ station_callsign: '', operator: '', pinFrom: '' });
   renderTargets(current);
 };
 
 function collectTargets() {
-  return [...$('targets').querySelectorAll('.three')].map((row) => ({
-    station_callsign: row.querySelector('.t-station').value.trim(),
-    operator: row.querySelector('.t-op').value.trim(),
-    pin: row.querySelector('.t-pin').value.trim(),
-  })).filter((x) => x.station_callsign);
+  return [...$('targets').querySelectorAll('.three')].map((row) => {
+    const sel = row.querySelector('.t-pinfrom');
+    const pick = sel ? sel.value : '';
+    return {
+      station_callsign: row.querySelector('.t-station').value.trim(),
+      operator: row.querySelector('.t-op').value.trim(),
+      // '__own' = zostaw PIN wpisany wprost w pliku; rdzeń rozpozna to po tym,
+      // że nie przysyłamy ani pinFrom, ani nowego PIN-u.
+      pinFrom: pick === '__own' ? '' : pick,
+      pinSet: pick === '__own',
+    };
+  }).filter((x) => x.station_callsign);
 }
 
 $('btnSave').onclick = async () => {
@@ -201,6 +287,7 @@ async function saveFromForm() {
       port: Number($('fPort').value),
       multicastGroups: $('fMulticast').value.split(',').map((x) => x.trim()).filter(Boolean),
     },
+    operators: collectOperators(),
     forward: { targets: collectTargets() },
   });
   $('saveInfo').textContent = r.restartRequired.length

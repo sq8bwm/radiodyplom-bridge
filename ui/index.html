@@ -64,6 +64,8 @@
     background:var(--bg); color:var(--text); font-size:13px; font-family:inherit; }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .three { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end; }
+  .op-row { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end;
+            margin-bottom:8px; }
   pre#logbox { background:var(--bg); border:1px solid var(--line); border-radius:6px;
        padding:10px; font-size:12px; max-height:460px; overflow:auto; margin:0;
        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; }
@@ -169,10 +171,18 @@
     </div>
 
     <div class="panel">
+      <h2 data-i18n="panel.operators"></h2>
+      <div id="operators"></div>
+      <button class="act sec" id="btnAddOperator" data-i18n="btn.addOperator" style="margin-top:8px"></button>
+      <div class="hint" data-i18n="hint.operators"></div>
+    </div>
+
+    <div class="panel">
       <h2 data-i18n="panel.fanout"></h2>
       <div id="targets"></div>
       <button class="act sec" id="btnAddTarget" data-i18n="btn.addTarget" style="margin-top:8px"></button>
       <div class="hint" data-i18n="hint.fanout"></div>
+      <div class="note" id="fanoutNoOps" data-i18n="note.noOperators" hidden></div>
     </div>
 
     <div class="row" style="margin-top:14px">

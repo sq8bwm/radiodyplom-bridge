@@ -93,6 +93,7 @@ export class StatusApi {
         targets: (this.cfg.forward.targets || []).map((t) => ({
           station_callsign: t.station_callsign,
           operator: t.operator || null,
+          pinFrom: t.pinFrom || null,
           pin: t.pin ? maskPin(t.pin) : null,
         })),
       },

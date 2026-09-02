@@ -7,6 +7,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { writeAtomic } from './atomic.js';
 import { configPath, isPinMissing } from './config.js';
+import { normalizeOperators } from './operators.js';
 import { maskPin } from './httpapi.js';
 import { log, setLevel } from './log.js';
 
@@ -30,16 +31,22 @@ export function editableConfig(cfg) {
       timeoutMs: cfg.radiodyplom.timeoutMs,
       dryRun: !!cfg.radiodyplom.dryRun,
     },
+    operators: (cfg.operators || []).map((o) => ({
+      call: o.call,
+      name: o.name || null,
+      pin: o.pin ? maskPin(o.pin) : null,
+      pinSet: !!o.pin,
+    })),
     forward: {
       operations: cfg.forward.operations,
       targets: (cfg.forward.targets || []).map((t) => ({
         station_callsign: t.station_callsign,
         operator: t.operator || null,
+        pinFrom: t.pinFrom || null,
         pin: t.pin ? maskPin(t.pin) : null,
         pinSet: !!t.pin,
       })),
     },
-    language: cfg.language || 'pl',
     rateLimit: cfg.rateLimit,
     queue: cfg.queue,
     api: cfg.api,
@@ -85,6 +92,25 @@ export function applyConfig(daemon, patch) {
     }
   }
 
+  // --- baza operatorów ---
+  // PIN-y przychodzą zamaskowane, więc „bez zmian" trzeba dopasować do wpisu
+  // sprzed edycji. Dopasowanie po znaku, a gdy znak został właśnie poprawiony —
+  // po pozycji w liście. Bez tego drobna literówka w znaku gubiłaby PIN.
+  if (Array.isArray(patch.operators)) {
+    const previous = cfg.operators || [];
+    cfg.operators = normalizeOperators(patch.operators.map((o, idx) => {
+      const call = String(o?.call || '').trim().toUpperCase();
+      const out = { call, name: o?.name || undefined };
+      if (!keepExisting(o?.pin)) {
+        out.pin = String(o.pin).trim();
+      } else {
+        const prev = previous.find((x) => x.call === call) || previous[idx];
+        if (prev?.pin) out.pin = prev.pin;
+      }
+      return out;
+    }));
+  }
+
   // --- cele fan-outu ---
   if (Array.isArray(patch.forward?.targets)) {
     const previous = cfg.forward.targets || [];
@@ -94,10 +120,15 @@ export function applyConfig(daemon, patch) {
         const station = String(t.station_callsign).trim().toUpperCase();
         const out = { station_callsign: station };
         if (t.operator) out.operator = String(t.operator).trim().toUpperCase();
+        // Wskazanie operatora z bazy. Puste = PIN główny z profilu.
+        if (t.pinFrom) out.pinFrom = String(t.pinFrom).trim().toUpperCase();
         if (!keepExisting(t.pin)) {
           out.pin = String(t.pin).trim();
-        } else {
-          // zamaskowany PIN → zachowaj dotychczasowy dla tej samej stacji
+        } else if (!out.pinFrom) {
+          // Zamaskowany PIN → zachowaj dotychczasowy dla tej samej stacji.
+          // Ale NIE wtedy, gdy cel wskazuje teraz operatora z bazy: stary PIN
+          // wpisany wprost ma pierwszeństwo w wysyłce, więc wybór z bazy
+          // nigdy by nie zadziałał.
           const prev = previous.find((p) => String(p.station_callsign).toUpperCase() === station);
           if (prev?.pin) out.pin = prev.pin;
         }
@@ -142,6 +173,7 @@ export function applyConfig(daemon, patch) {
   daemon.client.timeoutMs = cfg.radiodyplom.timeoutMs;
   daemon.listener.pin = cfg.radiodyplom.pin;
   daemon.listener.targets = cfg.forward.targets || [];
+  daemon.listener.operators = cfg.operators || [];
   daemon.listener.operations = new Set(cfg.forward.operations || ['insert']);
   daemon.worker.maxPerMinute = cfg.rateLimit.maxPerMinute;
   daemon.worker.minSpacingMs = cfg.rateLimit.minSpacingMs;
@@ -175,19 +207,28 @@ export function writeConfigFile(cfg) {
     try { original = JSON.parse(readFileSync(target, 'utf8')); } catch { /* nadpiszemy */ }
   }
 
+  // Zaczynamy od tego, co JEST w pliku, i nadpisujemy tylko pola, którymi
+  // zarządza interfejs. Wcześniej plik był budowany od zera z ustalonej listy
+  // kluczy, więc każdy zapis z UI wycinał sekcje, o których ta lista nie
+  // wiedziała — realnie ginęły `logFile` i `radiodyplom.pingIntervalMs`.
   const out = {
+    ...original,
     udp: {
+      ...(original.udp || {}),
       host: cfg.udp.host,
       port: cfg.udp.port,
       multicastGroups: cfg.udp.multicastGroups || [],
     },
     radiodyplom: {
+      ...(original.radiodyplom || {}),
       apiUrl: cfg.radiodyplom.apiUrl,
       pin: cfg.radiodyplom.pin,
       timeoutMs: cfg.radiodyplom.timeoutMs,
       dryRun: !!cfg.radiodyplom.dryRun,
     },
+    operators: cfg.operators || [],
     forward: {
+      ...(original.forward || {}),
       operations: cfg.forward.operations,
       targets: cfg.forward.targets || [],
     },
@@ -198,6 +239,7 @@ export function writeConfigFile(cfg) {
     language: cfg.language || 'pl',
   };
   if (cfg.dataDir) out.dataDir = cfg.dataDir;
+  else delete out.dataDir;
 
   return writeAtomic(target, JSON.stringify(out, null, 2));
 }

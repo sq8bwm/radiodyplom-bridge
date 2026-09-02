@@ -8,14 +8,16 @@
 // w aktywnej akcji — inaczej serwer odpowie success:true z pustym savedTo
 // i QSO przepadnie (obsługiwane w radiodyplom.js jako błąd NOT_SAVED).
 import { log } from './log.js';
+import { resolveTargetPin } from './operators.js';
 
 /**
  * @param {object} payload  ładunek po zmapowaniu (mapper.js)
  * @param {Array}  targets  cfg.forward.targets
  * @param {string} baseKey  klucz deduplikacji QSO źródłowego
+ * @param {Array}  operators  cfg.operators – baza znak → PIN
  * @returns {Array<{key:string, payload:object, station:string}>}
  */
-export function expandTargets(payload, targets, baseKey) {
+export function expandTargets(payload, targets, baseKey, operators = []) {
   // Brak celów → zachowanie jak dotąd: jedno QSO, stacja z loggera.
   if (!Array.isArray(targets) || targets.length === 0) {
     return [{ key: baseKey, payload, station: payload.station_callsign }];
@@ -42,8 +44,19 @@ export function expandTargets(payload, targets, baseKey) {
     // Celowo NIE podstawiamy tu znaku stacji – to dwa różne pola.
     if (t.operator) p.operator = String(t.operator).trim().toUpperCase();
 
-    // PIN opcjonalny – pozwala kierować kopie do różnych akcji.
-    if (t.pin) p.api_key = String(t.pin).trim();
+    // PIN opcjonalny – pozwala kierować kopie do różnych akcji. Bierze się
+    // wprost z celu albo z bazy operatorów (pole `pinFrom`); brak jednego
+    // i drugiego znaczy „PIN główny z profilu".
+    const { pin, missing } = resolveTargetPin(t, operators);
+    if (pin) p.api_key = pin;
+    if (missing) {
+      // Głośno, bo skutkiem byłaby wysyłka cudzym PIN-em i ciche NOT_SAVED.
+      log.warn(
+        `Cel ${station} wskazuje operatora ${missing}, którego nie ma w bazie `
+        + '(albo nie ma on PIN-u). Kopia poleci PIN-em głównym i najpewniej '
+        + 'wróci jako NOT_SAVED – popraw bazę operatorów.',
+      );
+    }
 
     // Klucz musi być różny dla każdej kopii, inaczej nasza deduplikacja
     // przepuściłaby tylko pierwszą z nich.

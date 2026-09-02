@@ -11,11 +11,13 @@
     "timeoutMs": 10000,
     "dryRun": true
   },
+  "_operators_komentarz": "Baza operatorow: znak + PIN API. Cel fan-outu wskazuje operatora polem pinFrom, zamiast powtarzac PIN w kazdym celu.",
+  "operators": [],
   "forward": {
     "operations": [
       "insert"
     ],
-    "_targets_komentarz": "Pusta lista = jedno QSO ze stacja z loggera. Podaj cele, aby rozmnozyc jedno QSO na kilka wpisow. station_callsign wymagany; operator i pin opcjonalne.",
+    "_targets_komentarz": "Pusta lista = jedno QSO ze stacja z loggera. Podaj cele, aby rozmnozyc jedno QSO na kilka wpisow. station_callsign wymagany; operator, pinFrom (znak z listy operators) i pin opcjonalne.",
     "targets": []
   },
   "queue": {

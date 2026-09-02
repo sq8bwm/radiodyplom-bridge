@@ -8,13 +8,14 @@ import { log } from './log.js';
 import { acquireLock, releaseLock, udpLockPath } from './lock.js';
 
 export class LoggerListener {
-  constructor({ host, port, multicastGroups, operations, pin, targets, onQSO }) {
+  constructor({ host, port, multicastGroups, operations, pin, targets, operators, onQSO }) {
     this.host = host;
     this.port = port;
     this.multicastGroups = multicastGroups || [];
     this.operations = new Set(operations || ['insert']);
     this.pin = pin;
     this.targets = targets || [];
+    this.operators = operators || [];
     this.onQSO = onQSO;
     this.socket = null;
     this.stats = { received: 0, accepted: 0, skipped: 0, invalid: 0, unknown: 0, bySource: {} };
@@ -115,7 +116,7 @@ export class LoggerListener {
     this.stats.bySource[decoder.name] = (this.stats.bySource[decoder.name] || 0) + 1;
 
     // Jedno QSO z loggera może dać kilka wpisów – po jednym na znak stacji.
-    const copies = expandTargets(mapped.payload, this.targets, result.key);
+    const copies = expandTargets(mapped.payload, this.targets, result.key, this.operators);
     for (const c of copies) {
       this.onQSO({
         key: c.key,

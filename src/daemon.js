@@ -6,6 +6,7 @@
 import { Store } from './store.js';
 import { RadiodyplomClient } from './radiodyplom.js';
 import { LoggerListener } from './udp.js';
+import { resolveTargetPin } from './operators.js';
 import { Worker } from './worker.js';
 import { StatusApi } from './httpapi.js';
 import { requeueFailed } from './requeue.js';
@@ -63,6 +64,7 @@ export async function startDaemon(cfg, opts = {}) {
     operations: cfg.forward.operations,
     pin: cfg.radiodyplom.pin,
     targets: cfg.forward.targets,
+    operators: cfg.operators,
     onQSO: (item) => {
       const added = store.enqueue(item);
       if (added) {
@@ -156,10 +158,12 @@ export async function startDaemon(cfg, opts = {}) {
   if (handle.lastPing.ok) {
     for (const t of cfg.forward.targets || []) {
       const station = String(t.station_callsign).toUpperCase();
-      if (!t.pin && station !== String(handle.lastPing.operator || '').toUpperCase()) {
+      // Cel z własnym PIN-em albo ze wskazaniem na operatora z bazy jest w porządku.
+      const { pin } = resolveTargetPin(t, cfg.operators);
+      if (!pin && station !== String(handle.lastPing.operator || '').toUpperCase()) {
         log.warn(
-          `Cel fan-outu ${station} nie ma własnego "pin", a PIN główny należy do ${handle.lastPing.operator}. `
-          + 'Ta kopia najpewniej wróci jako NOT_SAVED – dodaj PIN profilu tej stacji.',
+          `Cel fan-outu ${station} nie ma własnego PIN-u, a PIN główny należy do ${handle.lastPing.operator}. `
+          + 'Ta kopia najpewniej wróci jako NOT_SAVED – wskaż operatora z bazy albo dodaj go do bazy.',
         );
       }
     }

@@ -21,6 +21,7 @@ const DICT = {
     'btn.requeue': 'Ponów odrzucone',
     'btn.save': 'Zapisz',
     'btn.addTarget': 'Dodaj stację',
+    'btn.addOperator': 'Dodaj operatora',
     'btn.remove': 'Usuń',
     'btn.quit': 'Zakończ',
     'btn.openLog': 'Pokaż plik logu',
@@ -42,6 +43,7 @@ const DICT = {
     'panel.rejected': 'Odrzucone',
     'panel.connection': 'Połączenie z radiodyplom',
     'panel.udp': 'Nasłuch UDP',
+    'panel.operators': 'Operatorzy (znak i PIN API)',
     'panel.fanout': 'Rozmnażanie QSO na wiele stacji',
     'panel.language': 'Język',
 
@@ -59,12 +61,21 @@ const DICT = {
     'label.multicast': 'Grupy multicast (po przecinku, np. 224.0.0.222)',
     'label.stationCall': 'Znak stacji',
     'label.operator': 'Operator (opcjonalnie)',
-    'label.targetPin': 'PIN tej stacji',
+    'label.targetPin': 'PIN z bazy',
+    'label.opCall': 'Znak',
+    'label.opName': 'Opis (opcjonalnie)',
+    'label.opPin': 'PIN API',
+    'opt.mainPin': 'PIN główny (profil)',
+    'opt.ownPin': 'własny PIN z pliku',
     'label.language': 'Język interfejsu',
 
     'hint.pin': 'Zostaw zamaskowany, żeby nie zmieniać. Wpisz nowy, aby podmienić.',
     'hint.multicast': 'puste = brak',
     'hint.targetPin': 'jeśli inna niż profil',
+    'hint.operators': 'Lista do wyboru przy rozmnażaniu QSO. PIN wpisuje się tu raz, '
+      + 'a nie przy każdej stacji. Zostaw zamaskowany, żeby go nie zmieniać.',
+    'note.noOperators': 'Baza operatorów jest pusta, więc wszystkie kopie polecą PIN-em '
+      + 'głównym. Kopia ze znakiem innym niż Twój profil wróci wtedy jako NOT_SAVED.',
     'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Znak inny niż profil '
       + 'PIN-u wymaga własnego PIN-u tej stacji.',
     'hint.requeue': '„Ponów odrzucone" wraca do kolejki tylko te, które padły z powodu '
@@ -138,6 +149,7 @@ const DICT = {
     'btn.requeue': 'Retry rejected',
     'btn.save': 'Save',
     'btn.addTarget': 'Add station',
+    'btn.addOperator': 'Add operator',
     'btn.remove': 'Remove',
     'btn.quit': 'Quit',
     'btn.openLog': 'Show log file',
@@ -159,6 +171,7 @@ const DICT = {
     'panel.rejected': 'Rejected',
     'panel.connection': 'radiodyplom connection',
     'panel.udp': 'UDP listener',
+    'panel.operators': 'Operators (callsign and API PIN)',
     'panel.fanout': 'Duplicate QSO to several stations',
     'panel.language': 'Language',
 
@@ -176,12 +189,21 @@ const DICT = {
     'label.multicast': 'Multicast groups (comma separated, e.g. 224.0.0.222)',
     'label.stationCall': 'Station callsign',
     'label.operator': 'Operator (optional)',
-    'label.targetPin': "This station's PIN",
+    'label.targetPin': 'PIN from the book',
+    'label.opCall': 'Callsign',
+    'label.opName': 'Description (optional)',
+    'label.opPin': 'API PIN',
+    'opt.mainPin': 'Main PIN (profile)',
+    'opt.ownPin': 'own PIN from the file',
     'label.language': 'Interface language',
 
     'hint.pin': 'Leave it masked to keep the current PIN. Type a new one to replace it.',
     'hint.multicast': 'empty = none',
     'hint.targetPin': 'if different from profile',
+    'hint.operators': 'The list you pick from when duplicating QSOs. Each PIN is entered '
+      + 'here once instead of on every station. Leave it masked to keep it.',
+    'note.noOperators': 'The operator book is empty, so every copy will use the main PIN. '
+      + 'A copy with a callsign other than your own profile will come back as NOT_SAVED.',
     'hint.fanout': 'Empty = one QSO with the station callsign from the logger. A callsign '
       + "other than the PIN's profile needs that station's own PIN.",
     'hint.requeue': '“Retry rejected” only requeues QSOs that failed due to connectivity. '

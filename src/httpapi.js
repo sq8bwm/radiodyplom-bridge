@@ -137,6 +137,11 @@ export class StatusApi {
       logFile: this.getLogFile ? this.getLogFile() : null,
       lastSent: this.worker.lastSent,
       lastError: this.worker.lastError,
+      // Lista ostatnich zdarzeń; ile ich pokazać, decyduje konfiguracja.
+      recentEvents: this.worker.recentEvents(this.cfg.ui?.recentEvents ?? 20),
+      recentEventsMax: this.cfg.ui?.recentEvents ?? 20,
+      // Sygnalizacja problemów: trwa, dopóki użytkownik jej nie potwierdzi.
+      problems: this.worker.problems,
     };
   }
 
@@ -166,6 +171,9 @@ export class StatusApi {
       if (req.method === 'POST' && url.pathname === '/api/resume') {
         this.worker.resume();
         return send(200, { ok: true, paused: false });
+      }
+      if (req.method === 'POST' && url.pathname === '/api/problems/ack') {
+        return send(200, { ok: true, cleared: this.worker.ackProblems() });
       }
       if (req.method === 'POST' && url.pathname === '/api/requeue') {
         const n = this.requeue ? this.requeue() : 0;

@@ -249,3 +249,39 @@ describe('cele fan-outu', () => {
     assert.equal(saved().forward.targets[0].pin, 'BBBB-2222');
   });
 });
+
+describe('liczba pokazywanych zdarzeń', () => {
+  test('domyślnie 20, gdy w pliku nic nie ma', () => {
+    assert.equal(cfgMod.loadConfig().ui.recentEvents, 20);
+  });
+
+  test('zapis z interfejsu utrwala nową wartość', () => {
+    const cfg = cfgMod.loadConfig();
+    const d = fakeDaemon(cfg);
+    const r = mod.applyConfig(d, { ui: { recentEvents: 50 } });
+    assert.equal(saved().ui.recentEvents, 50);
+    assert.deepEqual(r.restartRequired, [], 'to tylko widok – restart zbędny');
+  });
+
+  test('wartości poza widełkami są przycinane, nie odrzucane', () => {
+    // Bez górnego ograniczenia status puchłby przy każdym odpytaniu (co 2 s),
+    // a obietnica „pokażę 5000" i tak byłaby pusta – bufor ma 200.
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), { ui: { recentEvents: 100000 } });
+    assert.equal(saved().ui.recentEvents, 200);
+    mod.applyConfig(fakeDaemon(cfg), { ui: { recentEvents: 1 } });
+    assert.equal(saved().ui.recentEvents, 5);
+  });
+
+  test('bzdura w polu nie psuje konfiguracji', () => {
+    const cfg = cfgMod.loadConfig();
+    const before = cfg.ui.recentEvents;
+    mod.applyConfig(fakeDaemon(cfg), { ui: { recentEvents: 'dużo' } });
+    assert.equal(saved().ui.recentEvents, before);
+  });
+
+  test('widok jest widoczny dla interfejsu', () => {
+    const view = mod.editableConfig(cfgMod.loadConfig());
+    assert.equal(view.ui.recentEvents, 20);
+  });
+});

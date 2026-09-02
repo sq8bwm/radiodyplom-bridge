@@ -141,6 +141,18 @@ const DICT = {
     'err.NOT_SAVED': 'Serwer przyjął QSO, ale nie zapisał go do żadnej akcji '
       + '(znak stacji bez uprawnień?)',
     'err.METHOD_NOT_ALLOWED': 'Niedozwolona metoda żądania',
+    'btn.ackProblems': 'Wyczyść sygnalizację problemów',
+    'panel.view': 'Widok',
+    'label.recentEvents': 'Ile ostatnich zdarzeń pokazywać',
+    'hint.recentEvents': 'Od 5 do 200. Dotyczy panelu „Ostatnie zdarzenia" na zakładce Stan.',
+    'badge.problems': 'PROBLEMY:',
+    'hint.problemBadge': 'Kliknij, aby zobaczyć odrzucone QSO.',
+    'hint.ackProblems': 'Kasuje samą sygnalizację. Odrzucone QSO zostają w kolejce.',
+    'ev.sent': 'wysłane',
+    'ev.duplicate': 'duplikat',
+    'ev.retry': 'ponowię',
+    'ev.rejected': 'ODRZUCONE',
+    'ev.exhausted': 'PORZUCONE po próbach',
   },
 
   en: {
@@ -271,6 +283,18 @@ const DICT = {
     'err.NOT_SAVED': 'Server accepted the QSO but stored it in no activity '
       + '(station callsign without permission?)',
     'err.METHOD_NOT_ALLOWED': 'Request method not allowed',
+    'btn.ackProblems': 'Clear problem indicator',
+    'panel.view': 'View',
+    'label.recentEvents': 'How many recent events to show',
+    'hint.recentEvents': 'Between 5 and 200. Applies to the “Recent events” panel on the Status tab.',
+    'badge.problems': 'PROBLEMS:',
+    'hint.problemBadge': 'Click to see the rejected QSOs.',
+    'hint.ackProblems': 'Clears the indicator only. Rejected QSOs stay in the queue.',
+    'ev.sent': 'sent',
+    'ev.duplicate': 'duplicate',
+    'ev.retry': 'will retry',
+    'ev.rejected': 'REJECTED',
+    'ev.exhausted': 'GIVEN UP after retries',
   },
 };
 

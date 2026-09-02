@@ -5,6 +5,13 @@
 // ponawia z wykładniczym backoffem, trwałe błędy odkłada do failed/.
 import { log } from './log.js';
 
+/**
+ * Ile zdarzeń trzymamy w pamięci. Świadomie więcej, niż pokazuje interfejs:
+ * podniesienie liczby wierszy w konfiguracji ma od razu pokazać historię,
+ * a nie zaczynać zbieranie od nowa.
+ */
+export const EVENT_RING = 200;
+
 export class Worker {
   constructor({ store, client, queue, rateLimit, tickMs = 1000 }) {
     this.store = store;
@@ -25,6 +32,18 @@ export class Worker {
     this.counters = { sent: 0, duplicates: 0, failed: 0, retries: 0 };
     this.lastSent = null;                      // ostatnie udane QSO (dla UI)
     this.lastError = null;                     // ostatni błąd (dla UI)
+
+    // Bufor ostatnich zdarzeń dla listy w UI. Trzymamy z zapasem względem
+    // tego, ile UI pokazuje — użytkownik może podnieść liczbę wierszy
+    // w konfiguracji i chcemy, żeby zadziałało to od razu, bez czekania
+    // na nowe QSO.
+    this.events = [];
+    this.maxEvents = EVENT_RING;
+
+    // Sygnalizacja problemów. Osobno od liczników, bo ma trwać, aż
+    // użytkownik ją potwierdzi: okno bywa zamknięte, gdy QSO jest
+    // odrzucane, a taka informacja nie może przepaść razem z oknem.
+    this.problems = { count: 0, firstAt: null, lastAt: null, last: null };
     // Czy ostatnia próba wysyłki się udała. To najwierniejszy wskaźnik łączności –
     // wynika z realnego POST-a, a nie z osobnego PING-a.
     this.online = true;
@@ -42,6 +61,52 @@ export class Worker {
     this.running = false;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+  }
+
+  /**
+   * Dopisuje zdarzenie do bufora.
+   * @param {'sent'|'duplicate'|'retry'|'rejected'|'exhausted'} kind
+   */
+  _event(kind, item, extra = {}) {
+    this.events.push({
+      at: new Date().toISOString(),
+      kind,
+      callsign: item.payload.callsign,
+      station: item.payload.station_callsign,
+      operator: item.payload.operator || null,
+      source: item.meta?.source || null,
+      ...extra,
+    });
+    if (this.events.length > this.maxEvents) {
+      this.events.splice(0, this.events.length - this.maxEvents);
+    }
+  }
+
+  /**
+   * Odnotowuje problem wymagający uwagi: QSO NIE trafiło na serwer.
+   * Nie dotyczy zwykłych ponowień — te same się naprawiają.
+   */
+  _problem(item, code, error) {
+    const p = this.problems;
+    p.count += 1;
+    const at = new Date().toISOString();
+    if (!p.firstAt) p.firstAt = at;
+    p.lastAt = at;
+    p.last = { callsign: item.payload.callsign, station: item.payload.station_callsign, code, error };
+  }
+
+  /** Kasuje sygnalizację problemów. Odrzucone QSO zostają tam, gdzie są. */
+  ackProblems() {
+    const had = this.problems.count;
+    this.problems = { count: 0, firstAt: null, lastAt: null, last: null };
+    if (had) log.info(`Sygnalizacja problemów wyczyszczona (było: ${had})`);
+    return had;
+  }
+
+  /** Ostatnie zdarzenia, najnowsze na końcu. */
+  recentEvents(n = 20) {
+    const k = Math.max(1, Math.min(this.maxEvents, Number(n) || 20));
+    return this.events.slice(-k);
   }
 
   /** Czy wolno teraz wysłać (okno 60 s + minimalny odstęp). */
@@ -103,6 +168,7 @@ export class Worker {
         source: item.meta?.source || null,
         at: new Date().toISOString(),
       };
+      this._event(res.duplicate ? 'duplicate' : 'sent', item, { savedTo: res.savedTo || null });
       log.info(res.duplicate ? `QSO ${call} już było na serwerze (duplikat)` : `QSO ${call} zapisane`, {
         akcje: res.savedTo, source: item.meta?.source,
       });
@@ -119,6 +185,8 @@ export class Worker {
     if (res.permanent) {
       // Serwer odrzucił dane – ponawianie nic nie zmieni.
       this.counters.failed += 1;
+      this._event('rejected', item, { code: res.code || null, error: res.error });
+      this._problem(item, res.code || null, res.error);
       this.store.fail(item, true);
       log.error(`QSO ${call} odrzucone trwale – do failed/`, {
         code: res.code, error: res.error,
@@ -129,6 +197,8 @@ export class Worker {
     if (item.attempts >= this.maxAttempts) {
       // Awaria sieci/serwera: nie oznaczamy jako obsłużone, żeby dało się przywrócić.
       this.counters.failed += 1;
+      this._event('exhausted', item, { code: res.code || null, error: res.error, attempts: item.attempts });
+      this._problem(item, res.code || null, res.error);
       this.store.fail(item, false);
       log.error(`QSO ${call} – wyczerpano ${this.maxAttempts} prób, do failed/ (przywrócisz: npm run requeue)`, {
         error: res.error,
@@ -137,6 +207,7 @@ export class Worker {
     }
 
     this.counters.retries += 1;
+    this._event('retry', item, { code: res.code || null, error: res.error, attempts: item.attempts });
     const delay = this._backoff(item.attempts);
     item.nextAt = Date.now() + delay;
     this.store.update(item);

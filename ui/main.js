@@ -164,6 +164,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('log', (_e, n) => daemon?.log(n) ?? []);
   ipcMain.handle('pause', () => { daemon.pause(); refreshTray(); return true; });
   ipcMain.handle('resume', () => { daemon.resume(); refreshTray(); return true; });
+  ipcMain.handle('ackProblems', () => { const n = daemon?.ackProblems?.() ?? 0; refreshTray(); return n; });
   ipcMain.handle('requeue', () => { const n = daemon.requeue(); refreshTray(); return n; });
   ipcMain.handle('config:get', () => daemon?.getConfig() ?? null);
   // Zamknięcie z okna — na Windows menu ikony w zasobniku bywa niedostępne,

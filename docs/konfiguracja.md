@@ -22,6 +22,7 @@ W `config.json` wstaw PIN API z Managera radiodyplom
 | `forward.targets[].operator` | pole OPERATOR tej kopii (dane, serwer go nie sprawdza) |
 | `queue.maxAttempts` | ile prób przed odłożeniem do `data/failed/` |
 | `rateLimit.maxPerMinute` | limit wysyłek (API dopuszcza 10/min, trzymamy 9) |
+| `ui.recentEvents` | ile ostatnich zdarzeń pokazuje zakładka Stan (5–200, domyślnie 20) |
 
 
 ## Katalogi danych

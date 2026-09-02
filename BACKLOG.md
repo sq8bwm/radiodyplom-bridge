@@ -133,6 +133,19 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **Lista ostatnich zdarzeń** zamiast dwóch pojedynczych linii: bufor 200 zdarzeń
+  w rdzeniu, liczba wierszy z konfiguracji (`ui.recentEvents`, 5–200, domyślnie 20,
+  przycinana po obu stronach). Wiersze z problemem czerwone, ponowienia żółte,
+  duplikaty wyblakłe.
+- **Sygnalizacja problemów** — plakietka „PROBLEMY: n" obok DRY-RUN, gdy QSO nie
+  trafiło na serwer. Licznik w RDZENIU, nie w oknie: QSO bywa odrzucane przy
+  zamkniętym oknie, a informacja nie może przepaść razem z oknem. Kasowanie
+  ręczne, przyciskiem w panelu Odrzucone; kliknięcie plakietki tylko tam
+  prowadzi. Ponowienia świadomie nie zapalają — inaczej świeciłaby przy każdym
+  mignięciu sieci. 17 testów.
+- **Trasy lokalnego API nie miały testów** — `/api/problems/ack` rzucała
+  „json is not defined" i cały zestaw przeszedł, bo żaden test nie dotykał
+  warstwy HTTP. Doszło 8 testów przechodzących po wszystkich trasach.
 - **Zakładka „O programie"** — wersja, autor, licencja i zdanie o braku gwarancji,
   plus odnośniki do licencji, repozytorium i wydań. Nic nie jest wpisane na sztywno:
   dane idą z `package.json` przez `/api/status`, więc wersja w oknie nie może

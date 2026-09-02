@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve, isAbsolute, join } from 'node:path';
 import { homedir } from 'node:os';
 import { log } from './log.js';
+import { EVENT_RING } from './worker.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOT = resolve(__dirname, '..');
@@ -120,6 +121,15 @@ export function loadConfig(opts = {}) {
       throw new Error('Każdy cel w config.forward.targets wymaga station_callsign.');
     }
   }
+
+  // Ile ostatnich zdarzeń pokazuje interfejs. Ograniczone z góry rozmiarem
+  // bufora w workerze — obietnica „pokażę 500" bez zapasu w pamięci byłaby
+  // pusta, a z góry bez ograniczenia dałaby ogromny ładunek co 2 sekundy.
+  cfg.ui = cfg.ui || {};
+  const want = Number(cfg.ui.recentEvents);
+  cfg.ui.recentEvents = Number.isFinite(want)
+    ? Math.max(5, Math.min(EVENT_RING, Math.round(want)))
+    : 20;
 
   // Rozwiń ścieżki kolejki do bezwzględnych
   const resolvePath = makeResolver(cfg.dataDir);

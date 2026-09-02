@@ -46,13 +46,17 @@ interfejsie tłumaczymy je **po kodzie** (`INVALID_CALLSIGN`, `NOT_SAVED`,
 `INVALID_API_KEY`…), a treść serwera zostaje w nawiasie jako uzupełnienie.
 
 Pięć zakładek:
-- **Stan** — liczniki, adres nasłuchu, rozbicie na źródła (QLog / N1MM / WSJT-X),
-  ostatnie wysłane QSO i ostatni błąd.
+- **Stan** — liczniki, adres nasłuchu, rozbicie na źródła (QLog / N1MM / WSJT-X)
+  i **lista ostatnich zdarzeń**: co wysłane, co duplikat, co ponawiane, a co
+  odrzucone. Wiersze z problemem są **czerwone**, ponowienia żółte, duplikaty
+  wyblakłe. Ile wierszy pokazywać, ustawia się w Konfiguracji (5–200,
+  domyślnie 20); bufor w rdzeniu trzyma 200, więc podniesienie liczby pokazuje
+  historię od razu, a nie zaczyna zbierania od nowa.
 - **Kolejka** — co czeka i co zostało odrzucone: znak, stacja, **operator**, liczba prób,
   powód. Operator jest tu istotny przy rozmnażaniu QSO: dwie kopie tej samej łączności
   różnią się stacją *i* operatorem, więc bez tej kolumny nie odróżnisz ich od siebie.
 - **Konfiguracja** — PIN, tryb próbny, adres i port nasłuchu, grupy multicast,
-  cele rozmnażania QSO.
+  liczba pokazywanych zdarzeń, cele rozmnażania QSO.
 - **Log** — bieżące zdarzenia.
 - **O programie** — wersja, autor, licencja i zdanie o braku gwarancji, plus
   odnośniki do pełnego tekstu licencji, repozytorium i wydań.
@@ -66,6 +70,23 @@ pomijany: w oknie nie jest potrzebny, a w metadanych `.deb` i tak jest.
 Odnośniki otwierają się w **przeglądarce systemowej**, przez IPC `openUrl`,
 nie w oknie aplikacji. Uchwyt w procesie głównym przepuszcza wyłącznie adresy
 `https://` — `shell.openExternal` wykonałby też `file:` czy `mailto:`.
+
+### Sygnalizacja problemów
+
+Gdy QSO **nie trafi na serwer** — odrzucone trwale albo porzucone po wyczerpaniu
+prób — w nagłówku, obok plakietki DRY-RUN, zapala się czerwone **„PROBLEMY: n"**.
+
+Rzecz istotna: licznik żyje w **rdzeniu**, nie w oknie. QSO bywa odrzucane przy
+zamkniętym oknie, a wtedy informacja „coś nie doszło" nie może przepaść razem
+z oknem. Dlatego plakietka trwa, dopóki jej nie potwierdzisz.
+
+Kasowanie jest **ręczne**: przycisk „Wyczyść sygnalizację problemów" w panelu
+Odrzucone. Kliknięcie samej plakietki tam prowadzi — celowo nie kasuje, żeby
+przypadkowe trafienie w nagłówek nie gubiło ostrzeżenia. Kasowanie dotyczy
+**tylko sygnalizacji**: odrzucone QSO zostają w kolejce i w liście zdarzeń.
+
+Zwykłe ponowienia **nie** zapalają plakietki — naprawiają się same, a inaczej
+świeciłaby przy każdym mignięciu sieci.
 
 **PIN-y są w UI zawsze zamaskowane** (`ABCD-****`), także PIN-y celów fan-outu.
 Pole zostawione zamaskowane oznacza „nie zmieniaj"; nowy PIN wpisuje się w całości.

@@ -95,21 +95,8 @@ function renderStatus(s) {
     ? keys.map((k) => `<div>${esc(k)}: <b>${by[k]}</b></div>`).join('')
     : t('empty.sources');
 
-  const parts = [];
-  if (s.lastSent) {
-    parts.push(`<div>${t('msg.lastSent')}<b>${esc(s.lastSent.callsign)}</b> → ${esc(s.lastSent.station)}`
-      + `${s.lastSent.savedTo ? ` (${t('msg.action')}${s.lastSent.savedTo.join(', ')})` : ''}</div>`);
-  }
-  if (s.lastError) {
-    parts.push(`<div class="lvl-error">${t('msg.lastError')}${esc(s.lastError.callsign)} — `
-      + `${esc(errText(s.lastError.code, s.lastError.error))}</div>`);
-  }
-  if (s.radiodyplom.pinMissing) {
-    parts.push(`<div class="lvl-warn">${t('msg.noPinHint')}</div>`);
-  } else if (bad && s.radiodyplom.pingError) {
-    parts.push(`<div class="lvl-error">API: ${esc(s.radiodyplom.pingError)}</div>`);
-  }
-  $('lastInfo').innerHTML = parts.join('') || `<span class="empty">${t('empty.nothing')}</span>`;
+  renderEvents(s);
+  renderProblems(s);
 
   renderAbout(s);
 
@@ -117,6 +104,68 @@ function renderStatus(s) {
     i.lastError ? errText(i.code, i.lastError) : '—'];
   fillTable('tPending', 'ePending', s.queue.pendingItems, row);
   fillTable('tFailed', 'eFailed', s.queue.failedItems, row);
+}
+
+/** Jak opisać i pokolorować jedno zdarzenie z kolejki. */
+function describeEvent(e) {
+  const who = `<b>${esc(e.callsign)}</b> → ${esc(e.station)}`;
+  const op = e.operator ? ` (${esc(e.operator)})` : '';
+  switch (e.kind) {
+    case 'sent':
+      return { cls: '', text: `${t('ev.sent')} ${who}${op}`
+        + (e.savedTo?.length ? ` — ${t('msg.action')}${esc(e.savedTo.join(', '))}` : '') };
+    case 'duplicate':
+      return { cls: 'dup', text: `${t('ev.duplicate')} ${who}${op}` };
+    case 'retry':
+      return { cls: 'warn', text: `${t('ev.retry')} ${who}${op} — ${esc(errText(e.code, e.error))}` };
+    case 'rejected':
+      return { cls: 'bad', text: `${t('ev.rejected')} ${who}${op} — ${esc(errText(e.code, e.error))}` };
+    case 'exhausted':
+      return { cls: 'bad', text: `${t('ev.exhausted')} ${who}${op} — ${esc(errText(e.code, e.error))}` };
+    default:
+      return { cls: '', text: `${esc(e.kind)} ${who}` };
+  }
+}
+
+function renderEvents(s) {
+  const list = [...(s.recentEvents || [])].reverse();      // najnowsze u góry
+  const extra = [];
+  if (s.radiodyplom.pinMissing) {
+    extra.push(`<li class="bad"><span class="what">${t('msg.noPinHint')}</span></li>`);
+  } else if (s.state === 'error' && s.radiodyplom.pingError) {
+    extra.push(`<li class="bad"><span class="what">API: ${esc(s.radiodyplom.pingError)}</span></li>`);
+  }
+
+  if (!list.length && !extra.length) {
+    $('lastInfo').innerHTML = `<span class="empty">${t('empty.nothing')}</span>`;
+    return;
+  }
+  $('lastInfo').innerHTML = `<ul class="events">${extra.join('')}${
+    list.map((e) => {
+      const d = describeEvent(e);
+      return `<li class="${d.cls}"><time>${esc(String(e.at).slice(11, 19))}</time>`
+        + `<span class="what">${d.text}</span></li>`;
+    }).join('')}</ul>`;
+}
+
+/**
+ * Sygnalizacja problemów. Plakietka w nagłówku trwa do potwierdzenia, bo QSO
+ * bywa odrzucane przy zamkniętym oknie — inaczej informacja przepadałaby
+ * razem z oknem.
+ */
+function renderProblems(s) {
+  const p = s.problems || { count: 0 };
+  const badge = $('probBadge');
+  badge.hidden = !p.count;
+  if (p.count) {
+    badge.textContent = `${t('badge.problems')} ${p.count}`;
+    const last = p.last
+      ? `${p.last.callsign} → ${p.last.station}: ${errText(p.last.code, p.last.error)}`
+      : '';
+    badge.title = `${last}\n${t('hint.problemBadge')}`;
+  }
+  $('btnAckProblems').hidden = !p.count;
+  $('ackHint').textContent = p.count ? t('hint.ackProblems') : '';
 }
 
 /** Powód stanu tłumaczymy w UI; rdzeń podaje sam kod stanu. */
@@ -194,6 +243,7 @@ async function loadConfig() {
   $('fHost').value = cfg.udp.host;
   $('fPort').value = cfg.udp.port;
   $('fMulticast').value = (cfg.udp.multicastGroups || []).join(', ');
+  $('fEvents').value = cfg.ui?.recentEvents ?? 20;
   renderTargets(cfg.forward.targets || []);
 }
 
@@ -285,6 +335,7 @@ async function saveFromForm() {
       port: Number($('fPort').value),
       multicastGroups: $('fMulticast').value.split(',').map((x) => x.trim()).filter(Boolean),
     },
+    ui: { recentEvents: Number($('fEvents').value) },
     forward: { targets },
   });
   $('saveInfo').textContent = r.restartRequired.length
@@ -302,6 +353,12 @@ $('btnPause').onclick = async () => {
   refresh();
 };
 $('btnRequeue').onclick = async () => { await window.bridge.requeue(); refresh(); };
+$('btnAckProblems').onclick = async () => { await window.bridge.ackProblems(); refresh(); };
+// Plakietka prowadzi tam, gdzie problemy widać — a nie kasuje ich jednym
+// przypadkowym kliknięciem w nagłówek.
+$('probBadge').onclick = () => {
+  document.querySelector('nav button[data-tab="kolejka"]').click();
+};
 $('btnOpenLog').onclick = () => window.bridge.openLog();
 
 $('btnQuit').onclick = async () => {

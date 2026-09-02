@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('bridge', {
   pause: () => ipcRenderer.invoke('pause'),
   resume: () => ipcRenderer.invoke('resume'),
   requeue: () => ipcRenderer.invoke('requeue'),
+  ackProblems: () => ipcRenderer.invoke('ackProblems'),
   quit: () => ipcRenderer.invoke('quit'),
   openLog: () => ipcRenderer.invoke('openLog'),
   openUrl: (url) => ipcRenderer.invoke('openUrl', url),

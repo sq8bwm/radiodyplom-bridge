@@ -80,6 +80,16 @@
   dl.kv { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; margin:0; }
   dl.kv dt { color:var(--muted); font-size:12px; }
   dl.kv dd { margin:0; font-size:13px; }
+  /* Lista ostatnich zdarzeń. Monospace w czasie, żeby kolumny się nie tańczyły. */
+  ul.events { list-style:none; margin:0; padding:0; font-size:13px; }
+  ul.events li { padding:3px 0; border-top:1px solid var(--line); display:flex; gap:8px; }
+  ul.events li:first-child { border-top:none; }
+  ul.events time { color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+                   font-size:12px; flex:none; }
+  ul.events .what { flex:1; }
+  ul.events li.bad .what { color:var(--err); }
+  ul.events li.warn .what { color:var(--warn); }
+  ul.events li.dup .what { color:var(--muted); }
   .note { border-left:3px solid var(--warn); padding:8px 10px; background:var(--panel);
           border-radius:0 6px 6px 0; font-size:12px; margin-top:10px; }
 </style>
@@ -90,6 +100,7 @@
   <h1 id="title" data-i18n="app.name">RadioDyplom Bridge</h1>
   <span class="badge" id="profile">—</span>
   <span class="badge dry" id="dryBadge" hidden>DRY-RUN</span>
+  <span class="badge st-error" id="probBadge" hidden style="cursor:pointer"></span>
   <span class="grow"></span>
   <select class="lang" id="langPick" title="Język / Language"></select>
   <button class="act sec" id="btnPause" data-i18n="btn.pause">Wstrzymaj</button>
@@ -150,6 +161,10 @@
       </tr></thead><tbody id="tFailed"></tbody></table>
       <div class="empty" id="eFailed" data-i18n="empty.none"></div>
       <div class="hint" data-i18n="hint.requeue"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="act sec" id="btnAckProblems" data-i18n="btn.ackProblems" hidden></button>
+        <span class="hint" id="ackHint" style="margin:0"></span>
+      </div>
     </div>
   </section>
 
@@ -178,6 +193,13 @@
       <label data-i18n="label.multicast"></label>
       <input type="text" id="fMulticast">
       <div class="note" data-i18n="note.anyhost"></div>
+    </div>
+
+    <div class="panel">
+      <h2 data-i18n="panel.view"></h2>
+      <label data-i18n="label.recentEvents"></label>
+      <input type="number" id="fEvents" min="5" max="200" step="5">
+      <div class="hint" data-i18n="hint.recentEvents"></div>
     </div>
 
     <div class="panel">

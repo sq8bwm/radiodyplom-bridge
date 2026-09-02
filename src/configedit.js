@@ -12,6 +12,7 @@ import { writeAtomic } from './atomic.js';
 import { configPath, isPinMissing } from './config.js';
 import { maskPin } from './httpapi.js';
 import { log, setLevel } from './log.js';
+import { EVENT_RING } from './worker.js';
 
 /** Zmiany wymagające restartu (nie da się ich zastosować na żywo). */
 const RESTART_KEYS = ['udp.host', 'udp.port', 'udp.multicastGroups', 'api.port', 'api.enabled',
@@ -47,6 +48,7 @@ export function editableConfig(cfg) {
     api: cfg.api,
     logLevel: cfg.logLevel,
     language: cfg.language || 'pl',
+    ui: { recentEvents: cfg.ui?.recentEvents ?? 20 },
   };
 }
 
@@ -131,6 +133,13 @@ export function applyConfig(daemon, patch) {
     if (patch.api.port) cfg.api.port = Number(patch.api.port);
     if (typeof patch.api.enabled === 'boolean') cfg.api.enabled = patch.api.enabled;
   }
+  if (patch.ui && patch.ui.recentEvents !== undefined) {
+    // Te same widełki co przy wczytywaniu — inaczej dałoby się je obejść
+    // zapisem z interfejsu, a status puchłby przy każdym odpytaniu.
+    const n = Number(patch.ui.recentEvents);
+    cfg.ui = cfg.ui || {};
+    if (Number.isFinite(n)) cfg.ui.recentEvents = Math.max(5, Math.min(EVENT_RING, Math.round(n)));
+  }
   if (patch.rateLimit) Object.assign(cfg.rateLimit, patch.rateLimit);
   if (patch.logLevel) cfg.logLevel = patch.logLevel;
   if (patch.language) cfg.language = String(patch.language);
@@ -208,6 +217,7 @@ export function writeConfigFile(cfg) {
     api: cfg.api,
     logLevel: cfg.logLevel,
     language: cfg.language || 'pl',
+    ui: { ...(original.ui || {}), recentEvents: cfg.ui?.recentEvents ?? 20 },
   };
   if (cfg.dataDir) out.dataDir = cfg.dataDir;
   else delete out.dataDir;

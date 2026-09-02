@@ -36,6 +36,9 @@
     "port": 12061
   },
   "language": "pl",
+  "ui": {
+    "recentEvents": 20
+  },
   "logFile": {
     "enabled": true,
     "maxBytes": 5242880,

@@ -19,6 +19,29 @@ przycisk „Zakończ", menu pod ikoną w zasobniku.
 
 ## Świadomie odłożone
 
+### PIN SQ8BWA w starych obiektach na GitHubie — do unieważnienia, nie do wyczyszczenia
+**Stan na 2026-09-02.** W commitach `6d72e1e` i `8758492` znalazły się przypadkiem
+dwa pliki wymiany vima (`.20260831*.log.swp`) zapisane razem z logiem konsoli.
+Zawierały **PIN API konta SQ8BWA**. Plików nie ma w drzewie roboczym od `8758492`,
+a historia została **przepisana** (`git filter-branch`) i wymuszenie wypchnięta —
+gałąź `main` jest czysta, zero obiektów `.swp`.
+
+**Ale**: GitHub nadal oddaje stare commity i ten blob **po SHA** (sprawdzone:
+pobrałam blob i PIN w nim jest). Wymuszone wypchnięcie nie odśmieca magazynu.
+
+**Decyzja: nie czyścimy dalej.** Repozytorium jest prywatne, zero forków, zero
+obserwujących. Gwarantowałoby to tylko skasowanie i odtworzenie repozytorium albo
+zgłoszenie do GitHub Support — obie drogi kosztują więcej, niż są tu warte.
+
+**Prawdziwa naprawa, niezależna od historii: WYGENEROWAĆ NOWY PIN dla SQ8BWA**
+(Manager → Dostęp API → Generuj nowy PIN API) i podmienić go w konfiguracji.
+Po tym stary PIN jest bezwartościowy i cała sprawa jest zamknięta.
+
+Wniosek na przyszłość: `.gitignore` ma już `*.swp`, ale sedno jest inne — **nie
+commitować surowych logów pracy**. Log konsoli mostka może zawierać PIN-y celów
+fan-outu, bo widać w nim ładunki żądań.
+
+
 ### Podpis kodu dla Windows — nie podpisujemy
 **Decyzja (2026-08-31): nie kupujemy certyfikatu.** Instalator zostaje niepodpisany,
 Windows pokaże SmartScreen („Nieznany wydawca").

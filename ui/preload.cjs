@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Most między procesem głównym a interfejsem.
 // Renderer nie ma dostępu do Node ani do rdzenia — wyłącznie te metody.
 // CommonJS (.cjs), bo preload działa w piaskownicy i nie przyjmuje ESM.
@@ -11,6 +14,7 @@ contextBridge.exposeInMainWorld('bridge', {
   requeue: () => ipcRenderer.invoke('requeue'),
   quit: () => ipcRenderer.invoke('quit'),
   openLog: () => ipcRenderer.invoke('openLog'),
+  openUrl: (url) => ipcRenderer.invoke('openUrl', url),
   getConfig: () => ipcRenderer.invoke('config:get'),
   saveConfig: (patch) => ipcRenderer.invoke('config:save', patch),
 });

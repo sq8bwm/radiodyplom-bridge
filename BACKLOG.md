@@ -77,35 +77,6 @@ wartością z konfiguracji, zamiast tekstem od operatora.
 
 ## Funkcjonalne
 
-### Zakładka „O programie"
-Na jutro (zgłoszone 2026-09-02). Piąta zakładka obok Stan / Kolejka /
-Konfiguracja / Log, z: **wersją**, **autorem** i **licencją**.
-
-Do rozstrzygnięcia przy robocie, żeby nie zgadywać na miejscu:
-- **Skąd wersja.** `package.json` nie wchodzi do paczki jako plik do czytania
-  w czasie działania — wchodzi do `app.asar`. W procesie głównym jest
-  `app.getVersion()`, ale renderer go nie widzi. Najprościej: dodać wersję
-  do `/api/status` (rdzeń zna ją z `package.json`) albo przez IPC w preload.
-  **Ta sama liczba musi zgadzać się z nazwą pliku instalatora** — inaczej
-  zakładka będzie kłamać po ręcznym podniesieniu wersji.
-- **Autor i licencja** są w `package.json` (`author`, `license: GPL-3.0-or-later`).
-  Nie wpisywać ich drugi raz na sztywno w UI. Zakładka ma podać wersję licencji
-  i **zdanie o braku gwarancji** — dla GPL to właściwe miejsce w programie
-  z interfejsem graficznym. Warto dać odnośnik do pełnego tekstu (`LICENSE`
-  jest w paczce: w AppImage w katalogu głównym, w `.deb` obok aplikacji).
-- Teksty przez `ui/strings.js` w obu językach, jak resztę interfejsu.
-- Warto dołożyć odnośnik do repozytorium i do wydań — przy braku
-  automatycznych aktualizacji to jedyna droga, żeby użytkownik sprawdził,
-  czy ma najnowszą wersję.
-
-### Nagłówki licencyjne w plikach źródłowych
-Do rozważenia po zmianie na GPL. Zalecana praktyka GNU to krótki nagłówek
-w każdym pliku (kto, jaka licencja, brak gwarancji). U nas to 25 plików,
-z których każdy zaczyna się już blokiem komentarza wyjaśniającego — więc
-zmiana jest mechaniczna, ale hałaśliwa w diffie. Sama licencja obowiązuje
-bez tych nagłówków; to kwestia wygody kogoś, kto dostanie jeden plik
-w oderwaniu od repozytorium.
-
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.
 Nieobsłużone (własne protokoły, **specyfikacji nie weryfikowałam**):
@@ -162,6 +133,19 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **Zakładka „O programie"** — wersja, autor, licencja i zdanie o braku gwarancji,
+  plus odnośniki do licencji, repozytorium i wydań. Nic nie jest wpisane na sztywno:
+  dane idą z `package.json` przez `/api/status`, więc wersja w oknie nie może
+  rozjechać się z nazwą instalatora. Odnośniki otwiera przeglądarka systemowa,
+  a uchwyt IPC przepuszcza wyłącznie `https://`.
+- **Nagłówki licencyjne** w 42 plikach źródłowych, w formie SPDX (dwie linie,
+  czytelne dla ludzi i dla narzędzi). Shebang i `<!doctype>` zostały pierwsze.
+- **Zdublowany klucz w słowniku UI** — przy dodawaniu zakładki ten sam klucz
+  trafił dwa razy do bloku polskiego (linia `'tab.log': 'Log',` jest w obu
+  językach identyczna), więc polski interfejs pokazywał angielską etykietę.
+  Bezgłośnie: w obiekcie JS wygrywa ostatni wpis. Widać to było dopiero na
+  zrzucie ekranu. Doszło 7 testów słownika czytających plik jako TEKST —
+  po sparsowaniu obiektu duplikatu nie da się zauważyć.
 - **Model uprawnień radiodyplom — zmierzony 2026-09-02, poprzedni wniosek był zły.**
   PIN to konto, a konto ma w Managerze listę znaków stacji, na które wolno mu
   logować. Serwer sprawdza `station_callsign`; pola `operator` **nie sprawdza

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Lokalna powierzchnia stanu dla UI (Electron albo przeglądarka).
 //
 // Świadome decyzje:
@@ -66,6 +69,14 @@ export class StatusApi {
       pendingRestart: this.getPendingRestart ? this.getPendingRestart() : [],       // tekst pomocniczy; UI tłumaczy po `state`
       app: this.pkg.name || 'radiodyplom-bridge',
       version: this.pkg.version || null,
+      // Dane do zakładki „O programie". Źródłem jest package.json, żeby nie
+      // trzymać ich drugi raz na sztywno w interfejsie i nie rozjechać.
+      // Adres e-mail autora świadomie POMIJAMY – w oknie nie jest potrzebny.
+      author: typeof this.pkg.author === 'string'
+        ? this.pkg.author
+        : (this.pkg.author?.name || null),
+      license: this.pkg.license || null,
+      repository: this.pkg.repository?.url || this.pkg.repository || null,
       uptimeSec: Math.round((Date.now() - this.startedAt) / 1000),
 
       listener: {

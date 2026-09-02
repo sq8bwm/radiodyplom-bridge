@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Blokady oparte na pliku z PID-em. Używane w dwóch miejscach:
 //  - katalog danych (żeby dwa mostki nie opróżniały jednej kolejki),
 //  - port UDP (żeby dwa mostki nie dzieliły między siebie datagramów).

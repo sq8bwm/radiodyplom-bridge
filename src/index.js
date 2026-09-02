@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Tryb headless: logger (UDP) → kolejka → radiodyplom.pl
 // Cała logika siedzi w daemon.js; tutaj tylko uruchomienie i obsługa sygnałów.
 import { loadConfig } from './config.js';

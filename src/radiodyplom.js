@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Klient API radiodyplom.pl (qso_upload.php).
 import { log } from './log.js';
 

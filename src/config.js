@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Wczytywanie i walidacja konfiguracji.
 //
 // Kluczowa rzecz dla wersji instalowanej: katalog programu jest wtedy tylko do

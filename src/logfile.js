@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Zapis logu do pliku, z rotacją.
 //
 // Po co: log żył wyłącznie w pamięci (bufor 300 wpisów) i ginął przy zamknięciu.

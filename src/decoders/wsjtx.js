@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Dekoder rodziny WSJT-X: binarny QDataStream (WSJT-X, JTDX >=2.2.158, MSHV).
 // Nagłówek: magic 0xADBCCBDA (quint32) | schema (quint32) | type (quint32) | id (utf8)
 // Interesuje nas typ 5 = "QSO Logged" (wysyłany po zatwierdzeniu okna Log QSO).

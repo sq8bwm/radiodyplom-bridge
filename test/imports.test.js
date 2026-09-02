@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Czy każdy moduł rdzenia w ogóle da się zaimportować.
 //
 // Po co taki nudny test: przy usuwaniu modułu `operators.js` został po nim

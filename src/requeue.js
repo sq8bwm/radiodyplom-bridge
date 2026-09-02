@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Przywracanie QSO z data/failed/ do kolejki.
 // Jedna implementacja używana przez CLI (npm run requeue) i przez API stanu.
 import { unlinkSync } from 'node:fs';

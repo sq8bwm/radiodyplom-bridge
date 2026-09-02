@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Trwała kolejka, blokady i konfiguracja. Testy operują na katalogach
 // tymczasowych, więc nie dotykają ani projektu, ani danych użytkownika.
 import { test, describe, beforeEach, afterEach } from 'node:test';

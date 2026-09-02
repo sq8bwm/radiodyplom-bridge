@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Rejestr dekoderów + automatyczne rozpoznanie formatu po zawartości datagramu.
 // Rodziny są rozłączne w pierwszych bajtach:
 //   '{'            → JSON (QLog)

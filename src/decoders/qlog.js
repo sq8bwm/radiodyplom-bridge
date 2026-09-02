@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Dekoder QLog: JSON z rekordem ADIF w data.value.
 // {appid:"QLog", msgtype:"qso", time, logid, data:{operation, rowid, type:"adif", value}}
 import { parseAdif } from '../adif.js';

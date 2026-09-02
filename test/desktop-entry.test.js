@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Pozycja w menu środowiska graficznego (Linux).
 //
 // REGRESJA 2026-09-01: po instalacji .deb program nie pojawiał się w menu XFCE.

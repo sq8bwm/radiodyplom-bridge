@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Atomowy zapis pliku, odporny na zachowanie Windows.
 //
 // Wzorzec „zapisz do .tmp i zmień nazwę" jest atomowy na Linuksie, gdzie rename

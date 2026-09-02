@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Dekoder rodziny N1MM: XML <contactinfo> (N1MM+, DXLog, BBlogger, Log4OM w trybie N1MM).
 // Uwaga: <rxfreq>/<txfreq> są w jednostkach 10 Hz, a <band> to MHz (np. "3.5"), nie pasmo ADIF.
 import { bandFromMHz } from '../bands.js';

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Edycja konfiguracji z interfejsu. Dwa dzisiejsze błędy mieszkały tutaj:
 // gubienie PIN-ów przy zapisie i fałszywe „wymaga restartu".
 import { test, describe, beforeEach, afterEach } from 'node:test';

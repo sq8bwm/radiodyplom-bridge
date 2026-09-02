@@ -45,7 +45,7 @@ Komunikaty błędów z API przychodzą **po polsku z serwera**, dlatego przy ang
 interfejsie tłumaczymy je **po kodzie** (`INVALID_CALLSIGN`, `NOT_SAVED`,
 `INVALID_API_KEY`…), a treść serwera zostaje w nawiasie jako uzupełnienie.
 
-Cztery zakładki:
+Pięć zakładek:
 - **Stan** — liczniki, adres nasłuchu, rozbicie na źródła (QLog / N1MM / WSJT-X),
   ostatnie wysłane QSO i ostatni błąd.
 - **Kolejka** — co czeka i co zostało odrzucone: znak, stacja, **operator**, liczba prób,
@@ -54,6 +54,18 @@ Cztery zakładki:
 - **Konfiguracja** — PIN, tryb próbny, adres i port nasłuchu, grupy multicast,
   cele rozmnażania QSO.
 - **Log** — bieżące zdarzenia.
+- **O programie** — wersja, autor, licencja i zdanie o braku gwarancji, plus
+  odnośniki do pełnego tekstu licencji, repozytorium i wydań.
+
+Zakładka „O programie" **nie ma niczego wpisanego na sztywno** — wersję, autora,
+licencję i adres repozytorium bierze z `/api/status`, czyli z `package.json`.
+Bez tego numer wersji w oknie rozjechałby się z nazwą pliku instalatora przy
+pierwszym ręcznym podniesieniu wersji. Adres e-mail autora jest świadomie
+pomijany: w oknie nie jest potrzebny, a w metadanych `.deb` i tak jest.
+
+Odnośniki otwierają się w **przeglądarce systemowej**, przez IPC `openUrl`,
+nie w oknie aplikacji. Uchwyt w procesie głównym przepuszcza wyłącznie adresy
+`https://` — `shell.openExternal` wykonałby też `file:` czy `mailto:`.
 
 **PIN-y są w UI zawsze zamaskowane** (`ABCD-****`), także PIN-y celów fan-outu.
 Pole zostawione zamaskowane oznacza „nie zmieniaj"; nowy PIN wpisuje się w całości.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Interfejs. Nie ma tu żadnej logiki mostka — tylko prezentacja stanu
 // i wysyłanie poleceń przez window.bridge (preload).
 import { t, setLang, getLang, errText, LANGS, LANG_NAMES } from './strings.js';
@@ -108,6 +111,8 @@ function renderStatus(s) {
   }
   $('lastInfo').innerHTML = parts.join('') || `<span class="empty">${t('empty.nothing')}</span>`;
 
+  renderAbout(s);
+
   const row = (i) => [i.callsign, i.station, i.operator || '—', i.attempts,
     i.lastError ? errText(i.code, i.lastError) : '—'];
   fillTable('tPending', 'ePending', s.queue.pendingItems, row);
@@ -131,6 +136,43 @@ function fillTable(tbodyId, emptyId, items, cols) {
 async function refresh() {
   try { renderStatus(await window.bridge.status()); } catch { /* rdzeń wstaje */ }
 }
+
+// ---------- o programie ----------
+// Wszystko bierzemy ze statusu, czyli z package.json. Nic tu nie jest wpisane
+// na sztywno — inaczej wersja w oknie rozjechałaby się z nazwą instalatora.
+let about = null;
+
+function renderAbout(s) {
+  about = {
+    version: s.version,
+    repository: s.repository,
+    license: s.license,
+  };
+  const rows = [
+    [t('about.program'), `${esc(s.app || '—')}`],
+    [t('about.version'), `<b>${esc(s.version || '—')}</b>`],
+    [t('about.author'), esc(s.author || '—')],
+    [t('about.license'), esc(s.license || '—')],
+  ];
+  $('aboutInfo').innerHTML = `<dl class="kv">${
+    rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
+
+  // Zdanie o braku gwarancji — dla GPL właściwe miejsce w programie z okienkiem.
+  $('licenseInfo').innerHTML = `<div>${t('about.gpl')}</div>`;
+  $('btnLicense').disabled = !s.repository;
+  $('btnRepo').disabled = !s.repository;
+  $('btnReleases').disabled = !s.repository;
+}
+
+$('btnLicense').onclick = () => {
+  if (about?.repository) window.bridge.openUrl(`${about.repository}/blob/main/LICENSE`);
+};
+$('btnRepo').onclick = () => {
+  if (about?.repository) window.bridge.openUrl(about.repository);
+};
+$('btnReleases').onclick = () => {
+  if (about?.repository) window.bridge.openUrl(`${about.repository}/releases`);
+};
 
 // ---------- log ----------
 async function refreshLog() {

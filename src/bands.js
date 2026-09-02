@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Wyliczanie pasma ADIF z częstotliwości. N1MM i WSJT-X nie podają pasma wprost.
 // Zakresy wg ADIF Specification (Band Enumeration).
 const BANDS = [

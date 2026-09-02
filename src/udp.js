@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Generyczny nasłuch UDP: rozpoznaje format datagramu i przekazuje go
 // właściwemu dekoderowi. Obsługuje mieszane źródła na jednym porcie.
 import dgram from 'node:dgram';

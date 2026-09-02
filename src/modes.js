@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Normalizacja emisji do wartości ADIF.
 //
 // Zasada: mapujemy WYŁĄCZNIE to, co jest jednoznaczne. Nie zgadujemy emisji,

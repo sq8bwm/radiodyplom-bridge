@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Proces główny Electrona.
 //
 // Rdzeń jest tu OSADZONY (startDaemon), a nie uruchamiany osobno — dzięki temu
@@ -170,6 +173,19 @@ app.whenReady().then(async () => {
 
   // Pokaż plik logu w menedżerze plików — przy zgłoszeniu usterki to pierwsza
   // rzecz, o którą trzeba poprosić, więc nie może wymagać szukania po dysku.
+  // Odnośniki otwieramy w przeglądarce systemowej, nie w oknie aplikacji.
+  // Sprawdzenie schematu jest celowe: shell.openExternal wykona też
+  // `file:` czy `mailto:`, a stąd mają wychodzić wyłącznie strony.
+  ipcMain.handle('openUrl', (_e, url) => {
+    const ok = typeof url === 'string' && /^https:\/\//.test(url);
+    if (!ok) {
+      log.warn('Odrzucam otwarcie odnośnika o nieoczekiwanym schemacie', String(url).slice(0, 80));
+      return false;
+    }
+    shell.openExternal(url);
+    return true;
+  });
+
   ipcMain.handle('openLog', () => {
     const p = daemon?.logFilePath?.();
     if (p) shell.showItemInFolder(p);

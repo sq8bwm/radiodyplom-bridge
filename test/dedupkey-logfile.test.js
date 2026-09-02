@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Klucze deduplikacji i zapis logu do pliku.
 // Oba moduły powstały po realnej utracie QSO 2026-08-31.
 import { test, describe, beforeEach, afterEach } from 'node:test';

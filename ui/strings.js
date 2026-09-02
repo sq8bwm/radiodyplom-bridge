@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Tłumaczenia interfejsu. JEDEN słownik dla okna i dla zasobnika — dwie kopie
 // rozjechałyby się, co już raz w tym projekcie zdążyło się stać przy logice stanu.
 //
@@ -14,6 +17,7 @@ const DICT = {
     'tab.state': 'Stan',
     'tab.queue': 'Kolejka',
     'tab.config': 'Konfiguracja',
+    'tab.about': 'O programie',
     'tab.log': 'Log',
 
     'btn.pause': 'Wstrzymaj',
@@ -24,6 +28,9 @@ const DICT = {
     'btn.remove': 'Usuń',
     'btn.quit': 'Zakończ',
     'btn.openLog': 'Pokaż plik logu',
+    'btn.licenseText': 'Pełny tekst licencji',
+    'btn.repo': 'Repozytorium',
+    'btn.releases': 'Wydania',
     'confirm.quit': 'Zakończyć mostek? Do czasu ponownego uruchomienia QSO z loggera '
       + 'nie będą przekazywane.',
     'hint.closeToTray': 'Zamknięcie okna nie kończy programu — mostek pracuje dalej '
@@ -44,6 +51,8 @@ const DICT = {
     'panel.udp': 'Nasłuch UDP',
     'panel.fanout': 'Rozmnażanie QSO na wiele stacji',
     'panel.language': 'Język',
+    'panel.about': 'O programie',
+    'panel.license': 'Licencja',
 
     'th.callsign': 'Znak',
     'th.station': 'Stacja',
@@ -63,6 +72,16 @@ const DICT = {
 
     'hint.pin': 'Zostaw zamaskowany, żeby nie zmieniać. Wpisz nowy, aby podmienić.',
     'hint.multicast': 'puste = brak',
+    'about.program': 'Program',
+    'about.version': 'Wersja',
+    'about.author': 'Autor',
+    'about.license': 'Licencja',
+    'about.gpl': 'To wolne oprogramowanie: możesz je rozpowszechniać i modyfikować '
+      + 'na warunkach Powszechnej Licencji Publicznej GNU w wersji 3 albo dowolnej '
+      + 'późniejszej. Program jest udostępniany <b>bez żadnej gwarancji</b> — '
+      + 'nawet bez rękojmi przydatności handlowej czy przydatności do określonego celu.',
+    'hint.releases': 'Program nie aktualizuje się sam. Zajrzyj do „Wydań", żeby sprawdzić, '
+      + 'czy nie ma nowszej wersji.',
     'hint.targetIncomplete': 'NIE ZAPISANO — każda pozycja wymaga znaku stacji.',
     'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Każdy znak stacji musi '
       + 'być na liście stacji Twojego konta w Managerze — inaczej serwer nie zapisze kopii.',
@@ -130,6 +149,7 @@ const DICT = {
     'tab.state': 'Status',
     'tab.queue': 'Queue',
     'tab.config': 'Settings',
+    'tab.about': 'About',
     'tab.log': 'Log',
 
     'btn.pause': 'Pause',
@@ -140,6 +160,9 @@ const DICT = {
     'btn.remove': 'Remove',
     'btn.quit': 'Quit',
     'btn.openLog': 'Show log file',
+    'btn.licenseText': 'Full license text',
+    'btn.repo': 'Repository',
+    'btn.releases': 'Releases',
     'confirm.quit': 'Quit the bridge? QSOs from the logger will not be forwarded '
       + 'until you start it again.',
     'hint.closeToTray': 'Closing the window does not quit the program — the bridge '
@@ -160,6 +183,8 @@ const DICT = {
     'panel.udp': 'UDP listener',
     'panel.fanout': 'Duplicate QSO to several stations',
     'panel.language': 'Language',
+    'panel.about': 'About',
+    'panel.license': 'License',
 
     'th.callsign': 'Call',
     'th.station': 'Station',
@@ -179,6 +204,16 @@ const DICT = {
 
     'hint.pin': 'Leave it masked to keep the current PIN. Type a new one to replace it.',
     'hint.multicast': 'empty = none',
+    'about.program': 'Program',
+    'about.version': 'Version',
+    'about.author': 'Author',
+    'about.license': 'License',
+    'about.gpl': 'This is free software: you may redistribute and modify it under the '
+      + 'terms of the GNU General Public License, version 3 or any later version. '
+      + 'It comes with <b>absolutely no warranty</b> — not even the implied warranty '
+      + 'of merchantability or fitness for a particular purpose.',
+    'hint.releases': 'The program does not update itself. Check “Releases” to see whether '
+      + 'a newer version is available.',
     'hint.targetIncomplete': 'NOT SAVED — every row needs a station callsign.',
     'hint.fanout': 'Empty = one QSO with the station callsign from the logger. Every station '
       + 'callsign must be on your account\'s station list in the Manager — otherwise the '

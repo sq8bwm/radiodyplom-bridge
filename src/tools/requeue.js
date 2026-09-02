@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Przywraca elementy z data/failed/ do kolejki: npm run requeue
 // Pomija te, które serwer odrzucił trwale (są już w seen).
 import { loadConfig } from '../config.js';

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Dekodery: rozpoznanie formatu i poprawność odczytu z każdego z trzech protokołów.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';

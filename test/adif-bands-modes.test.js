@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Parser ADIF, granice pasm, normalizacja emisji.
 // Testy przypinają błędy, które faktycznie wystąpiły w rozwoju.
 import { test, describe } from 'node:test';

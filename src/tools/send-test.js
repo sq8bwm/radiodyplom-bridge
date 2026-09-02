@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Generator syntetycznych datagramów – test dekoderów bez prawdziwego loggera.
 //   npm run send-test -- SP9TEST 40m SSB                 (domyślnie QLog)
 //   npm run send-test -- SP9TEST 40m SSB --format n1mm

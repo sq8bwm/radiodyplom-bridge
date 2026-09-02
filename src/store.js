@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Trwała kolejka plikowa (crash-safe): każdy element to jeden plik JSON.
 // Deduplikacja po kluczu (logid#rowid) przez zbiór "seen".
 import {

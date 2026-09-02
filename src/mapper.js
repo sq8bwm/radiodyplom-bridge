@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Mapowanie pól ADIF (z QLog) na format oczekiwany przez qso_upload.php.
 
 // ADIF → radiodyplom

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Prosty logger z poziomami; jedna linia = jedno zdarzenie.
 // Zdarzenia trafiają do: konsoli, bufora w pamięci (podgląd w UI) i — jeśli
 // włączony — do pliku (logfile.js). Plik jest jedynym śladem, który przeżywa

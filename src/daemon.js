@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Rdzeń jako komponent osadzalny.
 //
 // src/index.js uruchamia go jako proces (tryb headless), a Electron osadza

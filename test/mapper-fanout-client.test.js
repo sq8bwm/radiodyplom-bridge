@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Mapowanie na format radiodyplom, rozmnażanie QSO i klasyfikacja odpowiedzi API.
 // Tu siedzą najgroźniejsze z dzisiejszych błędów: ciche gubienie QSO.
 import { test, describe, beforeEach, afterEach } from 'node:test';

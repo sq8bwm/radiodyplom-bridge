@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Podgląd stanu kolejki i błędów: npm run queue
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';

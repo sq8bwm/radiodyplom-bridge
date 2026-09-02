@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Rozmnażanie jednego QSO z loggera na wiele wpisów — po jednym na znak stacji.
 //
 // Po co: to samo QSO ma trafić na radiodyplom jako kilka odrębnych łączności,

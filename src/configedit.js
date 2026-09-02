@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Odczyt i zapis konfiguracji dla UI.
 //
 // Zasada bezpieczeństwa: UI nigdy nie dostaje jawnych PIN-ów. Dostaje wersję

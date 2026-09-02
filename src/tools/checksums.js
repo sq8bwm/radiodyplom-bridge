@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Generuje SHA256SUMS dla artefaktów w release/.
 //
 // Po co: nie podpisujemy instalatorów certyfikatem (patrz BACKLOG), więc suma

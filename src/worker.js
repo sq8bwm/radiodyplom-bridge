@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 SQ8BWM
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Worker kolejki: bierze elementy gotowe do wysyłki, respektuje rate limit,
 // ponawia z wykładniczym backoffem, trwałe błędy odkłada do failed/.
 import { log } from './log.js';

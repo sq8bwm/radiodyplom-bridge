@@ -77,6 +77,24 @@ wartością z konfiguracji, zamiast tekstem od operatora.
 
 ## Funkcjonalne
 
+### Zakładka „O programie"
+Na jutro (zgłoszone 2026-09-02). Piąta zakładka obok Stan / Kolejka /
+Konfiguracja / Log, z: **wersją**, **autorem** i **licencją**.
+
+Do rozstrzygnięcia przy robocie, żeby nie zgadywać na miejscu:
+- **Skąd wersja.** `package.json` nie wchodzi do paczki jako plik do czytania
+  w czasie działania — wchodzi do `app.asar`. W procesie głównym jest
+  `app.getVersion()`, ale renderer go nie widzi. Najprościej: dodać wersję
+  do `/api/status` (rdzeń zna ją z `package.json`) albo przez IPC w preload.
+  **Ta sama liczba musi zgadzać się z nazwą pliku instalatora** — inaczej
+  zakładka będzie kłamać po ręcznym podniesieniu wersji.
+- **Autor i licencja** są w `package.json` (`author`, `license: ISC`).
+  Nie wpisywać ich drugi raz na sztywno w UI.
+- Teksty przez `ui/strings.js` w obu językach, jak resztę interfejsu.
+- Warto dołożyć odnośnik do repozytorium i do wydań — przy braku
+  automatycznych aktualizacji to jedyna droga, żeby użytkownik sprawdził,
+  czy ma najnowszą wersję.
+
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.
 Nieobsłużone (własne protokoły, **specyfikacji nie weryfikowałam**):

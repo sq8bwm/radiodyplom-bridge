@@ -1,6 +1,6 @@
 {
   "name": "radiodyplom-bridge",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Mostek: odbiera QSO z loggerow po UDP (QLog, N1MM/DXLog/BBlogger, WSJT-X/JTDX/MSHV) i przekazuje na radiodyplom.pl z kolejkowaniem, buforowaniem i ponawianiem.",
   "type": "module",
   "main": "ui/main.js",

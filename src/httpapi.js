@@ -6,6 +6,7 @@
 //  - PIN-y NIGDY nie opuszczają procesu — zawsze zamaskowane.
 //  - Zero zależności: node:http wystarcza.
 import http from 'node:http';
+import { targetOperator } from './operators.js';
 import { log, recentLog } from './log.js';
 
 /** Maskuje PIN do postaci bezpiecznej w UI: "ABCD-****". */
@@ -92,8 +93,7 @@ export class StatusApi {
         operations: this.cfg.forward.operations,
         targets: (this.cfg.forward.targets || []).map((t) => ({
           station_callsign: t.station_callsign,
-          operator: t.operator || null,
-          pinFrom: t.pinFrom || null,
+          operator: targetOperator(t),
           pin: t.pin ? maskPin(t.pin) : null,
         })),
       },

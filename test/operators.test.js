@@ -6,7 +6,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { normalizeOperators, findOperator, resolveTargetPin } from '../src/operators.js';
+import { normalizeOperators, findOperator, resolveTargetPin, targetOperator } from '../src/operators.js';
 import { expandTargets } from '../src/fanout.js';
 
 const BOOK = [
@@ -59,16 +59,32 @@ describe('findOperator', () => {
   });
 });
 
+describe('targetOperator', () => {
+  test('bierze operatora z celu, wielkimi literami', () => {
+    assert.equal(targetOperator({ operator: ' sq8bwm ' }), 'SQ8BWM');
+  });
+  test('brak operatora daje null', () => {
+    assert.equal(targetOperator({ station_callsign: 'SP0XYZ' }), null);
+  });
+  test('pinFrom działa jako starsza nazwa tego samego wskazania', () => {
+    // Konfiguracje z krótkiego okresu, gdy było to osobne pole.
+    assert.equal(targetOperator({ pinFrom: 'sp4oik' }), 'SP4OIK');
+  });
+  test('operator wygrywa nad starszym pinFrom', () => {
+    assert.equal(targetOperator({ operator: 'SQ8BWM', pinFrom: 'SP4OIK' }), 'SQ8BWM');
+  });
+});
+
 describe('resolveTargetPin', () => {
-  test('pinFrom bierze PIN z bazy', () => {
-    const r = resolveTargetPin({ station_callsign: 'SP0XYZ', pinFrom: 'SP4OIK' }, BOOK);
+  test('operator z celu wyznacza PIN z bazy', () => {
+    const r = resolveTargetPin({ station_callsign: 'SP0XYZ', operator: 'SP4OIK' }, BOOK);
     assert.equal(r.pin, 'BBBB-2222');
     assert.equal(r.missing, null);
   });
 
   test('PIN wpisany wprost ma pierwszeństwo nad bazą', () => {
     // Zgodność ze starszymi konfiguracjami: kto wpisał PIN w celu, ten go dostaje.
-    const r = resolveTargetPin({ pin: 'WPROST-9', pinFrom: 'SQ8BWM' }, BOOK);
+    const r = resolveTargetPin({ pin: 'WPROST-9', operator: 'SQ8BWM' }, BOOK);
     assert.equal(r.pin, 'WPROST-9');
   });
 
@@ -78,30 +94,46 @@ describe('resolveTargetPin', () => {
 
   test('wskazanie na kogoś spoza bazy jest RAPORTOWANE, nie przemilczane', () => {
     // To jest cała pointa: cicha podmiana na PIN główny kończy się NOT_SAVED.
-    const r = resolveTargetPin({ pinFrom: 'SP9ZZZ' }, BOOK);
+    const r = resolveTargetPin({ operator: 'SP9ZZZ' }, BOOK);
     assert.equal(r.pin, null);
     assert.equal(r.missing, 'SP9ZZZ');
   });
 
   test('operator z bazy bez PIN-u też jest raportowany', () => {
-    const r = resolveTargetPin({ pinFrom: 'SP1NOPIN' }, [{ call: 'SP1NOPIN' }]);
+    const r = resolveTargetPin({ operator: 'SP1NOPIN' }, [{ call: 'SP1NOPIN' }]);
     assert.equal(r.pin, null);
     assert.equal(r.missing, 'SP1NOPIN');
   });
 
-  test('wielkość liter w pinFrom nie ma znaczenia', () => {
-    assert.equal(resolveTargetPin({ pinFrom: 'sq8bwm' }, BOOK).pin, 'AAAA-1111');
+  test('wielkość liter w operatorze nie ma znaczenia', () => {
+    assert.equal(resolveTargetPin({ operator: 'sq8bwm' }, BOOK).pin, 'AAAA-1111');
   });
 });
 
 describe('fan-out z bazą operatorów', () => {
   test('każda kopia dostaje PIN swojego operatora', () => {
     const targets = [
-      { station_callsign: 'SQ8BWM', pinFrom: 'SQ8BWM' },
-      { station_callsign: 'SP4OIK', pinFrom: 'SP4OIK' },
+      { station_callsign: 'SQ8BWM', operator: 'SQ8BWM' },
+      { station_callsign: 'SP4OIK', operator: 'SP4OIK' },
     ];
     const copies = expandTargets(PAYLOAD, targets, 'k', BOOK);
     assert.deepEqual(copies.map((c) => c.payload.api_key), ['AAAA-1111', 'BBBB-2222']);
+  });
+
+  test('operator trafia zarazem do pola OPERATOR w QSO', () => {
+    // Jeden wybór, dwa skutki: kto pracował i czyim PIN-em to leci.
+    const copies = expandTargets(PAYLOAD,
+      [{ station_callsign: 'SP0XYZ', operator: 'SP4OIK' }], 'k', BOOK);
+    assert.equal(copies[0].payload.operator, 'SP4OIK');
+    assert.equal(copies[0].payload.api_key, 'BBBB-2222');
+  });
+
+  test('znak stacji zostaje znakiem stacji, nie operatorem', () => {
+    // Praca pod znakiem SES: to dwa różne pola i nie wolno ich zlepić.
+    const copies = expandTargets(PAYLOAD,
+      [{ station_callsign: 'SP0XYZ', operator: 'SQ8BWM' }], 'k', BOOK);
+    assert.equal(copies[0].payload.station_callsign, 'SP0XYZ');
+    assert.equal(copies[0].payload.operator, 'SQ8BWM');
   });
 
   test('cel bez wskazania zostaje na PIN-ie głównym', () => {
@@ -109,17 +141,8 @@ describe('fan-out z bazą operatorów', () => {
     assert.equal(copies[0].payload.api_key, 'MAIN-0000');
   });
 
-  test('znak stacji i operator są niezależne od źródła PIN-u', () => {
-    // Praca pod znakiem SES: stacja SP0XYZ, operator SQ8BWM, PIN profilu SQ8BWM.
-    const copies = expandTargets(PAYLOAD,
-      [{ station_callsign: 'SP0XYZ', operator: 'SQ8BWM', pinFrom: 'SQ8BWM' }], 'k', BOOK);
-    assert.equal(copies[0].payload.station_callsign, 'SP0XYZ');
-    assert.equal(copies[0].payload.operator, 'SQ8BWM');
-    assert.equal(copies[0].payload.api_key, 'AAAA-1111');
-  });
-
   test('brak bazy nie wywraca fan-outu', () => {
-    const copies = expandTargets(PAYLOAD, [{ station_callsign: 'SP0XYZ', pinFrom: 'SQ8BWM' }], 'k');
+    const copies = expandTargets(PAYLOAD, [{ station_callsign: 'SP0XYZ', operator: 'SQ8BWM' }], 'k');
     assert.equal(copies.length, 1);
     assert.equal(copies[0].payload.api_key, 'MAIN-0000');
   });
@@ -127,8 +150,8 @@ describe('fan-out z bazą operatorów', () => {
   test('klucze kopii nadal są różne', () => {
     // REGRESJA: wspólny klucz przepuszczał tylko pierwszą kopię.
     const copies = expandTargets(PAYLOAD, [
-      { station_callsign: 'SQ8BWM', pinFrom: 'SQ8BWM' },
-      { station_callsign: 'SP4OIK', pinFrom: 'SP4OIK' },
+      { station_callsign: 'SQ8BWM', operator: 'SQ8BWM' },
+      { station_callsign: 'SP4OIK', operator: 'SP4OIK' },
     ], 'k', BOOK);
     assert.equal(new Set(copies.map((c) => c.key)).size, 2);
   });

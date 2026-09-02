@@ -63,9 +63,14 @@
     width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
     background:var(--bg); color:var(--text); font-size:13px; font-family:inherit; }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .three { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end; }
+  /* Cel fan-outu: znak stacji + operator z bazy. Oba wymagane, więc dwa pola. */
+  .three { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:end; }
   .op-row { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end;
             margin-bottom:8px; }
+  /* Znaki wywoławcze zawsze wielkimi literami. CSS daje efekt natychmiast,
+     a skrypt podmienia samą wartość pola — inaczej widok i treść by się rozjechały. */
+  input.callsign { text-transform:uppercase; }
+  input.invalid, select.invalid { border-color:var(--err); }
   pre#logbox { background:var(--bg); border:1px solid var(--line); border-radius:6px;
        padding:10px; font-size:12px; max-height:460px; overflow:auto; margin:0;
        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; }

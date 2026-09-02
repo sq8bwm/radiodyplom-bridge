@@ -61,23 +61,23 @@ const DICT = {
     'label.multicast': 'Grupy multicast (po przecinku, np. 224.0.0.222)',
     'label.stationCall': 'Znak stacji',
     'label.operator': 'Operator (opcjonalnie)',
-    'label.targetPin': 'PIN z bazy',
+    'label.targetOperator': 'Operator (z bazy)',
     'label.opCall': 'Znak',
     'label.opName': 'Opis (opcjonalnie)',
     'label.opPin': 'PIN API',
-    'opt.mainPin': 'PIN główny (profil)',
+    'opt.pickOperator': '— wybierz operatora —',
     'opt.ownPin': 'własny PIN z pliku',
     'label.language': 'Język interfejsu',
 
     'hint.pin': 'Zostaw zamaskowany, żeby nie zmieniać. Wpisz nowy, aby podmienić.',
     'hint.multicast': 'puste = brak',
-    'hint.targetPin': 'jeśli inna niż profil',
+    'hint.targetIncomplete': 'NIE ZAPISANO — każda stacja wymaga znaku i operatora z bazy.',
     'hint.operators': 'Lista do wyboru przy rozmnażaniu QSO. PIN wpisuje się tu raz, '
       + 'a nie przy każdej stacji. Zostaw zamaskowany, żeby go nie zmieniać.',
     'note.noOperators': 'Baza operatorów jest pusta, więc wszystkie kopie polecą PIN-em '
       + 'głównym. Kopia ze znakiem innym niż Twój profil wróci wtedy jako NOT_SAVED.',
-    'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Znak inny niż profil '
-      + 'PIN-u wymaga własnego PIN-u tej stacji.',
+    'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Każda stacja wymaga '
+      + 'znaku i operatora z bazy — to operator wyznacza PIN, którym poleci ta kopia.',
     'hint.requeue': '„Ponów odrzucone" wraca do kolejki tylko te, które padły z powodu '
       + 'awarii łączności. Odrzucone przez serwer (zły znak, brak uprawnień) zostają.',
     'hint.saved': 'Zapisano i zastosowano.',
@@ -189,23 +189,24 @@ const DICT = {
     'label.multicast': 'Multicast groups (comma separated, e.g. 224.0.0.222)',
     'label.stationCall': 'Station callsign',
     'label.operator': 'Operator (optional)',
-    'label.targetPin': 'PIN from the book',
+    'label.targetOperator': 'Operator (from the book)',
     'label.opCall': 'Callsign',
     'label.opName': 'Description (optional)',
     'label.opPin': 'API PIN',
-    'opt.mainPin': 'Main PIN (profile)',
+    'opt.pickOperator': '— pick an operator —',
     'opt.ownPin': 'own PIN from the file',
     'label.language': 'Interface language',
 
     'hint.pin': 'Leave it masked to keep the current PIN. Type a new one to replace it.',
     'hint.multicast': 'empty = none',
-    'hint.targetPin': 'if different from profile',
+    'hint.targetIncomplete': 'NOT SAVED — every station needs a callsign and an operator from the book.',
     'hint.operators': 'The list you pick from when duplicating QSOs. Each PIN is entered '
       + 'here once instead of on every station. Leave it masked to keep it.',
     'note.noOperators': 'The operator book is empty, so every copy will use the main PIN. '
       + 'A copy with a callsign other than your own profile will come back as NOT_SAVED.',
-    'hint.fanout': 'Empty = one QSO with the station callsign from the logger. A callsign '
-      + "other than the PIN's profile needs that station's own PIN.",
+    'hint.fanout': 'Empty = one QSO with the station callsign from the logger. Every station '
+      + 'needs a callsign and an operator from the book — the operator decides which PIN '
+      + 'that copy is sent with.',
     'hint.requeue': '“Retry rejected” only requeues QSOs that failed due to connectivity. '
       + 'Those rejected by the server (bad callsign, no permission) stay.',
     'hint.saved': 'Saved and applied.',

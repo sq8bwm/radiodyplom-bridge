@@ -45,11 +45,22 @@ export function findOperator(operators, call) {
 }
 
 /**
+ * Operator wskazany w celu fan-outu. Jedno pole załatwia dwie rzeczy: trafia
+ * do pola OPERATOR w wysyłanym QSO i wskazuje, czyim PIN-em kopia leci.
+ *
+ * `pinFrom` obsługiwane jako starsza nazwa tego samego wskazania.
+ */
+export function targetOperator(target) {
+  const call = String(target?.operator || target?.pinFrom || '').trim().toUpperCase();
+  return call || null;
+}
+
+/**
  * PIN, którym ma polecieć dana kopia QSO.
  *
  * Kolejność jest istotna i świadoma:
  *  1. `pin` wpisany wprost w celu — starsze konfiguracje muszą działać dalej,
- *  2. `pinFrom` — wskazanie operatora z bazy,
+ *  2. PIN operatora z bazy,
  *  3. null — czyli PIN główny z profilu.
  *
  * @returns {{pin:string|null, from:string|null, missing:string|null}}
@@ -58,7 +69,7 @@ export function findOperator(operators, call) {
 export function resolveTargetPin(target, operators) {
   if (target?.pin) return { pin: String(target.pin).trim(), from: null, missing: null };
 
-  const ref = String(target?.pinFrom || '').trim().toUpperCase();
+  const ref = targetOperator(target);
   if (!ref) return { pin: null, from: null, missing: null };
 
   const op = findOperator(operators, ref);

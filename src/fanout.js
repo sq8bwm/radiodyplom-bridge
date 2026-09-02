@@ -8,7 +8,7 @@
 // w aktywnej akcji — inaczej serwer odpowie success:true z pustym savedTo
 // i QSO przepadnie (obsługiwane w radiodyplom.js jako błąd NOT_SAVED).
 import { log } from './log.js';
-import { resolveTargetPin } from './operators.js';
+import { resolveTargetPin, targetOperator } from './operators.js';
 
 /**
  * @param {object} payload  ładunek po zmapowaniu (mapper.js)
@@ -40,13 +40,15 @@ export function expandTargets(payload, targets, baseKey, operators = []) {
 
     const p = { ...payload, station_callsign: station };
 
-    // Operator opcjonalny. Gdy cel go nie podaje, zostaje operator z loggera.
+    // Operator wskazuje osobę z bazy: trafia do pola OPERATOR i wyznacza PIN.
+    // Gdy cel go nie podaje (starsza konfiguracja), zostaje operator z loggera.
     // Celowo NIE podstawiamy tu znaku stacji – to dwa różne pola.
-    if (t.operator) p.operator = String(t.operator).trim().toUpperCase();
+    const op = targetOperator(t);
+    if (op) p.operator = op;
 
-    // PIN opcjonalny – pozwala kierować kopie do różnych akcji. Bierze się
-    // wprost z celu albo z bazy operatorów (pole `pinFrom`); brak jednego
-    // i drugiego znaczy „PIN główny z profilu".
+    // PIN bierze się z operatora wskazanego w celu albo – w starszych
+    // konfiguracjach – z pola `pin` wpisanego wprost. Brak jednego i drugiego
+    // znaczy „PIN główny z profilu".
     const { pin, missing } = resolveTargetPin(t, operators);
     if (pin) p.api_key = pin;
     if (missing) {

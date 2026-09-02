@@ -9,7 +9,7 @@ import { readFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, isAbsolute, join } from 'node:path';
 import { homedir } from 'node:os';
-import { normalizeOperators, findOperator } from './operators.js';
+import { normalizeOperators, findOperator, targetOperator } from './operators.js';
 import { log } from './log.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -129,10 +129,18 @@ export function loadConfig(opts = {}) {
     // Wskazanie na nieistniejącego operatora NIE jest błędem startu – program
     // musi wstać, żeby dało się to poprawić w interfejsie. Ale musi być głośne,
     // bo skutkiem jest wysyłka cudzym PIN-em i ciche NOT_SAVED.
-    if (t.pinFrom && !t.pin && !findOperator(cfg.operators, t.pinFrom)) {
+    const station = String(t.station_callsign).toUpperCase();
+    const op = targetOperator(t);
+    if (op && !t.pin && !findOperator(cfg.operators, op)) {
+      log.warn(`Cel ${station} wskazuje operatora ${op}, którego nie ma w bazie operatorów.`);
+    }
+    // Cel bez operatora to konfiguracja z wersji przed bazą operatorów. Działa
+    // jak dawniej (operator z loggera, PIN główny), ale interfejs wymaga teraz
+    // wskazania osoby, więc mówimy o tym wprost.
+    if (!op && !t.pin) {
       log.warn(
-        `Cel ${String(t.station_callsign).toUpperCase()} wskazuje operatora `
-        + `${String(t.pinFrom).toUpperCase()}, którego nie ma w bazie operatorów.`,
+        `Cel ${station} nie wskazuje operatora z bazy – kopia poleci PIN-em głównym. `
+        + 'Wybierz operatora w zakładce Konfiguracja.',
       );
     }
   }

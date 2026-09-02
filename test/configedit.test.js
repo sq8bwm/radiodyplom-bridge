@@ -259,13 +259,13 @@ describe('baza operatorów', () => {
 });
 
 describe('cel fan-outu wskazujący operatora', () => {
-  test('pinFrom zapisuje się wielkimi literami', () => {
+  test('znak stacji i operator zapisują się wielkimi literami', () => {
     const cfg = cfgMod.loadConfig();
     mod.applyConfig(fakeDaemon(cfg), {
-      forward: { targets: [{ station_callsign: 'sp0xyz', pinFrom: 'sq8bwm' }] },
+      forward: { targets: [{ station_callsign: 'sp0xyz', operator: 'sq8bwm' }] },
     });
     assert.equal(saved().forward.targets[0].station_callsign, 'SP0XYZ');
-    assert.equal(saved().forward.targets[0].pinFrom, 'SQ8BWM');
+    assert.equal(saved().forward.targets[0].operator, 'SQ8BWM');
   });
 
   test('wybór operatora usuwa stary PIN wpisany wprost', () => {
@@ -273,19 +273,39 @@ describe('cel fan-outu wskazujący operatora', () => {
     // więc kopia dalej leciałaby starym sekretem.
     const cfg = cfgMod.loadConfig();
     mod.applyConfig(fakeDaemon(cfg), {
-      forward: { targets: [{ station_callsign: 'SQ8BWA', pinFrom: 'SQ8BWM' }] },
+      forward: { targets: [{ station_callsign: 'SQ8BWA', operator: 'SQ8BWM' }] },
     });
     const t0 = saved().forward.targets[0];
-    assert.equal(t0.pinFrom, 'SQ8BWM');
+    assert.equal(t0.operator, 'SQ8BWM');
     assert.equal(t0.pin, undefined);
   });
 
-  test('bez pinFrom zamaskowany PIN nadal jest zachowywany', () => {
+  test('cel bez operatora zachowuje swój PIN z pliku', () => {
+    // Wiersz z PIN-em wpisanym wprost (konfiguracja z 0.1.x) nie może stracić
+    // sekretu tylko dlatego, że ktoś zapisał konfigurację z interfejsu.
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), {
+      forward: { targets: [{ station_callsign: 'SQ8BWA', operator: '', pin: 'BBBB-****' }] },
+    });
+    assert.equal(saved().forward.targets[0].pin, 'BBBB-2222');
+  });
+
+  test('operator SPOZA bazy nie kasuje PIN-u wpisanego wprost', () => {
+    // Konfiguracja z 0.1.x: cel ma operatora (zwykły znak) i własny PIN.
+    // Skasowanie PIN-u „bo operator jest ustawiony" odesłałoby QSO na cudze konto.
     const cfg = cfgMod.loadConfig();
     mod.applyConfig(fakeDaemon(cfg), {
       forward: { targets: [{ station_callsign: 'SQ8BWA', operator: 'SQ8BWA', pin: 'BBBB-****' }] },
     });
     assert.equal(saved().forward.targets[0].pin, 'BBBB-2222');
+    assert.equal(saved().forward.targets[0].operator, 'SQ8BWA');
+  });
+
+  test('widok dla interfejsu podaje operatora także ze starszego pinFrom', () => {
+    const cfg = cfgMod.loadConfig();
+    cfg.forward.targets = [{ station_callsign: 'SP0XYZ', pinFrom: 'SQ8BWM' }];
+    const view = mod.editableConfig(cfg);
+    assert.equal(view.forward.targets[0].operator, 'SQ8BWM');
   });
 });
 

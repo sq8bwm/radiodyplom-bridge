@@ -20,7 +20,7 @@ W `config.json` wstaw PIN API z Managera radiodyplom
 | `radiodyplom.dryRun` | `true` = nic nie wysyła, tylko loguje (do testów) |
 | `udp.port` | port nasłuchu (musi zgadzać się z loggerem) |
 | `forward.operations` | które operacje QLog przekazywać (domyślnie `["insert"]`) |
-| `forward.targets[].pinFrom` | znak z `operators`, którego PIN-em leci ta kopia |
+| `forward.targets[].operator` | znak z `operators`: pole OPERATOR i PIN tej kopii |
 | `queue.maxAttempts` | ile prób przed odłożeniem do `data/failed/` |
 | `rateLimit.maxPerMinute` | limit wysyłek (API dopuszcza 10/min, trzymamy 9) |
 
@@ -108,6 +108,6 @@ dla danego użytkownika uprawnia **jego własny PIN**, a nie cudzy.
 
 **Wniosek dla fan-outu:** wysyłka na N znaków stacji wymaga **N PIN-ów** — po jednym
 z profilu każdej stacji, z włączonym logowaniem przez API w tej akcji. Dlatego jest
-baza `operators` i pole `pinFrom` przy celu (patrz [Rozmnażanie QSO](fan-out.md)).
+baza `operators`, a cel wskazuje osobę polem `operator` (patrz [Rozmnażanie QSO](fan-out.md)).
 Daemon sprawdza to na starcie i ostrzega, gdy cel ma inny znak niż profil PIN-u,
 a żadnego własnego PIN-u nie wskazano.

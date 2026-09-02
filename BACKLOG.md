@@ -133,12 +133,16 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
-- **Baza operatorów** (`operators`: znak + opis + PIN) i pole `pinFrom` przy celu
-  rozmnażania. PIN wpisuje się raz, a nie przy każdej stacji; `pin` wprost w celu
-  nadal działa i ma pierwszeństwo. Wskazanie na kogoś spoza bazy nie zatrzymuje
-  programu, ale ostrzega trzy razy (wczytanie, start, każde QSO). Sprawdzone
-  end-to-end na atrapie serwera: trzy kopie, trzy różne PIN-y, plus poprawny
-  odwrót do PIN-u głównego. 27 testów.
+- **Baza operatorów** (`operators`: znak + opis + PIN). Cel rozmnażania to teraz
+  dwa wymagane pola: `station_callsign` i `operator` — ten drugi wskazuje osobę
+  z bazy i wyznacza zarazem pole OPERATOR w QSO oraz PIN, którym kopia leci.
+  PIN wpisuje się raz, a nie przy każdej stacji. Zgodność: `pin` wprost w celu
+  nadal działa i ma pierwszeństwo, a interfejs kasuje go tylko wtedy, gdy wybrany
+  operator ma PIN w bazie (czyli gdy jest czym go zastąpić) — inaczej zapis
+  konfiguracji odsyłałby QSO na cudze konto. Wskazanie na kogoś spoza bazy nie
+  zatrzymuje programu, ale ostrzega trzy razy (wczytanie, start, każde QSO).
+  Sprawdzone end-to-end na atrapie serwera: trzy kopie, trzy różne PIN-y, plus
+  poprawny odwrót do PIN-u głównego. Pola znaków wpisują wielkimi literami.
 - **Zapis z UI gubił sekcje, których nie zna** — `writeConfigFile` budował plik od
   zera z ustalonej listy kluczy, więc każdy zapis wycinał `logFile`
   i `radiodyplom.pingIntervalMs`. Teraz nadpisuje tylko to, czym zarządza

@@ -156,6 +156,23 @@ async function loadConfig() {
   renderTargets(cfg.forward.targets || []);
 }
 
+// ---------- wielkie litery w polach znaku ----------
+/**
+ * Wymusza wielkie litery w polu, nie gubiąc miejsca kursora.
+ * Samo `text-transform` w CSS zmienia tylko wygląd — wartość zostawałaby
+ * małymi literami, więc to, co widać, różniłoby się od tego, co zapisane.
+ */
+function forceUpper(input) {
+  input.classList.add('callsign');
+  input.addEventListener('input', () => {
+    const up = input.value.toUpperCase();
+    if (up === input.value) return;
+    const { selectionStart: s, selectionEnd: e } = input;
+    input.value = up;
+    try { input.setSelectionRange(s, e); } catch { /* pole bez zaznaczenia */ }
+  });
+}
+
 // ---------- baza operatorów ----------
 function renderOperators(list) {
   $('operators').innerHTML = list.map((o) => `
@@ -166,16 +183,19 @@ function renderOperators(list) {
       <button class="act sec o-del">${t('btn.remove')}</button>
     </div>`).join('');
   $('operators').querySelectorAll('.o-del').forEach((b) => {
-    b.onclick = () => { b.closest('.op-row').remove(); syncPinPickers(); };
+    b.onclick = () => { b.closest('.op-row').remove(); syncOperatorPickers(); };
   });
-  // Poprawiony znak musi natychmiast trafić do list wyboru w fan-oucie,
-  // inaczej wybór wskazywałby na nieistniejącego już operatora.
-  $('operators').querySelectorAll('.o-call').forEach((i) => { i.onchange = syncPinPickers; });
+  $('operators').querySelectorAll('.o-call').forEach((i) => {
+    forceUpper(i);
+    // Poprawiony znak musi natychmiast trafić do list wyboru w fan-oucie,
+    // inaczej wybór wskazywałby na nieistniejącego już operatora.
+    i.onchange = syncOperatorPickers;
+  });
 }
 
 function collectOperators() {
   return [...$('operators').querySelectorAll('.op-row')].map((row) => ({
-    call: row.querySelector('.o-call').value.trim(),
+    call: row.querySelector('.o-call').value.trim().toUpperCase(),
     name: row.querySelector('.o-name').value.trim(),
     pin: row.querySelector('.o-pin').value.trim(),
   })).filter((x) => x.call);
@@ -190,20 +210,21 @@ $('btnAddOperator').onclick = () => {
 /** Znaki z bazy, w postaci gotowej na listę wyboru. */
 function operatorChoices() {
   return collectOperators().map((o) => ({
-    call: o.call.toUpperCase(),
-    label: o.name ? `${o.call.toUpperCase()} — ${o.name}` : o.call.toUpperCase(),
+    call: o.call,
+    label: o.name ? `${o.call} — ${o.name}` : o.call,
   }));
 }
 
-/** Buduje <option> listy PIN-u dla jednego celu. */
-function pinOptions(selected, hasOwnPin) {
-  const opts = [`<option value="">${esc(t('opt.mainPin'))}</option>`];
+/** Buduje <option> listy operatorów dla jednego celu. */
+function operatorOptions(selected, hasOwnPin) {
+  const opts = [`<option value="">${esc(t('opt.pickOperator'))}</option>`];
   for (const o of operatorChoices()) {
     const sel = o.call === String(selected || '').toUpperCase() ? ' selected' : '';
     opts.push(`<option value="${esc(o.call)}"${sel}>${esc(o.label)}</option>`);
   }
-  // Cel z PIN-em wpisanym wprost w config.json obsługujemy dalej — ale nie
-  // pokazujemy sekretu w interfejsie, tylko informujemy, że taki jest.
+  // Cel z PIN-em wpisanym wprost w config.json działa dalej, choć nie wskazuje
+  // nikogo z bazy. Musi mieć swoją pozycję, inaczej zapis z interfejsu
+  // po cichu skasowałby działający PIN.
   if (hasOwnPin && !selected) {
     opts.push(`<option value="__own" selected>${esc(t('opt.ownPin'))}</option>`);
   }
@@ -211,12 +232,12 @@ function pinOptions(selected, hasOwnPin) {
 }
 
 /** Odświeża listy wyboru po zmianie bazy, zachowując dotychczasowe wybory. */
-function syncPinPickers() {
+function syncOperatorPickers() {
   const choices = operatorChoices().map((o) => o.call);
-  $('targets').querySelectorAll('.t-pinfrom').forEach((sel) => {
+  $('targets').querySelectorAll('.t-op').forEach((sel) => {
     const keep = sel.value;
     const own = sel.dataset.own === '1';
-    sel.innerHTML = pinOptions(choices.includes(keep) ? keep : '', own);
+    sel.innerHTML = operatorOptions(choices.includes(keep) ? keep : '', own);
     sel.value = choices.includes(keep) ? keep : (own ? '__own' : '');
   });
   const none = choices.length === 0;
@@ -227,45 +248,61 @@ function syncPinPickers() {
 function renderTargets(list) {
   $('targets').innerHTML = list.map((x) => `
     <div class="three" style="margin-bottom:8px">
-      <div><label>${t('label.stationCall')}</label><input type="text" class="t-station" value="${esc(x.station_callsign)}"></div>
-      <div><label>${t('label.operator')}</label><input type="text" class="t-op" value="${esc(x.operator || '')}"></div>
-      <div><label>${t('label.targetPin')}</label>
-        <select class="t-pinfrom" data-own="${x.pinSet && !x.pinFrom ? '1' : '0'}">${pinOptions(x.pinFrom, x.pinSet)}</select></div>
+      <div><label>${t('label.stationCall')}</label><input type="text" class="t-station" value="${esc(x.station_callsign)}" placeholder="SN0ABC"></div>
+      <div><label>${t('label.targetOperator')}</label>
+        <select class="t-op" data-own="${x.pinSet && !x.operator ? '1' : '0'}">${operatorOptions(x.operator, x.pinSet)}</select></div>
       <button class="act sec t-del">${t('btn.remove')}</button>
     </div>`).join('');
+  $('targets').querySelectorAll('.t-station').forEach(forceUpper);
   $('targets').querySelectorAll('.t-del').forEach((b) => {
-    b.onclick = () => { b.closest('.three').remove(); syncPinPickers(); };
+    b.onclick = () => { b.closest('.three').remove(); syncOperatorPickers(); };
   });
   // Wybór operatora podpowiada znak stacji, gdy pole jest jeszcze puste —
   // najczęstszy przypadek to jedna osoba pracująca własnym znakiem.
-  $('targets').querySelectorAll('.t-pinfrom').forEach((sel) => {
+  $('targets').querySelectorAll('.t-op').forEach((sel) => {
     sel.onchange = () => {
+      sel.classList.remove('invalid');
       const station = sel.closest('.three').querySelector('.t-station');
       if (!station.value.trim() && sel.value && sel.value !== '__own') station.value = sel.value;
     };
   });
-  syncPinPickers();
+  syncOperatorPickers();
 }
 
 $('btnAddTarget').onclick = () => {
-  const current = collectTargets();
-  current.push({ station_callsign: '', operator: '', pinFrom: '' });
+  const current = collectTargets({ validate: false });
+  current.push({ station_callsign: '', operator: '' });
   renderTargets(current);
 };
 
-function collectTargets() {
-  return [...$('targets').querySelectorAll('.three')].map((row) => {
-    const sel = row.querySelector('.t-pinfrom');
-    const pick = sel ? sel.value : '';
+/**
+ * Czyta cele z formularza. Znak stacji i operator są OBA wymagane, więc przy
+ * validate:true brakujące pola są zaznaczane i zwracany jest null. Ciche
+ * pomijanie niepełnego wiersza byłoby najgorsze: użytkownik widziałby go
+ * w oknie, a QSO by tam nie leciały.
+ */
+function collectTargets({ validate = true } = {}) {
+  const rows = [...$('targets').querySelectorAll('.three')];
+  let bad = false;
+  const out = rows.map((row) => {
+    const stationEl = row.querySelector('.t-station');
+    const opEl = row.querySelector('.t-op');
+    const station = stationEl.value.trim().toUpperCase();
+    const pick = opEl.value;
+    if (validate) {
+      stationEl.classList.toggle('invalid', !station);
+      opEl.classList.toggle('invalid', !pick);
+      if (!station || !pick) bad = true;
+    }
     return {
-      station_callsign: row.querySelector('.t-station').value.trim(),
-      operator: row.querySelector('.t-op').value.trim(),
+      station_callsign: station,
       // '__own' = zostaw PIN wpisany wprost w pliku; rdzeń rozpozna to po tym,
-      // że nie przysyłamy ani pinFrom, ani nowego PIN-u.
-      pinFrom: pick === '__own' ? '' : pick,
-      pinSet: pick === '__own',
+      // że nie przysyłamy ani operatora, ani nowego PIN-u.
+      operator: pick === '__own' ? '' : pick,
     };
-  }).filter((x) => x.station_callsign);
+  });
+  if (validate && bad) return null;
+  return out.filter((x) => x.station_callsign);
 }
 
 $('btnSave').onclick = async () => {
@@ -280,6 +317,13 @@ $('btnSave').onclick = async () => {
 };
 
 async function saveFromForm() {
+  const targets = collectTargets();
+  if (targets === null) {
+    // Zapis wstrzymany, a nie wykonany po cichu z pominięciem wiersza.
+    $('saveInfo').textContent = t('hint.targetIncomplete');
+    $('saveInfo').className = 'hint lvl-error';
+    return;
+  }
   const r = await window.bridge.saveConfig({
     radiodyplom: { pin: $('fPin').value.trim(), dryRun: $('fDryRun').checked },
     udp: {
@@ -288,7 +332,7 @@ async function saveFromForm() {
       multicastGroups: $('fMulticast').value.split(',').map((x) => x.trim()).filter(Boolean),
     },
     operators: collectOperators(),
-    forward: { targets: collectTargets() },
+    forward: { targets },
   });
   $('saveInfo').textContent = r.restartRequired.length
     ? t('hint.savedRestart') + r.restartRequired.join(', ')

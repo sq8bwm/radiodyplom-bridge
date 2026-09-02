@@ -22,7 +22,7 @@ operatora po znaku, więc PIN nie powtarza się przy każdej stacji:
 - `pin` — PIN API z profilu tej osoby.
 
 W zakładce **Konfiguracja** jest do tego panel „Operatorzy", a przy każdym celu
-rozmnażania — lista wyboru **PIN z bazy**. Interfejs pokazuje PIN-y zamaskowane
+rozmnażania — lista wyboru **Operator**. Interfejs pokazuje PIN-y zamaskowane
 (`AAAA-****`); zostawienie maski znaczy „nie zmieniaj". Wybór operatora podpowiada
 też znak stacji, gdy pole jest jeszcze puste.
 
@@ -41,27 +41,34 @@ znakiem stacji. Konfiguruje się to listą celów:
 "forward": {
   "operations": ["insert"],
   "targets": [
-    { "station_callsign": "SN0ABC" },
-    { "station_callsign": "SP0DEF", "operator": "SQ8BWM", "pinFrom": "SQ8BWM" },
-    { "station_callsign": "3Z0GHI", "operator": "SP0OPER", "pinFrom": "SP4OIK" }
+    { "station_callsign": "SN0ABC", "operator": "SQ8BWM" },
+    { "station_callsign": "SP0DEF", "operator": "SP4OIK" }
   ]
 }
 ```
 
+Cel opisują **dwa pola i oba są wymagane**:
+
+- `station_callsign` — znak stacji. **Nadpisuje** znak podany przez logger.
+- `operator` — znak z listy `operators`. Jeden wybór, dwa skutki: trafia do pola
+  `OPERATOR` w wysyłanym QSO **i** wyznacza PIN, którym ta kopia leci.
+
+Znak stacji i operator to **dwa różne pola** i celowo nie podstawiamy jednego pod
+drugie: przy pracy pod znakiem okolicznościowym stacja to `SP0DEF`, a operator
+to konkretna osoba.
+
 - **Pusta lista (domyślnie)** → jedno QSO ze znakiem stacji z loggera. Zero zmian.
-- `station_callsign` — wymagany, **nadpisuje** znak podany przez logger.
-- `operator` — opcjonalny. Bez niego zostaje operator z loggera. Celowo **nie**
-  podstawiamy tu znaku stacji: to dwa różne pola.
-- `pinFrom` — znak z listy `operators`. **Potrzebny, gdy `station_callsign` należy
-  do innego profilu niż PIN główny** (patrz „Model uprawnień"). Bez niego kopia
-  wróci jako `NOT_SAVED`.
-- `pin` — PIN wpisany wprost w cel. Nadal działa i **ma pierwszeństwo** nad
-  `pinFrom`; starsze konfiguracje nie wymagają przepisywania.
+- `pin` — PIN wpisany wprost w cel. Nadal działa i **ma pierwszeństwo**; starsze
+  konfiguracje nie wymagają przepisywania.
 
 Wskazanie na kogoś, kogo nie ma w bazie (albo kto nie ma tam PIN-u), **nie zatrzymuje
 programu** — musi dać się to poprawić w interfejsie. Ale jest głośne: ostrzeżenie
 leci przy wczytaniu konfiguracji, na starcie i przy każdym takim QSO, bo kopia
 poleci wtedy PIN-em głównym i najpewniej wróci jako `NOT_SAVED`.
+
+> **Zgodność z 0.1.x.** Cel z własnym `pin` działa dalej, a interfejs go nie kasuje —
+> stary PIN jest usuwany tylko wtedy, gdy wybrany operator **ma** PIN w bazie, czyli
+> gdy jest czym go zastąpić. Inaczej zapis konfiguracji odsyłałby QSO na cudze konto.
 
 Pozostałe pola (data, czas, znak korespondenta, pasmo, emisja, raporty, `freq`,
 komentarz) są w każdej kopii identyczne.

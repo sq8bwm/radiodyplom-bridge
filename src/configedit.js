@@ -7,7 +7,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { writeAtomic } from './atomic.js';
 import { configPath, isPinMissing } from './config.js';
-import { normalizeOperators } from './operators.js';
+import { normalizeOperators, targetOperator, findOperator } from './operators.js';
 import { maskPin } from './httpapi.js';
 import { log, setLevel } from './log.js';
 
@@ -41,8 +41,8 @@ export function editableConfig(cfg) {
       operations: cfg.forward.operations,
       targets: (cfg.forward.targets || []).map((t) => ({
         station_callsign: t.station_callsign,
-        operator: t.operator || null,
-        pinFrom: t.pinFrom || null,
+        // Jedno pole: osoba z bazy. Wyznacza i pole OPERATOR, i PIN kopii.
+        operator: targetOperator(t),
         pin: t.pin ? maskPin(t.pin) : null,
         pinSet: !!t.pin,
       })),
@@ -119,18 +119,25 @@ export function applyConfig(daemon, patch) {
       .map((t) => {
         const station = String(t.station_callsign).trim().toUpperCase();
         const out = { station_callsign: station };
+        // Operator z bazy: pole OPERATOR w QSO i jednocześnie źródło PIN-u.
         if (t.operator) out.operator = String(t.operator).trim().toUpperCase();
-        // Wskazanie operatora z bazy. Puste = PIN główny z profilu.
-        if (t.pinFrom) out.pinFrom = String(t.pinFrom).trim().toUpperCase();
         if (!keepExisting(t.pin)) {
           out.pin = String(t.pin).trim();
-        } else if (!out.pinFrom) {
+        } else {
           // Zamaskowany PIN → zachowaj dotychczasowy dla tej samej stacji.
-          // Ale NIE wtedy, gdy cel wskazuje teraz operatora z bazy: stary PIN
-          // wpisany wprost ma pierwszeństwo w wysyłce, więc wybór z bazy
-          // nigdy by nie zadziałał.
-          const prev = previous.find((p) => String(p.station_callsign).toUpperCase() === station);
-          if (prev?.pin) out.pin = prev.pin;
+          //
+          // Wyjątek: gdy wskazany operator MA PIN w bazie, stary PIN wpisany
+          // wprost trzeba usunąć — ma pierwszeństwo w wysyłce, więc wybór
+          // z bazy nigdy by nie zadziałał.
+          //
+          // Ale tylko wtedy. Konfiguracje z 0.1.x mają w celu operatora
+          // (zwykły znak, nie wpis z bazy) i własny PIN; skasowanie go, bo
+          // „operator jest ustawiony", odesłałoby QSO na cudze konto.
+          const fromBook = findOperator(cfg.operators, out.operator);
+          if (!fromBook?.pin) {
+            const prev = previous.find((p) => String(p.station_callsign).toUpperCase() === station);
+            if (prev?.pin) out.pin = prev.pin;
+          }
         }
         return out;
       });

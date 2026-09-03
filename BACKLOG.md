@@ -105,7 +105,39 @@ informacja od autora serwisu.
 Gdyby okazało się, że pole ma znaczenie: przestać je wysyłać albo wypełniać
 wartością z konfiguracji, zamiast tekstem od operatora.
 
+**Pytanie zadane autorowi serwisu 2026-09-03** (razem z pytaniem, czy pole
+`operator` jest w ogóle walidowane). Czekamy na odpowiedź — nie zgadujemy dalej.
+
 ## Funkcjonalne
+
+### Sprawdzanie konfiguracji konta przez API — czekamy na serwis
+Zapytanie wysłane do autora radiodyplom **2026-09-03**. Prośba o rozszerzenie
+odpowiedzi `PING`/`STATUS` o: `stations` (znaki przypisane do konta),
+`activeActions` (z zakresem dat), `pinExpires`, `apiEnabled`.
+
+Sprawdzone przed wysłaniem: **takiego endpointu nie ma**. API odpowiada wprost
+„GET dozwolone tylko dla akcji: PING, STATUS", a oba zwracają jedynie „klucz
+prawidłowy" i znak operatora.
+
+**Projekt po naszej stronie już ustalony** — gdy dane będą dostępne:
+
+- Odpytywać **każdy różny PIN** z konfiguracji osobno, nie tylko główny. Dziś
+  zły PIN przy celu wychodzi dopiero z odbitego QSO; realny przypadek:
+  wymiana PIN-u przez właściciela drugiego konta (2026-09-02).
+- Sprawdzać **parę** (PIN celu → znak stacji tego celu), bo stacja musi być na
+  liście konta, którego kluczem kopia leci — nie na liście konta głównego.
+- Cudze konta odpytywać **tylko na starcie i po zapisie konfiguracji**, nie
+  w pętli co minutę: nie wiemy, czy PING wchodzi w limit 10/min.
+- W oknie **czerwony znacznik przy wierszu reguły**, trwały (jak plakietka
+  problemów), plus **pytanie przy zapisie** wymieniające stacje, których serwis
+  nie przyjmie.
+- **BEZ blokady zapisu.** Trzy powody: dane mogą być nieaktualne o minutę
+  (dokładnie tak było przy dopisywaniu `SQ8BWA`), serwis może nie odpowiedzieć,
+  a „wpiszę regułę teraz, stację dopiszę wieczorem" to normalna kolejność pracy.
+- Danych **nie zapisywać na dysk** — to informacje o cudzym koncie, potrzebne
+  tylko do ostrzeżenia w oknie.
+- Mostek **nie może od tego zależeć**: brak odpowiedzi z serwisu nigdy nie może
+  zatrzymać wysyłki QSO.
 
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.

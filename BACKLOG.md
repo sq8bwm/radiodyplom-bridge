@@ -19,27 +19,34 @@ przycisk „Zakończ", menu pod ikoną w zasobniku.
 
 ## Świadomie odłożone
 
-### PIN SQ8BWA w starych obiektach na GitHubie — do unieważnienia, nie do wyczyszczenia
-**Stan na 2026-09-02.** W commitach `6d72e1e` i `8758492` znalazły się przypadkiem
-dwa pliki wymiany vima (`.20260831*.log.swp`) zapisane razem z logiem konsoli.
-Zawierały **PIN API konta SQ8BWA**. Plików nie ma w drzewie roboczym od `8758492`,
-a historia została **przepisana** (`git filter-branch`) i wymuszenie wypchnięta —
-gałąź `main` jest czysta, zero obiektów `.swp`.
+### Przepisanie historii commitów — NIE robimy
+**Decyzja (2026-09-03).** Historia zostaje jaka jest, z widocznym okresem ISC.
+Nie dopisujemy też noty o zmianie licencji do README.
 
-**Ale**: GitHub nadal oddaje stare commity i ten blob **po SHA** (sprawdzone:
-pobrałam blob i PIN w nim jest). Wymuszone wypchnięcie nie odśmieca magazynu.
+Powód, żeby nie wracać: przepisanie commitów **nie zmieniłoby licencji**, tylko
+sprawiło, że historia twierdziłaby coś nieprawdziwego. Okres ISC był faktem —
+wersje 0.1.0–0.1.5 zostały wydane na tej licencji i kto je pobrał, ma prawa
+z ISC bezterminowo. O licencji decyduje **bieżące drzewo**: `LICENSE`, pole
+w `package.json`, metadane paczek i zakładka „O programie" — wszystko mówi
+GPL-3.0-or-later i to jest jednoznaczne.
 
-**Decyzja: nie czyścimy dalej.** Repozytorium jest prywatne, zero forków, zero
-obserwujących. Gwarantowałoby to tylko skasowanie i odtworzenie repozytorium albo
-zgłoszenie do GitHub Support — obie drogi kosztują więcej, niż są tu warte.
+Techniczna strona, gdyby kiedyś wróciło: `git filter-branch --tree-filter`
+przeszedłby po 30 commitach, podmieniając pole `license` i dokładając `LICENSE`.
+Wykonalne w minutę; problem nie jest techniczny.
 
-**Prawdziwa naprawa, niezależna od historii: WYGENEROWAĆ NOWY PIN dla SQ8BWA**
-(Manager → Dostęp API → Generuj nowy PIN API) i podmienić go w konfiguracji.
-Po tym stary PIN jest bezwartościowy i cała sprawa jest zamknięta.
+### Stary PIN SQ8BWA w obiektach GitHuba — sprawa zamknięta
+**Stan na 2026-09-03.** Blob nadal daje się pobrać po SHA (sprawdzone: wymuszone
+wypchnięcie nie odśmieca magazynu GitHuba). Zawiera **wyłącznie** stary PIN
+konta SQ8BWA, dwa razy — sprawdzone zawartością: PIN-u SQ8BWM tam nie ma,
+innych sekretów też nie.
 
-Wniosek na przyszłość: `.gitignore` ma już `*.swp`, ale sedno jest inne — **nie
-commitować surowych logów pracy**. Log konsoli mostka może zawierać PIN-y celów
-fan-outu, bo widać w nim ładunki żądań.
+Ten PIN **został wymieniony 2026-09-02**, więc te bajty są bezwartościowe.
+Z bezpieczeństwa zrobiła się higiena, a higiena nie jest warta kasowania
+i odtwarzania repozytorium (jedyna droga z gwarancją; druga to zgłoszenie
+do GitHub Support).
+
+Wniosek na przyszłość zostaje ten sam: **nie commitować surowych logów pracy** —
+log mostka pokazuje ładunki żądań razem z PIN-ami celów.
 
 
 ### Podpis kodu dla Windows — nie podpisujemy
@@ -126,22 +133,6 @@ takie QSO normalnie przyjmuje, więc odrzucaliśmy poprawne łączności.
 
 Pamiętać o maskowaniu: PIN-y nigdy nie opuszczają procesu jawne, a wartość
 zamaskowana przy zapisie znaczy „zostaw dotychczasowy".
-
-### Przepisanie historii commitów — do rozważenia
-Na jutro (2026-09-02). Śmieci `.swp` **są już usunięte** z historii
-(`git filter-branch`, 2026-09-02) i `main` jest czysty. Do przemyślenia zostaje
-głębsze przepisanie: żeby cała historia była od początku na GPL, bez śladu po
-okresie ISC.
-
-Argument przeciw, ten sam co poprzednio: 30 commitów niesie **uzasadnienia
-decyzji** — kolizja `rowid` gubiąca QSO, zmierzony model uprawnień, dwie
-przebudowy w złą stronę i powód powrotu. Już z tego korzystaliśmy. Zgniecenie
-do jednego commita kupuje czystość, a kosztuje pamięć projektu.
-
-Warto też pamiętać: przepisanie **nie usuwa** starych obiektów z GitHuba —
-sprawdzone dziś, blob był pobieralny po SHA mimo wymuszonego wypchnięcia.
-Gwarancję daje tylko skasowanie i odtworzenie repozytorium albo zgłoszenie
-do GitHub Support.
 
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.

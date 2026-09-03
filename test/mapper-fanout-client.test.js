@@ -7,7 +7,7 @@ import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { mapToRadiodyplom } from '../src/mapper.js';
-import { expandTargets } from '../src/fanout.js';
+import { expandTargets, targetEnabled } from '../src/fanout.js';
 import { RadiodyplomClient } from '../src/radiodyplom.js';
 import { computeState, maskPin } from '../src/httpapi.js';
 import { setLevel } from '../src/log.js';
@@ -232,5 +232,57 @@ describe('maskPin', () => {
   test('brak PIN-u daje null', () => {
     assert.equal(maskPin(null), null);
     assert.equal(maskPin(''), null);
+  });
+});
+
+describe('znacznik włączenia celu', () => {
+  const PAYLOAD = {
+    api_key: 'GLOWNY', callsign: 'SP7VCL', station_callsign: 'SQ8BWM',
+    band: '80m', mode: 'SSB', qso_date: '20260903', time_on: '100000',
+  };
+
+  test('brak pola = reguła włączona', () => {
+    assert.equal(targetEnabled({ station_callsign: 'X' }), true);
+    assert.equal(targetEnabled({ station_callsign: 'X', enabled: true }), true);
+    assert.equal(targetEnabled({ station_callsign: 'X', enabled: false }), false);
+  });
+
+  test('wyłączona reguła nie tworzy kopii', () => {
+    const copies = expandTargets(PAYLOAD, [
+      { station_callsign: 'SN0LPU' },
+      { station_callsign: 'SN8N', enabled: false },
+    ], 'k');
+    assert.deepEqual(copies.map((c) => c.station), ['SN0LPU']);
+  });
+
+  test('WSZYSTKIE wyłączone = jak brak celów, a nie brak wysyłki', () => {
+    // Najważniejsze w tym znaczniku: wyłączenie wszystkiego nie może
+    // oznaczać, że QSO przepada. Leci jedno, ze stacją z loggera.
+    const copies = expandTargets(PAYLOAD, [
+      { station_callsign: 'SN0LPU', enabled: false },
+      { station_callsign: 'SN8N', enabled: false },
+    ], 'k');
+    assert.equal(copies.length, 1);
+    assert.equal(copies[0].station, 'SQ8BWM', 'stacja z loggera, nie z wyłączonego celu');
+    assert.equal(copies[0].key, 'k', 'klucz bez przyrostka — to nie jest kopia');
+  });
+
+  test('wyłączona reguła nie blokuje znaku dla innej', () => {
+    // Odrzucanie duplikatów stacji liczy tylko reguły czynne.
+    const copies = expandTargets(PAYLOAD, [
+      { station_callsign: 'SN8N', enabled: false, operator: 'STARY' },
+      { station_callsign: 'SN8N', operator: 'NOWY' },
+    ], 'k');
+    assert.equal(copies.length, 1);
+    assert.equal(copies[0].payload.operator, 'NOWY');
+  });
+
+  test('PIN wyłączonej reguły nie jest używany', () => {
+    const copies = expandTargets(PAYLOAD, [
+      { station_callsign: 'SN8N', pin: 'CUDZY-1', enabled: false },
+      { station_callsign: 'SN0LPU' },
+    ], 'k');
+    assert.equal(copies.length, 1);
+    assert.equal(copies[0].payload.api_key, 'GLOWNY');
   });
 });

@@ -41,6 +41,7 @@ export function editableConfig(cfg) {
         operator: t.operator || null,
         pin: t.pin ? maskPin(t.pin) : null,
         pinSet: !!t.pin,
+        enabled: t.enabled !== false,
       })),
     },
     rateLimit: cfg.rateLimit,
@@ -96,17 +97,29 @@ export function applyConfig(daemon, patch) {
       .filter((t) => t && String(t.station_callsign || '').trim())
       .map((t) => {
         const station = String(t.station_callsign).trim().toUpperCase();
-        const out = { station_callsign: station };
+        const out = { station_callsign: station, enabled: t.enabled !== false };
         if (t.operator) out.operator = String(t.operator).trim().toUpperCase();
-        if (!keepExisting(t.pin)) {
+
+        // PIN celu ma CZTERY stany i wszystkie trzeba rozróżniać:
+        //  - pola NIE przysłano (undefined) → zostaw dotychczasowy,
+        //  - zamaskowany                    → zostaw dotychczasowy,
+        //  - nowa wartość                   → zapisz ją,
+        //  - przysłany PUSTY                → usuń (kopia poleci PIN-em głównym).
+        //
+        // Rozróżnienie „nie przysłano" od „przysłano puste" jest istotne:
+        // bez niego klient, który o tym polu nie wie (starsze okno, skrypt
+        // wołający /api/config), po cichu kasowałby cudze PIN-y. Usunięcie
+        // musi być jawną decyzją, a okno pyta o nią wprost.
+        const prev = previous.find((p) => String(p.station_callsign).toUpperCase() === station);
+        const przyslany = t.pin !== undefined && t.pin !== null;
+        const zamaskowany = typeof t.pin === 'string' && t.pin.includes('*');
+        const nowy = przyslany && !zamaskowany && String(t.pin).trim() !== '';
+        if (nowy) {
           out.pin = String(t.pin).trim();
-        } else {
-          // Zamaskowany PIN → zachowaj dotychczasowy dla tej samej stacji.
-          // Pole `pin` w celu jest drogą z 0.1.x i nie ma go w interfejsie,
-          // ale zapis z okna nie może go po cichu skasować.
-          const prev = previous.find((p) => String(p.station_callsign).toUpperCase() === station);
+        } else if (!przyslany || zamaskowany) {
           if (prev?.pin) out.pin = prev.pin;
         }
+        // przysłany i pusty → celowo nic nie ustawiamy: PIN usunięty
         return out;
       });
   }

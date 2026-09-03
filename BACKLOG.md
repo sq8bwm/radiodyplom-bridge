@@ -107,33 +107,6 @@ wartością z konfiguracji, zamiast tekstem od operatora.
 
 ## Funkcjonalne
 
-### Powrót PIN-u per operator (i może bazy użytkowników)
-Na jutro (2026-09-02). **Uwaga: to była już raz zbudowana i usunięta funkcja** —
-zaczynać od faktów poniżej, nie od zera.
-
-Co wiemy z pomiaru na prawdziwym serwerze (szczegóły i tabela w
-`docs/konfiguracja.md`):
-- PIN API to **konto**, a konto ma w Managerze **listę znaków stacji**;
-- serwer sprawdza **`station_callsign`**, pola `operator` **nie sprawdza wcale**;
-- dlatego jeden PIN wystarcza dla wszystkich stacji z listy konta — i właśnie
-  tak rozwiązaliśmy przypadek `SQ8BWA` (dopisanie stacji do listy).
-
-Kiedy własny PIN przy celu **nadal** ma sens: gdy nie da się (albo nie chce)
-dopisać cudzej stacji do swojego konta — wtedy kopia musi polecieć PIN-em
-właściciela tej stacji.
-
-Stan wyjściowy: pole `pin` przy celu **nigdy nie zostało usunięte z rdzenia**
-(`src/fanout.js`), działa i jest zachowywane przy zapisie z okna — brakuje
-tylko sposobu wpisania go w interfejsie. To jest najtańsza wersja tej zmiany.
-
-Jeśli wraca baza użytkowników, to **kluczowana po znaku STACJI**, nie po
-operatorze — poprzednia wersja myliła te dwa pola. I **nie wracamy** do
-lokalnego odrzucania QSO (`NO_OPERATOR_PIN`): pomiar pokazał, że serwer
-takie QSO normalnie przyjmuje, więc odrzucaliśmy poprawne łączności.
-
-Pamiętać o maskowaniu: PIN-y nigdy nie opuszczają procesu jawne, a wartość
-zamaskowana przy zapisie znaczy „zostaw dotychczasowy".
-
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.
 Nieobsłużone (własne protokoły, **specyfikacji nie weryfikowałam**):
@@ -190,6 +163,22 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Przełączalny język PL/EN — słownik `ui/strings.js`, wybór zapamiętywany,
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
+- **PIN przy celu rozgałęziania i znacznik „Aktywna"** (2026-09-03). Model
+  ustalony ostatecznie: PIN należy do KONTA, konto ma listę przypisanych stacji,
+  a serwer sprawdza wyłącznie `station_callsign` — `operator` jest polem
+  opisowym i nie jest weryfikowany. Dlatego PIN przy celu jest potrzebny tylko
+  wtedy, gdy stacja nie jest przypisana do własnego konta. Bez bazy użytkowników:
+  jedno pole przy regule wystarcza.
+  PIN celu ma cztery stany (nieprzysłany / zamaskowany / nowy / pusty), bo bez
+  rozróżnienia „nie przysłano" od „przysłano puste" klient nieznający tego pola
+  po cichu kasowałby cudze PIN-y. Usunięcie jest za potwierdzeniem.
+  Znacznik `enabled` wyłącza regułę **bez utraty danych**; wyłączenie wszystkich
+  zachowuje się jak brak reguł (jedno QSO ze stacją z loggera), a nie jak brak
+  wysyłki. 220 testów; trzy mutacje wywalają właściwe testy.
+- **Test słownika po raz drugi udowodnił swoją wartość**: przy dodawaniu etykiet
+  te same klucze znów trafiły dwa razy do bloku polskiego (linia
+  `'hint.targetIncomplete':` jest identyczna w obu językach). Wyłapane od razu,
+  zamiast na zrzucie ekranu jak poprzednio.
 - **Okno logu: nie dało się czytać ani nie rosło z oknem.** Skok na koniec był
   bezwarunkowy, więc każde odświeżenie (co 2 s) wyrywało widok z powrotem;
   wysokość pola była wpisana na sztywno (460 px). Teraz: przewijanie za logiem

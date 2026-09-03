@@ -105,6 +105,7 @@ export class StatusApi {
           station_callsign: t.station_callsign,
           operator: t.operator || null,
           pin: t.pin ? maskPin(t.pin) : null,
+          enabled: t.enabled !== false,
         })),
       },
 

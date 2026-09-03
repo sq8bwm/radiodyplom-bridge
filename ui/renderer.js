@@ -348,21 +348,33 @@ function forceUpper(input) {
 
 // ---------- cele fan-outu ----------
 function renderTargets(list) {
-  $('targets').innerHTML = list.map((x) => `
-    <div class="three" style="margin-bottom:8px">
-      <div><label>${t('label.stationCall')}</label><input type="text" class="t-station" value="${esc(x.station_callsign)}" placeholder="SN0ABC"></div>
-      <div><label>${t('label.operator')}</label><input type="text" class="t-op" value="${esc(x.operator || '')}" placeholder="SQ8BWM"></div>
+  $('targets').innerHTML = list.map((x) => {
+    const on = x.enabled !== false;
+    return `
+    <div class="three${on ? '' : ' off'}" style="margin-bottom:8px" data-pinset="${x.pinSet ? '1' : '0'}">
+      <div><label class="t-lbl">${t('label.targetOn')}</label>
+        <input type="checkbox" class="t-on" style="width:auto" ${on ? 'checked' : ''}
+               title="${esc(t('hint.targetOn'))}"></div>
+      <div><label class="t-lbl">${t('label.stationCall')}</label><input type="text" class="t-station" value="${esc(x.station_callsign)}" placeholder="SN0ABC"></div>
+      <div><label class="t-lbl">${t('label.operator')}</label><input type="text" class="t-op" value="${esc(x.operator || '')}" placeholder="SQ8BWM"></div>
+      <div><label class="t-lbl">${t('label.targetPin')}</label><input type="text" class="t-pin" value="${esc(x.pin || '')}" placeholder="${esc(t('hint.targetPin'))}" title="${esc(t('hint.targetPinLong'))}"></div>
       <button class="act sec t-del">${t('btn.remove')}</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   $('targets').querySelectorAll('.t-station, .t-op').forEach(forceUpper);
   $('targets').querySelectorAll('.t-del').forEach((b) => {
     b.onclick = () => { b.closest('.three').remove(); };
+  });
+  // Wyszarzenie od razu po przełączeniu — widać, że reguła nie działa,
+  // jeszcze przed zapisem.
+  $('targets').querySelectorAll('.t-on').forEach((c) => {
+    c.onchange = () => c.closest('.three').classList.toggle('off', !c.checked);
   });
 }
 
 $('btnAddTarget').onclick = () => {
   const current = collectTargets({ validate: false });
-  current.push({ station_callsign: '', operator: '' });
+  current.push({ station_callsign: '', operator: '', enabled: true });
   renderTargets(current);
 };
 
@@ -385,6 +397,10 @@ function collectTargets({ validate = true } = {}) {
     return {
       station_callsign: station,
       operator: row.querySelector('.t-op').value.trim().toUpperCase(),
+      pin: row.querySelector('.t-pin').value.trim(),
+      enabled: row.querySelector('.t-on').checked,
+      // Tylko na potrzeby ostrzeżenia przy zapisie — rdzeń tego nie czyta.
+      _pinWasSet: row.dataset.pinset === '1',
     };
   });
   if (validate && bad) return null;
@@ -403,13 +419,23 @@ $('btnSave').onclick = async () => {
 };
 
 async function saveFromForm() {
-  const targets = collectTargets();
-  if (targets === null) {
+  const collected = collectTargets();
+  if (collected === null) {
     // Zapis wstrzymany, a nie wykonany po cichu z pominięciem wiersza.
     $('saveInfo').textContent = t('hint.targetIncomplete');
     $('saveInfo').className = 'hint lvl-error';
     return;
   }
+
+  // Puste pole PIN-u przy celu, który PIN miał, znaczy „usuń go". To decyzja
+  // nieodwracalna z okna (sekretu nie da się odczytać z powrotem), więc pytamy.
+  const zPinem = collected.filter((x) => x._pinWasSet && !x.pin).map((x) => x.station_callsign);
+  if (zPinem.length) {
+    const ok = window.confirm(t('confirm.dropTargetPin').replace('{stacje}', zPinem.join(', ')));
+    if (!ok) return;
+  }
+  const targets = collected.map(({ _pinWasSet, ...x }) => x);
+
   const r = await window.bridge.saveConfig({
     radiodyplom: { pin: $('fPin').value.trim(), dryRun: $('fDryRun').checked },
     udp: {

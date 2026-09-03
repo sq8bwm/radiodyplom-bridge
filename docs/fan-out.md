@@ -20,13 +20,48 @@ znakiem stacji. Konfiguruje się to listą celów:
 }
 ```
 
-Cel opisują dwa pola:
+Cel opisują cztery pola:
 
 - `station_callsign` — **wymagany**. Znak stacji; **nadpisuje** znak z loggera.
-  To jedyne pole, które serwer sprawdza — musi być na liście stacji Twojego konta.
+  To jedyne pole, które serwer sprawdza — musi być na liście stacji konta,
+  którego PIN-em leci ta kopia.
 - `operator` — opcjonalny. Trafia do pola `OPERATOR` w QSO; serwer go **nie
   weryfikuje** (sprawdzone: przechodzi nawet znak nieistniejący). Bez niego
   zostaje operator z loggera.
+- `pin` — opcjonalny. PIN **konta**, z którego ma polecieć ta kopia. Potrzebny
+  tylko wtedy, gdy dana stacja **nie jest przypisana do Twojego** konta, a jest
+  do cudzego. Brak = PIN główny.
+- `enabled` — opcjonalny, domyślnie `true`. `false` **wyłącza regułę bez
+  usuwania jej danych**: znak, operator i PIN zostają w pliku, a kopia nie
+  powstaje. Do tego służy pole wyboru „Aktywna" w oknie.
+
+### Wyłączanie reguł
+
+Wyłączenie wszystkich reguł zachowuje się **jak brak reguł**: leci jedno QSO ze
+znakiem stacji z loggera. Świadomie nie „nie wysyłamy nic" — ciche gubienie QSO
+to najgorsze, co ten program może zrobić.
+
+Wyłączona reguła nie blokuje też swojego znaku: jeśli masz dwie reguły na tę
+samą stację i jedna jest wyłączona, druga zadziała (odrzucanie duplikatów
+liczy tylko reguły czynne).
+
+### PIN celu w oknie
+
+Pole pokazuje PIN **zamaskowany** (`ABCD-****`), a przy zapisie ma cztery stany:
+
+| Co przyszło | Co się dzieje |
+|---|---|
+| pole nieprzysłane (starszy klient, skrypt) | zostaje dotychczasowy |
+| zamaskowane | zostaje dotychczasowy |
+| nowa wartość | zapisana |
+| **puste, a PIN był** | **usunięty** — kopia poleci PIN-em głównym |
+
+Ostatni stan to jedyna droga cofnięcia własnego PIN-u z okna, więc jest za
+potwierdzeniem: okno wymienia stacje, których to dotyczy, i ostrzega, że
+sekretu nie da się odczytać z powrotem.
+
+Rozróżnienie „nie przysłano" od „przysłano puste" jest istotne — bez niego
+klient, który o tym polu nie wie, po cichu kasowałby cudze PIN-y.
 
 Znak stacji i operator to **dwa różne pola** i celowo nie podstawiamy jednego pod
 drugie: przy pracy pod znakiem okolicznościowym stacja to `SP0DEF`, a operator

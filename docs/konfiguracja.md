@@ -20,6 +20,8 @@ W `config.json` wstaw PIN API z Managera radiodyplom
 | `udp.port` | port nasłuchu (musi zgadzać się z loggerem) |
 | `forward.operations` | które operacje QLog przekazywać (domyślnie `["insert"]`) |
 | `forward.targets[].operator` | pole OPERATOR tej kopii (dane, serwer go nie sprawdza) |
+| `forward.targets[].pin` | PIN konta, z którego leci ta kopia (brak = PIN główny) |
+| `forward.targets[].enabled` | `false` wyłącza regułę bez usuwania danych (domyślnie `true`) |
 | `queue.maxAttempts` | ile prób przed odłożeniem do `data/failed/` |
 | `rateLimit.maxPerMinute` | limit wysyłek (API dopuszcza 10/min, trzymamy 9) |
 | `ui.recentEvents` | ile ostatnich zdarzeń pokazuje zakładka Stan (5–200, domyślnie 20) |

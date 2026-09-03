@@ -67,8 +67,10 @@ const DICT = {
     'label.address': 'Adres',
     'label.port': 'Port',
     'label.multicast': 'Grupy multicast (po przecinku, np. 224.0.0.222)',
+    'label.targetOn': 'Aktywna',
     'label.stationCall': 'Znak stacji',
     'label.operator': 'Operator (opcjonalnie)',
+    'label.targetPin': 'PIN konta (opcjonalnie)',
     'label.language': 'Język interfejsu',
 
     'hint.pin': 'Zostaw zamaskowany, żeby nie zmieniać. Wpisz nowy, aby podmienić.',
@@ -85,6 +87,15 @@ const DICT = {
       + 'nawet bez rękojmi przydatności handlowej czy przydatności do określonego celu.',
     'hint.releases': 'Program nie aktualizuje się sam. Zajrzyj do „Wydań", żeby sprawdzić, '
       + 'czy nie ma nowszej wersji.',
+    'hint.targetOn': 'Odznacz, żeby wyłączyć tę regułę bez usuwania jej danych.',
+    'hint.targetPin': 'puste = PIN główny',
+    'hint.targetPinLong': 'PIN konta, z którego ma polecieć ta kopia. Potrzebny tylko, '
+      + 'gdy ta stacja NIE jest przypisana do Twojego konta. Zostaw zamaskowany, '
+      + 'żeby nie zmieniać; wyczyść, żeby wrócić do PIN-u głównego.',
+    'confirm.dropTargetPin': 'Usunąć własny PIN z celów: {stacje}?\n\nTe kopie polecą '
+      + 'wtedy PIN-em głównym, a jeśli te stacje nie są przypisane do Twojego konta, '
+      + 'wrócą jako odrzucone.\n\nSekretu nie da się odczytać z okna, więc trzeba go '
+      + 'będzie wpisać na nowo.',
     'hint.targetIncomplete': 'NIE ZAPISANO — każda pozycja wymaga znaku stacji.',
     'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Każdy znak stacji musi '
       + 'być na liście stacji Twojego konta w Managerze — inaczej serwer nie zapisze kopii.',
@@ -234,8 +245,10 @@ const DICT = {
     'label.address': 'Address',
     'label.port': 'Port',
     'label.multicast': 'Multicast groups (comma separated, e.g. 224.0.0.222)',
+    'label.targetOn': 'Active',
     'label.stationCall': 'Station callsign',
     'label.operator': 'Operator (optional)',
+    'label.targetPin': 'Account PIN (optional)',
     'label.language': 'Interface language',
 
     'hint.pin': 'Leave it masked to keep the current PIN. Type a new one to replace it.',
@@ -252,6 +265,15 @@ const DICT = {
       + 'of merchantability or fitness for a particular purpose.',
     'hint.releases': 'The program does not update itself. Check “Releases” to see whether '
       + 'a newer version is available.',
+    'hint.targetOn': 'Uncheck to switch this rule off without deleting its data.',
+    'hint.targetPin': 'empty = main PIN',
+    'hint.targetPinLong': 'PIN of the account this copy is sent from. Needed only when '
+      + 'that station is NOT assigned to your own account. Leave it masked to keep it; '
+      + 'clear it to fall back to the main PIN.',
+    'confirm.dropTargetPin': 'Remove the own PIN from: {stacje}?\n\nThose copies will then '
+      + 'be sent with the main PIN, and if those stations are not assigned to your '
+      + 'account they will come back rejected.\n\nThe secret cannot be read back from '
+      + 'the window, so you would have to type it again.',
     'hint.targetIncomplete': 'NOT SAVED — every row needs a station callsign.',
     'hint.fanout': 'Empty = one QSO with the station callsign from the logger. Every station '
       + 'callsign must be on your account\'s station list in the Manager — otherwise the '

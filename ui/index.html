@@ -74,7 +74,9 @@
     width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
     background:var(--bg); color:var(--text); font-size:13px; font-family:inherit; }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .three { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:end; }
+  /* Cel fan-outu: znacznik + znak stacji + operator + PIN + usuwanie. */
+  .three { display:grid; grid-template-columns:auto 1fr 1fr 1fr auto; gap:8px; align-items:end; }
+  .three.off input, .three.off .t-lbl { opacity:.45; }
   /* Znaki wywoławcze zawsze wielkimi literami. CSS daje efekt natychmiast,
      a skrypt podmienia samą wartość pola — inaczej widok i treść by się rozjechały. */
   input.callsign { text-transform:uppercase; }

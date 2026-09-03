@@ -15,7 +15,7 @@
     "operations": [
       "insert"
     ],
-    "_targets_komentarz": "Pusta lista = jedno QSO ze stacja z loggera. Podaj cele, aby rozmnozyc jedno QSO na kilka wpisow. station_callsign wymagany i MUSI byc na liscie stacji Twojego konta w Managerze; operator opcjonalny (serwer go nie sprawdza).",
+    "_targets_komentarz": "Pusta lista = jedno QSO ze stacja z loggera. Kazdy cel wymaga station_callsign (musi byc na liscie stacji konta, ktorego PIN-em leci kopia). operator opcjonalny (serwer go nie sprawdza), pin opcjonalny (PIN konta, brak = PIN glowny), enabled=false wylacza regule bez usuwania danych.",
     "targets": []
   },
   "queue": {

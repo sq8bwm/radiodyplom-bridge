@@ -148,7 +148,8 @@ describe('applyConfig — zapis z interfejsu', () => {
     mod.applyConfig(fakeDaemon(cfg), {
       forward: { targets: [{ station_callsign: ' sp1aaa ', operator: ' sp1op ' }] },
     });
-    assert.deepEqual(saved().forward.targets[0], { station_callsign: 'SP1AAA', operator: 'SP1OP' });
+    assert.deepEqual(saved().forward.targets[0],
+      { station_callsign: 'SP1AAA', enabled: true, operator: 'SP1OP' });
   });
 
   test('cel bez znaku stacji jest odfiltrowany', () => {
@@ -283,5 +284,81 @@ describe('liczba pokazywanych zdarzeń', () => {
   test('widok jest widoczny dla interfejsu', () => {
     const view = mod.editableConfig(cfgMod.loadConfig());
     assert.equal(view.ui.recentEvents, 20);
+  });
+});
+
+describe('znacznik włączenia celu', () => {
+  test('brak pola w pliku = reguła włączona', () => {
+    // Zgodność: pliki z 0.1.x nie mają tego pola i muszą dalej działać.
+    const view = mod.editableConfig(cfgMod.loadConfig());
+    assert.equal(view.forward.targets[0].enabled, true);
+  });
+
+  test('wyłączenie zapisuje się, a dane celu zostają', () => {
+    // Sedno znacznika: wyłączyć bez utraty znaku, operatora i PIN-u.
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), {
+      forward: { targets: [{ station_callsign: 'SQ8BWA', operator: 'SQ8BWA', enabled: false }] },
+    });
+    const t0 = saved().forward.targets[0];
+    assert.equal(t0.enabled, false);
+    assert.equal(t0.operator, 'SQ8BWA');
+    assert.equal(t0.pin, 'BBBB-2222', 'PIN nie może zniknąć przy wyłączaniu');
+  });
+
+  test('ponowne włączenie przywraca działanie bez wpisywania czegokolwiek', () => {
+    const cfg = cfgMod.loadConfig();
+    const d = fakeDaemon(cfg);
+    mod.applyConfig(d, { forward: { targets: [{ station_callsign: 'SQ8BWA', enabled: false }] } });
+    mod.applyConfig(d, { forward: { targets: [{ station_callsign: 'SQ8BWA', enabled: true }] } });
+    const t0 = saved().forward.targets[0];
+    assert.equal(t0.enabled, true);
+    assert.equal(t0.pin, 'BBBB-2222');
+  });
+
+  test('znacznik trafia do listenera od razu, bez restartu', () => {
+    const cfg = cfgMod.loadConfig();
+    const d = fakeDaemon(cfg);
+    const r = mod.applyConfig(d, {
+      forward: { targets: [{ station_callsign: 'SQ8BWA', enabled: false }] },
+    });
+    assert.equal(d.listener.targets[0].enabled, false);
+    assert.deepEqual(r.restartRequired, []);
+  });
+});
+
+describe('PIN celu — cztery stany', () => {
+  test('pole nieprzysłane wcale → PIN zostaje', () => {
+    // Ochrona przed klientem, który o tym polu nie wie.
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), {
+      forward: { targets: [{ station_callsign: 'SQ8BWA' }] },
+    });
+    assert.equal(saved().forward.targets[0].pin, 'BBBB-2222');
+  });
+
+  test('zamaskowany → PIN zostaje', () => {
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), {
+      forward: { targets: [{ station_callsign: 'SQ8BWA', pin: 'BBBB-****' }] },
+    });
+    assert.equal(saved().forward.targets[0].pin, 'BBBB-2222');
+  });
+
+  test('nowa wartość → nadpisuje', () => {
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), {
+      forward: { targets: [{ station_callsign: 'SQ8BWA', pin: 'INNY-9999' }] },
+    });
+    assert.equal(saved().forward.targets[0].pin, 'INNY-9999');
+  });
+
+  test('przysłany PUSTY → PIN usunięty', () => {
+    // Jedyna droga cofnięcia własnego PIN-u z okna. Okno pyta o potwierdzenie.
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), {
+      forward: { targets: [{ station_callsign: 'SQ8BWA', pin: '' }] },
+    });
+    assert.equal(saved().forward.targets[0].pin, undefined);
   });
 });

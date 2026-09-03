@@ -120,6 +120,14 @@ export function loadConfig(opts = {}) {
     if (!t?.station_callsign || !String(t.station_callsign).trim()) {
       throw new Error('Każdy cel w config.forward.targets wymaga station_callsign.');
     }
+    // Znacznik włączenia: normalizujemy do boola, brak pola = włączony.
+    // Bez normalizacji `"enabled": "false"` z ręcznej edycji byłoby prawdą.
+    t.enabled = t.enabled !== false && String(t.enabled).toLowerCase() !== 'false';
+  }
+
+  const wylaczone = (targets || []).filter((t) => !t.enabled).length;
+  if (wylaczone) {
+    log.info(`Cele fan-outu wyłączone: ${wylaczone} z ${targets.length} — nie polecą`);
   }
 
   // Ile ostatnich zdarzeń pokazuje interfejs. Ograniczone z góry rozmiarem

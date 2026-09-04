@@ -69,9 +69,24 @@ do sesyjnego. QSO, które nie opuściło komputera, nie jest wysłane. Liczba
 przejść próbnych od początku jest w podpowiedzi karty.
 
 Panel **ŹRÓDŁA** pokazuje pod dekoderami wiersz `bez QSO`, z podziałem na
-nieznany format, brak wymaganych pól i świadome pominięcie (np. edycja QSO
-w loggerze — QLog wysyła wtedy operację inną niż `insert`). Wcześniej ta różnica
-nie była widoczna nigdzie w oknie, a w logu siedziała na poziomie DEBUG.
+nieznany format, brak wymaganych pól i świadome pominięcie — a pod nim
+**wypisuje powody z liczbami**, na przykład:
+
+```
+bez QSO: 4  (nieznany format: 0 · brak wymaganych pól: 0 · pominięte świadomie: 4)
+    operacja "update": 3
+    operacja "delete": 1
+```
+
+Najczęstszy powód to **edycja albo usunięcie QSO w loggerze**: QLog wysyła
+datagram przy każdej operacji w dzienniku, a mostek przekazuje wyłącznie
+`insert` (`forward.operations`). Ponowne wysłanie poprawionego QSO i tak byłoby
+duplikatem — radiodyplom nie ma czego „poprawiać".
+
+Powody są **zliczane, a nie logowane** na poziomie `info`: WSJT-X nadaje
+komunikaty stanu co sekundę i zalałby log. Wcześniej trafiały tylko do `debug`,
+więc przy domyślnych ustawieniach nie dało się odpowiedzieć na pytanie „skąd
+te cztery pominięte".
 
 ### Powiadomienie o nowszej wersji
 

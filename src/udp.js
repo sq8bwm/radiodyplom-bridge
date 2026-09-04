@@ -20,7 +20,8 @@ export class LoggerListener {
     this.targets = targets || [];
     this.onQSO = onQSO;
     this.socket = null;
-    this.stats = { received: 0, accepted: 0, skipped: 0, invalid: 0, unknown: 0, bySource: {} };
+    this.stats = { received: 0, accepted: 0, skipped: 0, invalid: 0, unknown: 0,
+      bySource: {}, skipReasons: {} };
   }
 
   start() {
@@ -96,7 +97,19 @@ export class LoggerListener {
     }
     if (result.skip) {
       this.stats.skipped++;
-      log.debug(`Dekoder ${decoder.name}: pomijam – ${result.skip}`);
+      // Powód zliczamy, a nie tylko logujemy. Na poziomie `debug` (bo WSJT-X
+      // sypie komunikatami stanu co sekundę i przy `info` zalałby log), więc
+      // przy domyślnych ustawieniach użytkownik NIE MIAŁ jak się dowiedzieć,
+      // czemu „odebrane z loggera" nie zgadza się ze „źródłami". Pytanie
+      // padło 2026-09-04 przy czterech pominiętych datagramach.
+      //
+      // Liczba różnych powodów jest z natury mała (operacje QLoga, typy
+      // komunikatów WSJT-X), ale limit i tak stawiamy — źródło nadające
+      // śmieci nie ma prawa rozdąć tego bez końca.
+      const powod = String(result.skip);
+      if (this.stats.skipReasons[powod] !== undefined) this.stats.skipReasons[powod] += 1;
+      else if (Object.keys(this.stats.skipReasons).length < 20) this.stats.skipReasons[powod] = 1;
+      log.debug(`Dekoder ${decoder.name}: pomijam – ${powod}`);
       return;
     }
     if (result.error) {

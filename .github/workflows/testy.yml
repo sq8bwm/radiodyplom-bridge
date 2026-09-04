@@ -1,0 +1,43 @@
+# Testy na każdym pull requeście i na każdym wypchnięciu do main.
+#
+# Wynik tego przebiegu jest WYMAGANY do scalenia pull requesta (ustawione
+# w ochronie gałęzi `main`), więc czerwony przebieg blokuje merge.
+name: Testy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Tylko czytanie repozytorium. Domyślnie token dostaje więcej uprawnień, niż
+# potrzebuje — w publicznym repozytorium nie ma powodu ich zostawiać.
+permissions:
+  contents: read
+
+# Nowe wypchnięcie do tej samej gałęzi anuluje poprzedni przebieg. Bez tego
+# przy trzech poprawkach z rzędu liczą się trzy przebiegi, a liczy się ostatni.
+concurrency:
+  group: testy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      # ŻADEN test nie uruchamia Electrona — `desktop-entry.test.js` tylko
+      # czyta `electron-builder.yml` (przez js-yaml). Pominięcie ściągania
+      # binarki Electrona oszczędza ~100 MB i większość czasu przebiegu.
+      - name: Zależności
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      - name: Testy
+        run: npm test

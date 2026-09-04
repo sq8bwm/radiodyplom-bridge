@@ -34,44 +34,37 @@ Techniczna strona, gdyby kiedyś wróciło: `git filter-branch --tree-filter`
 przeszedłby po 30 commitach, podmieniając pole `license` i dokładając `LICENSE`.
 Wykonalne w minutę; problem nie jest techniczny.
 
-### Stary PIN SQ8BWA w obiektach GitHuba — do odśmiecenia przez GitHub Support
-**Uwaga: 2026-09-04 repozytorium stało się PUBLICZNE**, więc nieosiągalny blob
-jest teraz dostępny dla każdego, kto zna jego SHA — a nie tylko dla trojga
-współpracowników. PIN jest wymieniony i bezwartościowy, ale ekspozycja się
-zmieniła, więc zgłoszenie do GitHub Support przestało być opcjonalne.
-Gotowa treść zgłoszenia leży w scratchpadzie sesji (patrz historia rozmowy);
-warunki są dobre: 0 forków, 0 otwartych pull requestów.
+### Stary PIN SQ8BWA w obiektach GitHuba — zamknięte, zostaje jak jest
+**Rozstrzygnięte 2026-09-04.** Zgłoszenia do GitHub Support **nie wysyłamy** —
+sprawdzone w dokumentacji (*Removing sensitive data from a repository*):
 
-**Stan na 2026-09-03.** Blob nadal daje się pobrać po SHA (sprawdzone: wymuszone
-wypchnięcie nie odśmieca magazynu GitHuba). Zawiera **wyłącznie** stary PIN
-konta SQ8BWA, dwa razy — sprawdzone zawartością: PIN-u SQ8BWM tam nie ma,
-innych sekretów też nie.
+> GitHub Support won't remove non-sensitive data, and will only assist in the
+> removal of sensitive data in cases where we determine that the risk can't be
+> mitigated by rotating affected credentials.
 
-Ten PIN **został wymieniony 2026-09-02**, więc te bajty są bezwartościowe.
-Z bezpieczeństwa zrobiła się higiena, a higiena nie jest warta kasowania
-i odtwarzania repozytorium (jedyna droga z gwarancją; druga to zgłoszenie
-do GitHub Support).
+PIN został wymieniony 2026-09-02, więc ryzyko jest zażegnane rotacją i GitHub
+takiej prośby nie realizuje. Wcześniejsza notatka w tym miejscu twierdziła, że
+„robią to bez dyskusji" — to było powtórzone przekonanie, nie sprawdzony fakt.
 
-Wniosek na przyszłość zostaje ten sam: **nie commitować surowych logów pracy** —
-log mostka pokazuje ładunki żądań razem z PIN-ami celów.
+Stan faktyczny, dla porządku:
 
+- blob jest nieosiągalny z jakiejkolwiek gałęzi i tagu, ale nadal dawał się
+  pobrać po SHA (sprawdzone 2026-09-03);
+- po upublicznieniu repozytorium (2026-09-04) może go pobrać każdy, **kto zna
+  jego SHA** — a SHA nie da się zgadnąć ani wyklikać, i nie ma go w żadnym
+  publicznym odnośniku;
+- zawiera **wyłącznie** stary, wymieniony PIN konta SQ8BWA, dwa razy. PIN-u
+  SQ8BWM tam nie ma, innych sekretów też nie;
+- 0 forków i 0 otwartych pull requestów, więc nic tego nie rozprzestrzenia.
 
-### Zapis do `main` — tylko właściciel, reszta przez pull request
-Ustalone 2026-09-04, po upublicznieniu repozytorium.
+Jedyna droga z gwarancją to skasowanie i odtworzenie repozytorium — a to dziś
+znaczy utratę publicznego adresu i czterech wydań z pobraniami. Nieproporcjonalne
+do martwych bajtów.
 
-`main` wymaga **pull requesta** (zero wymaganych zatwierdzeń — chodzi o ścieżkę,
-nie o recenzję), a `enforce_admins` jest **wyłączone**, więc SQ8BWM jako
-administrator pisze do `main` bezpośrednio. `piotr-maj` i `agapaha` zachowują
-`push`, dzięki czemu mogą wypychać własne gałęzie w tym repozytorium i otwierać
-z nich pull requesty — ale do `main` już nie wejdą wprost.
-
-Dlaczego nie „ogranicz, kto może pisać do tej gałęzi": ta opcja działa
-**wyłącznie w repozytoriach organizacji**. Przy koncie osobistym pole
-`restrictions` API odrzuca, więc wymuszenie pull requesta plus pominięcie dla
-administratora jest jedyną drogą do tego samego efektu.
-
-Zablokowane pozostają też wymuszone wypchnięcie i usunięcie gałęzi — te dwie
-rzeczy dotyczą **wszystkich**, także właściciela (sprawdzone: `GH006`).
+**Wniosek na przyszłość zostaje ten sam i jest jedyną rzeczą, która tu naprawdę
+działa: nie commitować surowych logów pracy.** Log mostka pokazuje ładunki żądań
+razem z PIN-ami celów. Od 0.1.10 tryb próbny PIN-u już nie zapisuje, a `*.log`
+jest w `.gitignore`.
 
 ### Podpis kodu dla Windows — nie podpisujemy
 **Decyzja (2026-08-31): nie kupujemy certyfikatu.** Instalator zostaje niepodpisany,

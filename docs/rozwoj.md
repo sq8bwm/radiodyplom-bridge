@@ -70,6 +70,17 @@ Skuteczność zestawu sprawdzona mutacjami: cofnięcie poprawki zawsze wywala
 odpowiedni test, a nie tylko „przechodzi na zielono".
 
 
+### Testy w CI
+
+`.github/workflows/testy.yml` — na każdym pull requeście i wypchnięciu do `main`.
+Przebieg zajmuje **około 30 sekund**, bo pomijamy ściąganie binarki Electrona
+(`ELECTRON_SKIP_BINARY_DOWNLOAD`): żaden test jej nie potrzebuje, a to ~100 MB
+i większość czasu. `desktop-entry.test.js` czyta `electron-builder.yml` tylko
+jako plik, przez `js-yaml`.
+
+Token przebiegu ma `contents: read` i nic więcej. Kolejny przebieg tej samej
+gałęzi anuluje poprzedni — przy kilku poprawkach z rzędu liczy się ostatni.
+
 ## Pakowanie i dystrybucja
 
 ```bash
@@ -161,6 +172,16 @@ nowe dekodery loggerów (jeden plik w `src/decoders/`, patrz `loggery.md`).
 `main` jest chroniony i **wymaga pull requesta**; wymuszone wypchnięcia
 i usunięcie gałęzi są zablokowane dla wszystkich, także dla właściciela.
 Bezpośrednio do `main` pisze tylko właściciel repozytorium.
+
+**Testy uruchamiają się automatycznie na każdym pull requeście** i ich zielony
+wynik jest **wymagany do scalenia** — czerwony przebieg blokuje merge (stan
+`BLOCKED`, GitHub odmawia: *„the base branch policy prohibits the merge"*).
+Ustawiona jest też opcja `strict`, więc gałąź musi mieć najnowszy `main`, żeby
+testy przechodziły na tym, co faktycznie wejdzie.
+
+Sprawdzone końcowo na PR #1: z zepsutym testem scalenie odrzucone, po jego
+usunięciu stan `CLEAN` i scalenie przeszło zwykłą drogą, bez uprawnień
+administratora.
 
 Czego oczekuję od zgłoszenia:
 

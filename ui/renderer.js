@@ -120,6 +120,15 @@ function renderStatus(s) {
   renderEvents(s);
   renderProblems(s);
   renderAccount(s);
+  // Dyskretna odznaka w nagłówku — bez wyskakujących okien. Mostek ma
+  // pracować, a nie przerywać pracę informacją o wersji.
+  const upd = $('updBadge');
+  upd.hidden = !s.update?.available;
+  if (s.update?.available) {
+    upd.textContent = t('badge.update').replace('{n}', s.update.latest);
+    upd.title = t('hint.update');
+    upd.onclick = () => document.querySelector('nav button[data-tab="about"]').click();
+  }
   paintTargetChecks(s.forward?.targets);
 
   renderAbout(s);
@@ -293,9 +302,16 @@ function renderAbout(s) {
     repository: s.repository,
     license: s.license,
   };
+  // Wiersz o nowszym wydaniu tylko wtedy, gdy NAPRAWDĘ jest nowsze. Brak
+  // łączności albo wyłączone sprawdzanie nie mają tu nic pokazywać — cisza
+  // jest lepsza od „nie wiem".
+  const wersja = s.update?.available
+    ? `<b>${esc(s.version || '—')}</b> — <span class="lvl-warn">${
+      t('about.newVersion').replace('{n}', esc(s.update.latest))}</span>`
+    : `<b>${esc(s.version || '—')}</b>`;
   const rows = [
     [t('about.program'), `${esc(s.app || '—')}`],
-    [t('about.version'), `<b>${esc(s.version || '—')}</b>`],
+    [t('about.version'), wersja],
     [t('about.author'), esc(s.author || '—')],
     [t('about.license'), esc(s.license || '—')],
   ];
@@ -304,6 +320,12 @@ function renderAbout(s) {
 
   // Zdanie o braku gwarancji — dla GPL właściwe miejsce w programie z okienkiem.
   $('licenseInfo').innerHTML = `<div>${t('about.gpl')}</div>`;
+  // Przycisk pobrania pokazujemy tylko przy dostępnej nowszej wersji.
+  const btn = $('btnUpdate');
+  btn.hidden = !s.update?.available;
+  btn.textContent = t('btn.getUpdate').replace('{n}', s.update?.latest || '');
+  btn.onclick = () => { if (s.update?.url) window.bridge.openUrl(s.update.url); };
+
   $('btnLicense').disabled = !s.repository;
   $('btnRepo').disabled = !s.repository;
   $('btnReleases').disabled = !s.repository;

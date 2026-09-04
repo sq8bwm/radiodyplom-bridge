@@ -139,6 +139,13 @@ export function loadConfig(opts = {}) {
     ? Math.max(5, Math.min(EVENT_RING, Math.round(want)))
     : 20;
 
+  // Sprawdzanie aktualizacji. Wychodzi na zewnątrz (api.github.com), więc musi
+  // dać się wyłączyć — nie każdy pracuje z łącza bez limitu.
+  cfg.updates = cfg.updates || {};
+  if (typeof cfg.updates.check !== 'boolean') cfg.updates.check = true;
+  const coIle = Number(cfg.updates.intervalHours);
+  cfg.updates.intervalHours = Number.isFinite(coIle) && coIle >= 1 ? coIle : 24;
+
   // Rozwiń ścieżki kolejki do bezwzględnych
   const resolvePath = makeResolver(cfg.dataDir);
   cfg.queue.dir = resolvePath(cfg.queue.dir);

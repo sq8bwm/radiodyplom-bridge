@@ -37,7 +37,7 @@ export function computeState({ paused, online, failed, pingOk }) {
 
 export class StatusApi {
   constructor({ cfg, store, listener, worker, pkg, getPing, getProfile, requeue, getConfig, saveConfig,
-    getPendingRestart, getLogFile, getAccountChecks, checkConfig }) {
+    getPendingRestart, getLogFile, getAccountChecks, checkConfig, getUpdate }) {
     this.cfg = cfg;
     this.store = store;
     this.listener = listener;
@@ -52,6 +52,7 @@ export class StatusApi {
     this.saveConfig = saveConfig;
     this.getAccountChecks = getAccountChecks;
     this.checkConfig = checkConfig;
+    this.getUpdate = getUpdate;
     this.server = null;
     this.startedAt = Date.now();
   }
@@ -90,6 +91,14 @@ export class StatusApi {
       license: this.pkg.license || null,
       repository: this.pkg.repository?.url || this.pkg.repository || null,
       uptimeSec: Math.round((Date.now() - this.startedAt) / 1000),
+
+      // Nowsze wydanie — sama informacja, program NIE aktualizuje się sam.
+      // `null` = nie sprawdzono albo sprawdzanie wyłączone w konfiguracji.
+      update: (() => {
+        const u = this.getUpdate ? this.getUpdate() : null;
+        if (!u || !u.ok) return null;
+        return { available: !!u.newer, latest: u.latest, url: u.url, checkedAt: u.checkedAt };
+      })(),
 
       // Liczby „w tej sesji" wystawione OSOBNO i nazwane wprost.
       //

@@ -68,6 +68,8 @@ before(async () => {
     requeue: () => 2,
     getConfig: () => ({ ui: { recentEvents: 7 } }),
     getPendingRestart: () => [],
+    getUpdate: () => ({ ok: true, latest: '0.1.11', url: 'https://x/rel',
+      newer: true, checkedAt: '2026-09-04T18:00:00.000Z' }),
     getLogFile: () => '/tmp/x.log',
     getAccountChecks: () => [
       { station: 'SN8N', enabled: true, pinSource: 'main', operator: 'SQ8BWM', state: 'ok', blocking: false },
@@ -119,6 +121,13 @@ describe('API stanu — każda trasa odpowiada', () => {
     const s = await (await get('/api/status')).json();
     assert.deepEqual(s.listener.notDecoded, { total: 2, unknown: 0, invalid: 0, skipped: 2 },
       'różnica musi być widoczna z podziałem na przyczyny');
+  });
+
+  test('GET /api/status — nowsze wydanie w stanie', async () => {
+    const s = await (await get('/api/status')).json();
+    assert.equal(s.update.available, true);
+    assert.equal(s.update.latest, '0.1.11');
+    assert.equal(s.update.url, 'https://x/rel');
   });
 
   test('GET /api/log', async () => {

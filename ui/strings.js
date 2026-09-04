@@ -125,6 +125,12 @@ const DICT = {
     'about.version': 'Wersja',
     'about.author': 'Autor',
     'about.license': 'Licencja',
+    'about.newVersion': 'jest nowsza: {n}',
+    'badge.update': 'NOWA WERSJA {n}',
+    'btn.getUpdate': 'Pobierz {n}',
+    'hint.update': 'Jest nowsze wydanie. Program NIE aktualizuje się sam — '
+      + 'kliknij, żeby zobaczyć szczegóły w zakładce „O programie". Sprawdzanie '
+      + 'można wyłączyć w pliku konfiguracji (updates.check).',
     'about.gpl': 'To wolne oprogramowanie: możesz je rozpowszechniać i modyfikować '
       + 'na warunkach Powszechnej Licencji Publicznej GNU w wersji 3 albo dowolnej '
       + 'późniejszej. Program jest udostępniany <b>bez żadnej gwarancji</b> — '
@@ -393,6 +399,12 @@ const DICT = {
     'about.version': 'Version',
     'about.author': 'Author',
     'about.license': 'License',
+    'about.newVersion': 'newer available: {n}',
+    'badge.update': 'NEW VERSION {n}',
+    'btn.getUpdate': 'Download {n}',
+    'hint.update': 'A newer release is available. The program does NOT update '
+      + 'itself — click to see the details on the “About” tab. The check can be '
+      + 'turned off in the configuration file (updates.check).',
     'about.gpl': 'This is free software: you may redistribute and modify it under the '
       + 'terms of the GNU General Public License, version 3 or any later version. '
       + 'It comes with <b>absolutely no warranty</b> — not even the implied warranty '

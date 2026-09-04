@@ -73,6 +73,35 @@ nieznany format, brak wymaganych pól i świadome pominięcie (np. edycja QSO
 w loggerze — QLog wysyła wtedy operację inną niż `insert`). Wcześniej ta różnica
 nie była widoczna nigdzie w oknie, a w logu siedziała na poziomie DEBUG.
 
+### Powiadomienie o nowszej wersji
+
+Program **nie aktualizuje się sam** — sprawdza tylko, czy na GitHubie jest
+nowsze wydanie, i mówi o tym: odznaką w nagłówku (klik → zakładka „O programie")
+oraz wierszem przy numerze wersji, z przyciskiem prowadzącym do wydania.
+
+Dlaczego bez samoaktualizacji — trzy powody, w tej kolejności:
+
+1. **Mostek pracuje w trakcie akcji.** Aktualizator, który się restartuje,
+   przerywa nasłuch UDP, a QSO wysłane przez logger w tym oknie **nie ma jak
+   wrócić** — UDP nie ponawia. Program gubiący łączności, żeby się
+   zaktualizować, jest gorszy od nieaktualnego.
+2. **Samoaktualizacja objęłaby dwie postacie z czterech.** `latest.yml`
+   generowany przez electron-buildera opisuje wyłącznie instalator NSIS,
+   a `latest-linux.yml` wyłącznie AppImage. `.deb` i wersja przenośna i tak
+   potrzebowałyby powiadomienia — czyli tego, co jest.
+3. Instalatorów nie podpisujemy, więc pobrana aktualizacja i tak trafiłaby na
+   ostrzeżenie SmartScreen.
+
+Sprawdzenie idzie do `api.github.com` na starcie i raz na dobę. **Da się je
+wyłączyć** — to wychodzenie na zewnątrz, a nie każdy pracuje z łącza bez limitu:
+
+```json
+"updates": { "check": false }
+```
+
+Brak łączności jest **cichy**: żadnego czerwonego stanu, żadnego wpisu w logu
+powyżej `debug`. Wpis pojawia się tylko wtedy, gdy nowsza wersja naprawdę jest.
+
 ### Panel „Konto na radiodyplom.pl"
 
 Na zakładce **Stan**, z odpowiedzi `PING`. Pokazuje, czym konto naprawdę

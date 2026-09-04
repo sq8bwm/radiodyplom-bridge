@@ -116,7 +116,8 @@ Autor serwisu **rozszerzył API 2026-09-04** (`stations`, `activeActions`,
 Sprawdzanie konfiguracji **jest już zrobione** — patrz
 [docs/konfiguracja.md](docs/konfiguracja.md#sprawdzanie-konfiguracji-wobec-konta-od-019).
 
-Zmierzone i zgłoszone autorowi, blokuje dalsze kroki:
+Zgłoszenie **wysłane 2026-09-04**, czekamy na odpowiedź. Zmierzone i zgłoszone,
+blokuje dalsze kroki:
 
 1. **`is_validation_only` tylko przy sukcesie.** Gdy walidacja stwierdza, że QSO
    nigdzie nie wejdzie, odpowiedź jest bajt w bajt taka jak przy nieudanym

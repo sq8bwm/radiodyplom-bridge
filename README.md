@@ -5,6 +5,8 @@
 Mostek nasłuchuje, co logger wysyła po UDP, i przekazuje każdą łączność na serwer
 akcji dyplomowej. Bez eksportu ADIF, bez wgrywania plików, bez pamiętania o niczym.
 
+[![Testy](https://github.com/SQ8BWM/radiodyplom-bridge/actions/workflows/testy.yml/badge.svg)](https://github.com/SQ8BWM/radiodyplom-bridge/actions/workflows/testy.yml)
+
 ![Okno programu](docs/screenshot.png)
 
 ---

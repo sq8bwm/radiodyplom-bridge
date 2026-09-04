@@ -259,9 +259,27 @@ Opisany w `docs/windows-i-siec.md` (Harmonogram zadań / systemd), ale **nie zai
 brak opcji w instalatorze i brak `app.setLoginItemSettings()`. Dla usługi w tle
 to naturalne oczekiwanie użytkownika.
 
-### Aktualizacje aplikacji
-Brak mechanizmu (`electron-updater`). Przy dystrybucji do innych osób oznacza to,
-że każdą poprawkę trzeba rozesłać ręcznie.
+### Aktualizacje aplikacji — powiadomienie zrobione, samoaktualizacji NIE robimy
+Od 0.1.11 program sprawdza, czy jest nowsze wydanie, i mówi o tym w oknie
+(odznaka + zakładka „O programie"). Nie pobiera i nie instaluje niczego sam.
+
+**Samoaktualizacji świadomie nie wprowadzamy**, ustalone 2026-09-04:
+
+1. Mostek pracuje godzinami w trakcie akcji. Restart przerywa nasłuch UDP,
+   a QSO wysłane przez logger w tym oknie **nie ma jak wrócić** — UDP nie
+   ponawia. To jedyny powód, który wystarcza sam.
+2. Objęłaby dwie postacie z czterech: `latest.yml` opisuje wyłącznie instalator
+   NSIS, `latest-linux.yml` wyłącznie AppImage (sprawdzone w wygenerowanych
+   plikach). `.deb` i wersja przenośna i tak zostają z powiadomieniem.
+3. Bez podpisu kodu pobrany instalator trafi na SmartScreen.
+
+Gdyby kiedyś wracać do tematu: `electron-updater` + sekcja `publish`
+w `electron-builder.yml` + wgrywanie `latest*.yml` do wydania (dziś ich NIE
+wgrywamy) — i twarda reguła „nigdy nie restartuj sam, tylko zaproponuj po
+zamknięciu".
+
+Repozytorium `apt` dla `.deb` byłoby „właściwą" drogą dystrybucji, ale to własny
+serwer albo PPA, klucze GPG i utrzymanie — nieproporcjonalne do skali.
 
 ## Techniczne / jakościowe
 

@@ -31,6 +31,8 @@
   .grow { flex:1; }
   .badge { font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--line);
            color:var(--muted); font-weight:500; white-space:nowrap; }
+  .badge.upd { background:color-mix(in srgb, var(--warn) 18%, transparent);
+               color:var(--warn); border-color:var(--warn); }
   .badge.dry { color:var(--warn); border-color:var(--warn); }
   /* Stan łączności – te same kolory co ikona w zasobniku */
   .badge.st-ok    { color:var(--ok);   border-color:var(--ok);   background:color-mix(in srgb, var(--ok) 10%, transparent); }
@@ -175,6 +177,7 @@
   <span class="badge" id="profile">—</span>
   <span class="badge dry" id="dryBadge" hidden>DRY-RUN</span>
   <span class="badge st-error" id="probBadge" hidden style="cursor:pointer"></span>
+  <span class="badge upd" id="updBadge" hidden style="cursor:pointer"></span>
   <span class="grow"></span>
   <div class="hdr-actions">
     <select class="lang" id="langPick" title="Język / Language"></select>
@@ -331,7 +334,8 @@
       <div id="licenseInfo"></div>
       <div class="row" style="margin-top:10px">
         <button class="act sec" id="btnLicense" data-i18n="btn.licenseText"></button>
-        <button class="act sec" id="btnRepo" data-i18n="btn.repo"></button>
+        <button class="act" id="btnUpdate" hidden></button>
+      <button class="act sec" id="btnRepo" data-i18n="btn.repo"></button>
         <button class="act sec" id="btnReleases" data-i18n="btn.releases"></button>
       </div>
       <div class="hint" data-i18n="hint.releases"></div>

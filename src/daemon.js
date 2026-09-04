@@ -9,6 +9,7 @@
 import { Store } from './store.js';
 import { Journal, readRecords, parseDay } from './journal.js';
 import { aggregate, filterRecords, filterOptions } from './stats.js';
+import { checkAndLog, repoFromUrl } from './updates.js';
 import { RadiodyplomClient } from './radiodyplom.js';
 import { LoggerListener } from './udp.js';
 import { Worker } from './worker.js';
@@ -98,6 +99,7 @@ export async function startDaemon(cfg, opts = {}) {
     api: null,
     lastPing: null,
     profile: null,
+    lastUpdate: null,          // wynik ostatniego sprawdzenia aktualizacji
     // Opis kont (PIN → wynik PING-a). TYLKO w pamięci: to informacje
     // o cudzych kontach, potrzebne wyłącznie do ostrzeżenia w oknie.
     accounts: new Map(),
@@ -143,6 +145,17 @@ export async function startDaemon(cfg, opts = {}) {
         if (!aktualne.has(pin)) handle.accounts.delete(pin);
       }
       return handle.accountChecks();
+    },
+    /**
+     * Sprawdza, czy jest nowsze wydanie. Nigdy nie rzuca i nigdy nie wpływa
+     * na wysyłkę QSO — to wyłącznie informacja dla użytkownika.
+     */
+    async refreshUpdate() {
+      if (cfg.updates?.check === false) return null;
+      const pkg = readPkg();
+      const repo = repoFromUrl(pkg.repository?.url || pkg.repository);
+      handle.lastUpdate = await checkAndLog({ current: pkg.version, repo });
+      return handle.lastUpdate;
     },
     /**
      * Ocena celów z konfiguracji NIEZAPISANEJ, wprost z okna.
@@ -211,6 +224,7 @@ export async function startDaemon(cfg, opts = {}) {
       worker.stop();
       if (handle.api) handle.api.stop();
       if (handle.pingTimer) clearInterval(handle.pingTimer);
+      if (handle.updateTimer) clearInterval(handle.updateTimer);
       store.release();
     },
   };
@@ -224,6 +238,7 @@ export async function startDaemon(cfg, opts = {}) {
     getAccountChecks: () => handle.accountChecks(),
     checkConfig: (patch) => handle.checkConfig(patch),
     getPendingRestart: () => [...(handle.pendingRestart || [])],
+    getUpdate: () => handle.lastUpdate,
     getLogFile: () => logFilePath(),
     requeue: handle.requeue,
     getConfig: () => editableConfig(cfg),
@@ -256,6 +271,19 @@ export async function startDaemon(cfg, opts = {}) {
     }
   }, pingEveryMs);
   handle.pingTimer.unref?.();
+
+  // Sprawdzenie aktualizacji: na starcie i raz na dobę. Bez `await` — mostek
+  // ma być gotowy do przyjmowania QSO natychmiast, a to tylko informacja.
+  if (cfg.updates?.check !== false) {
+    Promise.resolve(handle.refreshUpdate()).catch(() => { /* wygoda, nie warunek */ });
+    const coIle = (cfg.updates?.intervalHours ?? 24) * 3600 * 1000;
+    handle.updateTimer = setInterval(() => {
+      Promise.resolve(handle.refreshUpdate()).catch(() => {});
+    }, coIle);
+    handle.updateTimer.unref?.();
+  } else {
+    log.debug('Sprawdzanie aktualizacji wyłączone w konfiguracji');
+  }
 
   // Sprawdzenie celów wobec uprawnień kont.
   //

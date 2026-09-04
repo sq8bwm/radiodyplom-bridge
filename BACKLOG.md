@@ -163,6 +163,25 @@ Do rozważenia, gdy pojawi się potrzeba:
   jeszcze długo nie problem. Podział na pliki miesięczne jest już zrobiony, więc
   usuwanie starych będzie trywialne.
 
+### Wrzucanie spotów — pomysł, nie zamówienie
+Zgłoszone 2026-09-04 jako „może kiedyś". Nic nie było jeszcze ustalane, więc
+zapisuję tylko to, co trzeba będzie rozstrzygnąć NA POCZĄTKU, żeby nie zacząć
+od budowania złej rzeczy:
+
+- **Gdzie spotować.** Klaster DX (telnet, protokół tekstowy), SOTAwatch/POTA
+  (HTTP), czy radiodyplom, gdyby dorobił u siebie spoty? To trzy różne
+  rozwiązania i różne dane logowania.
+- **Kogo spotować: siebie czy korespondenta.** Aktywator spotuje siebie
+  („jestem na 7.144"), a to znaczy, że dane NIE pochodzą z QSO, tylko ze
+  stanu radia albo z ręcznego wpisu. Kolejka QSO jest tu bez znaczenia.
+- **Czy z automatu.** Spot po każdym QSO to zaśmiecanie klastra; realnie
+  potrzebne jest „wrzuć spot teraz" na żądanie albo po zmianie pasma.
+
+Loggery wysyłają nam tylko zalogowane QSO, więc częstotliwość bieżąca jest
+znana wyłącznie wtedy, gdy właśnie coś zalogowano. Jeśli spot ma być
+niezależny od QSO, trzeba będzie osobnego źródła (CAT z radia albo pole
+w oknie) — i to jest największa nieznana tej pozycji.
+
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.
 Nieobsłużone (własne protokoły, **specyfikacji nie weryfikowałam**):

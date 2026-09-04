@@ -8,8 +8,15 @@
 //
 // MODEL UPRAWNIEŃ (zmierzony 2026-09-02, patrz docs/konfiguracja.md):
 // PIN API należy do KONTA, a konto ma listę znaków stacji, na które wolno mu
-// logować. To `station_callsign` decyduje, czy QSO zostanie zapisane — pola
-// `operator` serwer nie sprawdza w ogóle (przechodzi nawet znak nieistniejący).
+// logować. To `station_callsign` decyduje, czy QSO zostanie zapisane.
+//
+// Pole `operator` serwer sprawdza TYLKO jako znak krótkofalarski (zmierzone
+// 2026-09-04, potwierdzone przez autora serwisu): z żadną listą go nie wiąże,
+// więc przechodzi dowolny poprawny znak, także nieistniejący — ale wartość
+// niebędąca znakiem odbija QSO (`INVALID_CALLSIGN`, HTTP 400), a dłuższa niż
+// 15 znaków jest po cichu UCINANA. Wcześniejszy komentarz twierdził, że
+// serwer nie sprawdza tego pola w ogóle; to był zbyt mocny wniosek z pomiaru
+// na znaku o poprawnym kształcie.
 //
 // Stąd rola pola `pin` przy celu: potrzebne tylko wtedy, gdy dana stacja NIE
 // jest przypisana do Twojego konta, a jest do cudzego. Wtedy kopia musi polecieć

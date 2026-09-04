@@ -19,7 +19,7 @@ W `config.json` wstaw PIN API z Managera radiodyplom
 | `radiodyplom.dryRun` | `true` = nic nie wysyła, tylko loguje (do testów) |
 | `udp.port` | port nasłuchu (musi zgadzać się z loggerem) |
 | `forward.operations` | które operacje QLog przekazywać (domyślnie `["insert"]`) |
-| `forward.targets[].operator` | pole OPERATOR tej kopii (dane, serwer go nie sprawdza) |
+| `forward.targets[].operator` | pole OPERATOR tej kopii (sprawdzane tylko jako znak; >15 znaków ucinane) |
 | `forward.targets[].pin` | PIN konta, z którego leci ta kopia (brak = PIN główny) |
 | `forward.targets[].enabled` | `false` wyłącza regułę bez usuwania danych (domyślnie `true`) |
 | `queue.maxAttempts` | ile prób przed odłożeniem do `data/failed/` |

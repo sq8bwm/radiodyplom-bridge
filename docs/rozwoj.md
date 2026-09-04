@@ -93,6 +93,22 @@ GitHub zamienia spacje na kropki przy wgrywaniu załączników do wydania, przez
 plik sum kontrolnych przestawał pasować do tego, co odbiorca pobiera. Windows buduje się **z
 Linuksa** — electron-builder sam dociąga NSIS, wine nie jest potrzebne.
 
+### Konwencja nazw wydania
+
+| Miejsce | Postać | Przykład |
+|---|---|---|
+| tag w gicie | **z** `v` | `v0.1.10` |
+| `package.json` | bez `v` | `0.1.10` |
+| nazwy plików | bez `v` | `radiodyplom-bridge-0.1.10.deb` |
+| **tytuł wydania na GitHubie** | **bez** `v` | `0.1.10 — statystyki QSO…` |
+
+Tytuł bez `v`, bo GitHub i tak pokazuje obok niego tag `v0.1.10` — powtarzanie
+jest zbędne, a nazwy plików dystrybucyjnych też są bez `v`.
+
+Przy 0.1.9 i 0.1.10 tytuły wyszły bez `v`, a przy 0.1.7 i 0.1.8 z `v`; różnicę
+wyrównano wstecz 2026-09-04 (`gh release edit --title`). Zmiana tytułu nie
+dotyka tagu, załączników ani sum kontrolnych — sprawdzone.
+
 Każde pakowanie kończy się wygenerowaniem **`release/SHA256SUMS`** (osobno:
 `npm run checksums`). Plik jest w formacie zgodnym z `sha256sum`, więc odbiorca
 sprawdza pobranie jednym poleceniem:

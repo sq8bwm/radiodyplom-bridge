@@ -183,6 +183,30 @@ Sprawdzone końcowo na PR #1: z zepsutym testem scalenie odrzucone, po jego
 usunięciu stan `CLEAN` i scalenie przeszło zwykłą drogą, bez uprawnień
 administratora.
 
+Do scalenia potrzebne jest też **jedno zatwierdzenie właściciela kodu**
+(`.github/CODEOWNERS`). Zatwierdzenie kogokolwiek innego nie wystarcza — nawet
+osoby z prawem zapisu. Nowy commit po zatwierdzeniu **unieważnia je**, żeby nie
+dało się dopisać czegoś już po recenzji.
+
+### Dlaczego właściciel scala własne PR-y uprawnieniem administratora
+
+GitHub nie pozwala zatwierdzić **własnego** pull requesta. Skoro wymagane jest
+zatwierdzenie właściciela kodu, a właściciel jest jeden, to jego własne PR-y nie
+mogą tego wymogu spełnić. Scala je więc pominięciem reguły:
+
+```bash
+gh pr merge <numer> --squash --admin
+```
+
+Testy muszą przy tym być **zielone** — pominięcie jest świadomą decyzją
+właściciela, a nie sposobem na obejście czerwonego CI. Każde takie scalenie
+GitHub odnotowuje (`Bypassed rule violations`).
+
+Zwykła ścieżka pracy to od teraz **pull request**, także dla właściciela.
+Bezpośredni commit do `main` zostaje na sytuacje, w których inaczej nie da się
+zacząć — na przykład `CODEOWNERS` musi istnieć na gałęzi bazowej, zanim ochrona
+zacznie z niego korzystać.
+
 Czego oczekuję od zgłoszenia:
 
 - **testy przechodzą** (`npm test`) i nowe zachowanie ma swój test — najlepiej

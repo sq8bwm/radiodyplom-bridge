@@ -85,10 +85,25 @@ Data QSO idzie z pola ADIF, czyli jest w UTC.
 Dziennik powstał w wersji 0.1.10. Wcześniejsze QSO da się odzyskać z plików logu —
 jest w nich wszystko poza datą samej łączności:
 
+Z katalogu z kodem:
+
 ```bash
 node src/tools/import-log.js --dry  ~/.local/share/radiodyplom-bridge/data/bridge.log
 node src/tools/import-log.js        ~/.local/share/radiodyplom-bridge/data/bridge.log
 ```
+
+Z **zainstalowanej** wersji (bez Node w systemie — używamy tego, który jest
+w paczce; sprawdzone na zbudowanym pakiecie):
+
+```bash
+APP=/opt/RadioDyplom\ Bridge
+ELECTRON_RUN_AS_NODE=1 "$APP/radiodyplom-bridge" \
+  "$APP/resources/app.asar/src/tools/import-log.js" \
+  --dry ~/.local/share/radiodyplom-bridge/data/bridge.log
+```
+
+Najpierw zawsze `--dry` — pokaże, ile wpisów by dodał i z jakiego zakresu dat,
+nie zapisując niczego.
 
 | Przełącznik | Działanie |
 |---|---|

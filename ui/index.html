@@ -75,8 +75,18 @@
     background:var(--bg); color:var(--text); font-size:13px; font-family:inherit; }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   /* Cel fan-outu: znacznik + znak stacji + operator + PIN + usuwanie. */
-  .three { display:grid; grid-template-columns:auto 1fr 1fr 1fr auto; gap:8px; align-items:end; }
+  .three { display:grid; grid-template-columns:auto 1fr 1fr 1fr auto auto; gap:8px; align-items:end; }
   .three.off input, .three.off .t-lbl { opacity:.45; }
+  /* Znacznik uprawnień przy regule. Trwały, jak plakietka problemów —
+     ostrzeżenie, które gaśnie samo, jest gorsze od żadnego. */
+  .t-chk { font-size:16px; line-height:32px; cursor:help; user-select:none; }
+  .t-chk.bad { color:var(--err); }
+  .t-chk.warn { color:var(--warn); }
+  .t-chk.ok { color:var(--ok); }
+  /* Reguła wyłączona nic nie wysyła, więc jej usterka nie jest pilna —
+     znacznik zostaje (po włączeniu zaboli), ale nie krzyczy czerwienią. */
+  .t-chk.muted { color:var(--muted); }
+  .three.off .t-chk { opacity:.45; }
   /* Znaki wywoławcze zawsze wielkimi literami. CSS daje efekt natychmiast,
      a skrypt podmienia samą wartość pola — inaczej widok i treść by się rozjechały. */
   input.callsign { text-transform:uppercase; }
@@ -144,6 +154,10 @@
       <div class="card"><div class="k" data-i18n="card.failed"></div><div class="v" id="cFailed">0</div></div>
       <div class="card"><div class="k" data-i18n="card.received"></div><div class="v" id="cRecv">0</div></div>
       <div class="card"><div class="k" data-i18n="card.skipped"></div><div class="v" id="cSkipped">0</div></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="panel.account"></h2>
+      <div id="accountInfo" class="empty"></div>
     </div>
     <div class="panel">
       <h2 data-i18n="panel.listen"></h2>

@@ -36,6 +36,40 @@ Brak łączności rozpoznawany jest **dwiema drogami**, żeby nie umknął w ża
 Błąd trwały (zły znak, brak uprawnień) **nie** gasi łączności — to problem z danymi,
 nie z siecią, i dlatego daje stan żółty, a nie czerwony.
 
+### Panel „Konto na radiodyplom.pl"
+
+Na zakładce **Stan**, z odpowiedzi `PING`. Pokazuje, czym konto naprawdę
+dysponuje: operatora, **znaki stacji, na które wolno logować**, i **aktywne akcje**
+z zakresem dat. To odpowiedź na najczęstsze „dlaczego moje QSO się nie zapisało":
+albo znaku stacji nie ma na liście, albo żadna akcja w tej chwili nie trwa.
+
+Rozróżnia dwa różne braki:
+
+- *serwis nie podaje* — starsza wersja API, nic nie wiemy;
+- *brak — konto nie ma przypisanej żadnej stacji* — serwis odpowiedział i wiemy,
+  że nie ma nic.
+
+### Znacznik uprawnień przy regule fan-outu
+
+Każdy wiersz w „Rozmnażanie QSO na wiele stacji" ma znacznik, z podpowiedzią
+pod kursorem:
+
+| Znacznik | Znaczenie |
+|---|---|
+| zielone `✓` | konto ma tę stację na liście — kopie się zapiszą |
+| żółta `•` | uprawnienia są, ale konto nie ma teraz aktywnej akcji |
+| czerwone `!` | serwis kopii **nie przyjmie** (brak stacji, zły PIN, wyłączone API) |
+| szare | to samo, ale reguła jest wyłączona — nic nie wysyła, więc nie jest pilne |
+| brak | nie wiadomo: brak łączności, starszy serwis albo reguła dopiero wpisywana |
+
+Znacznik jest **trwały** — nie gaśnie sam po chwili. Ostrzeżenie, które znika,
+jest gorsze od żadnego.
+
+Przy **zapisie** okno pyta, jeśli któraś włączona reguła nie przejdzie, i wymienia
+stacje. **Zapisu nie blokuje**: dane bywają nieaktualne o minutę, serwis może nie
+odpowiedzieć, a „wpiszę regułę teraz, stację dopiszę wieczorem" to normalna
+kolejność pracy. Szczegóły w [konfiguracja.md](konfiguracja.md).
+
 ### Język
 Przełącznik **Polski / English** w nagłówku okna. Wybór zapamiętywany w konfiguracji
 (`language`), więc obowiązuje też dla menu i podpowiedzi w zasobniku oraz po restarcie.
@@ -162,6 +196,7 @@ Daemon wystawia lokalną powierzchnię stanu, z której korzysta interfejs użyt
 | POST | `/api/pause` | wstrzymuje **wysyłkę**; odbiór z loggera i kolejkowanie działają dalej |
 | POST | `/api/resume` | wznawia wysyłkę |
 | POST | `/api/requeue` | przywraca QSO z `failed/` do kolejki |
+| POST | `/api/config/check` | ocenia cele z konfiguracji **niezapisanej** (ciało: taki sam obiekt jak przy zapisie) |
 
 Dwie decyzje projektowe, świadome i celowe:
 
@@ -171,6 +206,14 @@ Dwie decyzje projektowe, świadome i celowe:
 
 > **PIN-y nigdy nie opuszczają procesu.** W `/api/status` są zamaskowane (`ABCD-****`),
 > tak samo PIN-y celów fan-outu. UI nie potrzebuje ich w jawnej postaci.
+
+> **Sprawdzanie nigdy nie zwraca piątki.** `/api/config/check` przy błędzie oddaje
+> `200` z `ok:false` i pustą listą ocen. Gdyby padało błędem, okno musiałoby
+> zgadywać, czy zapis wolno wykonać — a wolno **zawsze**.
+
+Z cudzych kont `/api/status` podaje przy regule tylko `state`, `blocking` i znak
+operatora — nigdy listy stacji. Listy stacji widać wyłącznie dla konta głównego,
+w panelu „Konto na radiodyplom.pl".
 
 Jeśli **port API** (12061) jest zajęty, daemon loguje ostrzeżenie i pracuje dalej —
 brak podglądu nigdy nie może zatrzymać przekazywania QSO. Sprawdzone: przy zajętym

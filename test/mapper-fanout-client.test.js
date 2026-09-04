@@ -194,6 +194,58 @@ describe('RadiodyplomClient — klasyfikacja odpowiedzi', () => {
     await client.upload({ callsign: 'X', api_key: 'CEL-PIN' });
     assert.equal(seen.api_key, 'CEL-PIN');
   });
+
+  // --- PING: opis konta (rozszerzenie API z 2026-09-04) ---
+
+  test('PING oddaje listę stacji i akcji, znaki wielkimi literami', async () => {
+    globalThis.fetch = async () => ({ status: 200, json: async () => ({
+      success: true, operator: 'SQ8BWM', stations: [' sn8n ', 'sq8bwa'],
+      activeActions: [{ id: 295, name: 'Muzeum' }], pinExpires: null, apiEnabled: true,
+    }) });
+    const p = await client.ping();
+    assert.equal(p.ok, true);
+    assert.deepEqual(p.stations, ['SN8N', 'SQ8BWA'], 'porównanie ze znakiem celu musi być pewne');
+    assert.equal(p.activeActions.length, 1);
+    assert.equal(p.apiEnabled, true);
+  });
+
+  test('starszy serwis: brak pól daje null, a NIE pustą listę', async () => {
+    // Zlanie tych przypadków kazałoby ostrzegać przed poprawną konfiguracją
+    // na każdym serwerze bez tego rozszerzenia.
+    globalThis.fetch = async () => ({ status: 200, json: async () => ({
+      success: true, operator: 'SQ8BWM',
+    }) });
+    const p = await client.ping();
+    assert.equal(p.stations, null);
+    assert.equal(p.activeActions, null);
+    assert.equal(p.apiEnabled, null);
+  });
+
+  test('PING można zadać INNYM kluczem niż własny (PIN celu)', async () => {
+    let url = null;
+    globalThis.fetch = async (u) => { url = String(u); return { status: 200, json: async () => ({ success: true, operator: 'SQ8BWA' }) }; };
+    const p = await client.ping('CEL-PIN');
+    assert.match(url, /api_key=CEL-PIN/);
+    assert.equal(p.operator, 'SQ8BWA');
+  });
+
+  test('odrzucony klucz niesie KOD, nie tylko tekst', async () => {
+    // Bez kodu nie da się odróżnić złego PIN-u od awarii sieci, a to dwie
+    // różne rzeczy do pokazania użytkownikowi.
+    globalThis.fetch = async () => ({ status: 401, json: async () => ({
+      success: false, error: { code: 'INVALID_API_KEY', message: 'Nieprawidłowy klucz' },
+    }) });
+    const p = await client.ping();
+    assert.equal(p.ok, false);
+    assert.equal(p.code, 'INVALID_API_KEY');
+  });
+
+  test('awaria sieci przy PING-u nie ma kodu', async () => {
+    globalThis.fetch = async () => { throw new Error('timeout'); };
+    const p = await client.ping();
+    assert.equal(p.ok, false);
+    assert.equal(p.code, undefined);
+  });
 });
 
 describe('computeState — jedno źródło stanu dla okna i zasobnika', () => {

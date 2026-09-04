@@ -92,6 +92,29 @@ const DICT = {
     'hint.targetPinLong': 'PIN konta, z którego ma polecieć ta kopia. Potrzebny tylko, '
       + 'gdy ta stacja NIE jest przypisana do Twojego konta. Zostaw zamaskowany, '
       + 'żeby nie zmieniać; wyczyść, żeby wrócić do PIN-u głównego.',
+    'panel.account': 'Konto na radiodyplom.pl',
+    'account.operator': 'Operator',
+    'account.stations': 'Stacje, na które wolno logować',
+    'account.actions': 'Aktywne akcje',
+    'account.pinExpires': 'PIN wygasa',
+    'account.apiDisabled': 'To konto ma wyłączone API — nic się nie zapisze.',
+    'account.notReported': 'serwis nie podaje (starsza wersja API)',
+    'account.noStations': 'brak — konto nie ma przypisanej żadnej stacji',
+    'account.noActions': 'brak — w tej chwili nie ma do czego zapisywać',
+    'account.unknown': 'Jeszcze nie sprawdzono.',
+    'account.offline': 'Brak łączności z serwisem — dane konta nieznane.',
+    'chk.ok': 'Konto {konto} ma tę stację na liście. Kopie się zapiszą.',
+    'chk.noActiveAction': 'Uprawnienia są, ale konto {konto} nie ma teraz aktywnej akcji '
+      + 'dyplomowej. QSO wysłane dziś nigdzie nie trafi.',
+    'chk.missingStation': 'Konto {konto} NIE ma stacji {stacja} na liście uprawnień. '
+      + 'Te kopie wrócą jako odrzucone. Dopisz stację w Managerze na radiodyplom.pl.',
+    'chk.badPin': 'Serwis odrzucił PIN tego celu. Kopie nie pójdą.',
+    'chk.apiDisabled': 'Konto {konto} ma wyłączone API. Kopie nie pójdą.',
+    'chk.noPin': 'Brak PIN-u — ani przy tym celu, ani głównego.',
+    'confirm.targetsRejected': 'Serwis nie przyjmie kopii dla: {stacje}.\n\nTe konta nie '
+      + 'mają tych znaków na liście stacji, więc QSO wrócą jako odrzucone.\n\nZapisać '
+      + 'mimo to? (jeśli właśnie dopisujesz stację w Managerze — zapisz, sprawdzenie '
+      + 'odświeży się samo)',
     'confirm.dropTargetPin': 'Usunąć własny PIN z celów: {stacje}?\n\nTe kopie polecą '
       + 'wtedy PIN-em głównym, a jeśli te stacje nie są przypisane do Twojego konta, '
       + 'wrócą jako odrzucone.\n\nSekretu nie da się odczytać z okna, więc trzeba go '
@@ -270,6 +293,29 @@ const DICT = {
     'hint.targetPinLong': 'PIN of the account this copy is sent from. Needed only when '
       + 'that station is NOT assigned to your own account. Leave it masked to keep it; '
       + 'clear it to fall back to the main PIN.',
+    'panel.account': 'radiodyplom.pl account',
+    'account.operator': 'Operator',
+    'account.stations': 'Stations allowed to log',
+    'account.actions': 'Active awards',
+    'account.pinExpires': 'PIN expires',
+    'account.apiDisabled': 'This account has the API disabled — nothing will be saved.',
+    'account.notReported': 'not reported by the service (older API)',
+    'account.noStations': 'none — the account has no station assigned',
+    'account.noActions': 'none — there is nothing to save into right now',
+    'account.unknown': 'Not checked yet.',
+    'account.offline': 'No connection to the service — account details unknown.',
+    'chk.ok': 'Account {konto} has this station listed. Copies will be saved.',
+    'chk.noActiveAction': 'Rights are fine, but account {konto} has no active award '
+      + 'right now. A QSO sent today would not be saved anywhere.',
+    'chk.missingStation': 'Account {konto} does NOT have station {stacja} in its rights. '
+      + 'Those copies will come back rejected. Add the station in the radiodyplom.pl Manager.',
+    'chk.badPin': 'The service rejected this target PIN. Copies will not be sent.',
+    'chk.apiDisabled': 'Account {konto} has the API disabled. Copies will not be sent.',
+    'chk.noPin': 'No PIN — neither on this target nor the main one.',
+    'confirm.targetsRejected': 'The service will not accept copies for: {stacje}.\n\nThose '
+      + 'accounts do not have these callsigns in their station list, so the QSOs will come '
+      + 'back rejected.\n\nSave anyway? (if you are adding the station in the Manager right '
+      + 'now — save, the check refreshes itself)',
     'confirm.dropTargetPin': 'Remove the own PIN from: {stacje}?\n\nThose copies will then '
       + 'be sent with the main PIN, and if those stations are not assigned to your '
       + 'account they will come back rejected.\n\nThe secret cannot be read back from '

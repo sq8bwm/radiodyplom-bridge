@@ -172,6 +172,15 @@ app.whenReady().then(async () => {
   ipcMain.handle('ackProblems', () => { const n = daemon?.ackProblems?.() ?? 0; refreshTray(); return n; });
   ipcMain.handle('requeue', () => { const n = daemon.requeue(); refreshTray(); return n; });
   ipcMain.handle('config:get', () => daemon?.getConfig() ?? null);
+  // Sprawdzenie uprawnień dla konfiguracji jeszcze NIEZAPISANEJ. Nigdy nie
+  // rzuca do okna: brak odpowiedzi serwisu nie może przeszkodzić w zapisie.
+  ipcMain.handle('config:check', async (_e, patch) => {
+    try {
+      return { ok: true, checks: (await daemon?.checkConfig?.(patch)) || [] };
+    } catch (err) {
+      return { ok: false, error: err.message, checks: [] };
+    }
+  });
   // Zamknięcie z okna — na Windows menu ikony w zasobniku bywa niedostępne,
   // a samo zamknięcie okna tylko chowa aplikację. Bez tego użytkownik nie
   // miałby żadnego sposobu, żeby ją zakończyć.

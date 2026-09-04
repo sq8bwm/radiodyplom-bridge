@@ -110,34 +110,42 @@ wartością z konfiguracji, zamiast tekstem od operatora.
 
 ## Funkcjonalne
 
-### Sprawdzanie konfiguracji konta przez API — czekamy na serwis
-Zapytanie wysłane do autora radiodyplom **2026-09-03**. Prośba o rozszerzenie
-odpowiedzi `PING`/`STATUS` o: `stations` (znaki przypisane do konta),
-`activeActions` (z zakresem dat), `pinExpires`, `apiEnabled`.
+### Wykorzystanie API do walidacji — czekamy na dwie zmiany w serwisie
+Autor serwisu **rozszerzył API 2026-09-04** (`stations`, `activeActions`,
+`pinExpires`, `apiEnabled` w `PING`/`STATUS`, plus `action=VALIDATE`).
+Sprawdzanie konfiguracji **jest już zrobione** — patrz
+[docs/konfiguracja.md](docs/konfiguracja.md#sprawdzanie-konfiguracji-wobec-konta-od-019).
 
-Sprawdzone przed wysłaniem: **takiego endpointu nie ma**. API odpowiada wprost
-„GET dozwolone tylko dla akcji: PING, STATUS", a oba zwracają jedynie „klucz
-prawidłowy" i znak operatora.
+Zmierzone i zgłoszone autorowi, blokuje dalsze kroki:
 
-**Projekt po naszej stronie już ustalony** — gdy dane będą dostępne:
+1. **`is_validation_only` tylko przy sukcesie.** Gdy walidacja stwierdza, że QSO
+   nigdzie nie wejdzie, odpowiedź jest bajt w bajt taka jak przy nieudanym
+   PRAWDZIWYM zapisie — a to właśnie ten przypadek jest wart sprawdzania.
+   Dopóki tak jest, nie użyjemy VALIDATE do przycisku „sprawdź to QSO".
+2. **Brak `reason`.** „Stacja bez uprawnień" i „data poza zakresem akcji" dają
+   identyczny komunikat, więc nie da się użytkownikowi powiedzieć, co poprawić.
+   Poprosiliśmy o `NO_STATION_RIGHTS` / `NO_ACTIVE_ACTION` / `ACTION_CLOSED` /
+   `WOULD_BE_DUPLICATE`, przy VALIDATE i przy zwykłym zapisie.
 
-- Odpytywać **każdy różny PIN** z konfiguracji osobno, nie tylko główny. Dziś
-  zły PIN przy celu wychodzi dopiero z odbitego QSO; realny przypadek:
-  wymiana PIN-u przez właściciela drugiego konta (2026-09-02).
-- Sprawdzać **parę** (PIN celu → znak stacji tego celu), bo stacja musi być na
-  liście konta, którego kluczem kopia leci — nie na liście konta głównego.
-- Cudze konta odpytywać **tylko na starcie i po zapisie konfiguracji**, nie
-  w pętli co minutę: nie wiemy, czy PING wchodzi w limit 10/min.
-- W oknie **czerwony znacznik przy wierszu reguły**, trwały (jak plakietka
-  problemów), plus **pytanie przy zapisie** wymieniające stacje, których serwis
-  nie przyjmie.
-- **BEZ blokady zapisu.** Trzy powody: dane mogą być nieaktualne o minutę
-  (dokładnie tak było przy dopisywaniu `SQ8BWA`), serwis może nie odpowiedzieć,
-  a „wpiszę regułę teraz, stację dopiszę wieczorem" to normalna kolejność pracy.
-- Danych **nie zapisywać na dysk** — to informacje o cudzym koncie, potrzebne
-  tylko do ostrzeżenia w oknie.
-- Mostek **nie może od tego zależeć**: brak odpowiedzi z serwisu nigdy nie może
-  zatrzymać wysyłki QSO.
+Dwie mniejsze prośby w tym samym zgłoszeniu: `INVALID_CALLSIGN` wraca dla trzech
+różnych pól (korespondent, stacja, operator) i rozróżnia je tylko polski tekst —
+prosiliśmy o `field` albo osobne kody; `savedTo: []` przy `success: true` nadal
+nie ma kodu błędu.
+
+Otwarte pytania do autora: czy `PING` wchodzi w limit 10/min razem z zapisami
+(dziś zakładamy ostrożnie, że tak — cudze konta odpytujemy tylko na starcie
+i po zapisie), oraz czy `PING` i `STATUS` mają celowo zwracać to samo.
+
+**Ustalone przy okazji:** PIN nie ma daty ważności (`pinExpires: null`) poza
+banem/blokadą konta. Nie można logować do akcji zakończonej dawniej niż 7 dni —
+to dotyczy naszego ponawiania: QSO leżące długo w `failed/` może już nie wejść.
+Pole `operator` jest walidowane jako znak krótkofalarski (max 15 znaków,
+ucinane), z żadną listą nie jest wiązane.
+
+### Ostrzeżenie o złym znaku operatora przed wysyłką
+`operator` jest walidowany jako callsign — zła wartość z loggera **odbija QSO**
+(`INVALID_CALLSIGN`, HTTP 400). Dziś mostek wyśle to i odłoży do `failed/`.
+Warto sprawdzać kształt znaku po naszej stronie, zanim QSO opuści komputer.
 
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.

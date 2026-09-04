@@ -11,7 +11,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { StatusApi } from '../src/httpapi.js';
+import { StatusApi, maskPin } from '../src/httpapi.js';
 import { setLevel } from '../src/log.js';
 
 setLevel('error');
@@ -23,7 +23,10 @@ const cfg = {
   api: { enabled: true, port: PORT },
   udp: { host: '127.0.0.1', port: 12778, multicastGroups: [] },
   radiodyplom: { apiUrl: 'http://x/y', pin: 'AAAA-1111', dryRun: true },
-  forward: { operations: ['insert'], targets: [] },
+  forward: { operations: ['insert'], targets: [
+    { station_callsign: 'SN8N' },
+    { station_callsign: 'SP9XYZ', pin: 'BBBB-2222' },
+  ] },
   queue: { maxAttempts: 20 },
   rateLimit: { maxPerMinute: 9, minSpacingMs: 700 },
   logLevel: 'error',
@@ -59,11 +62,20 @@ before(async () => {
       resume() { this.paused = false; },
     },
     pkg: { name: 'radiodyplom-bridge', version: '9.9.9', license: 'GPL-3.0-or-later' },
-    getPing: () => ({ ok: true, operator: 'SQ8BWM' }),
+    getPing: () => ({ ok: true, operator: 'SQ8BWM', stations: ['SN8N'],
+      activeActions: [{ id: 295 }], pinExpires: null, apiEnabled: true }),
     requeue: () => 2,
     getConfig: () => ({ ui: { recentEvents: 7 } }),
     getPendingRestart: () => [],
     getLogFile: () => '/tmp/x.log',
+    getAccountChecks: () => [
+      { station: 'SN8N', enabled: true, pinSource: 'main', operator: 'SQ8BWM', state: 'ok', blocking: false },
+      { station: 'SP9XYZ', enabled: true, pinSource: 'own', operator: 'SQ8BWA', state: 'missing-station', blocking: true },
+    ],
+    checkConfig: async (patch) => {
+      if (patch?.wywalSie) throw new Error('serwis nie odpowiada');
+      return [{ station: 'SN8N', enabled: true, state: 'ok', blocking: false }];
+    },
   });
   assert.equal(await api.start(), true, 'API musi wstać');
 });
@@ -122,6 +134,39 @@ describe('API stanu — każda trasa odpowiada', () => {
     assert.equal(discarded, before + 1, 'store musi zostać naprawdę wywołany');
   });
 
+  test('GET /api/status — opis konta i ocena celów', async () => {
+    const s = await (await get('/api/status')).json();
+    assert.deepEqual(s.radiodyplom.account.stations, ['SN8N']);
+    assert.equal(s.radiodyplom.account.apiEnabled, true);
+    const [a, b] = s.forward.targets;
+    assert.equal(a.check.state, 'ok');
+    assert.equal(b.check.state, 'missing-station');
+    assert.equal(b.check.blocking, true);
+    assert.equal(b.check.operator, 'SQ8BWA', 'komunikat ma nazwać konto, którego brak dotyczy');
+    assert.equal(b.pin, maskPin('BBBB-2222'), 'PIN celu nadal zamaskowany');
+  });
+
+  test('POST /api/config/check', async () => {
+    const r = await post('/api/config/check');
+    assert.equal(r.status, 200);
+    const body = await r.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.checks[0].state, 'ok');
+  });
+
+  test('błąd sprawdzania NIE blokuje zapisu — 200 z ok:false, nie piątka', async () => {
+    // Sedno: sprawdzanie to wygoda. Gdyby padało piątką, okno musiałoby
+    // zgadywać, czy zapis wolno wykonać — a wolno ZAWSZE.
+    const r = await fetch(base + '/api/config/check', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wywalSie: true }),
+    });
+    assert.equal(r.status, 200);
+    const body = await r.json();
+    assert.equal(body.ok, false);
+    assert.deepEqual(body.checks, []);
+  });
+
   test('GET /api/config', async () => {
     const r = await get('/api/config');
     assert.equal(r.status, 200);
@@ -132,7 +177,8 @@ describe('API stanu — każda trasa odpowiada', () => {
     // Sedno: wyjątek w uchwycie objawia się piątką, a nie brakiem trasy.
     for (const [m, p] of [['GET', '/api/status'], ['GET', '/api/log'], ['GET', '/api/config'],
       ['POST', '/api/pause'], ['POST', '/api/resume'], ['POST', '/api/requeue'],
-      ['POST', '/api/problems/ack'], ['POST', '/api/failed/discard']]) {
+      ['POST', '/api/problems/ack'], ['POST', '/api/failed/discard'],
+      ['POST', '/api/config/check']]) {
       const r = await fetch(base + p, { method: m });
       assert.ok(r.status < 500, `${m} ${p} → ${r.status}`);
     }

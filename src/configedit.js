@@ -59,6 +59,53 @@ function keepExisting(value) {
 }
 
 /**
+ * Scala listę celów z UI z dotychczasową, odmaskowując PIN-y.
+ *
+ * Wydzielone z `applyConfig`, bo tej samej listy potrzebuje sprawdzanie
+ * konfiguracji PRZED zapisem: żeby zapytać serwis o uprawnienia, trzeba znać
+ * prawdziwy PIN celu, a UI przysyła go zamaskowanego.
+ *
+ * @param {object[]} patchTargets  cele przysłane z UI
+ * @param {object[]} previous      cele dotychczasowe (źródło PIN-ów)
+ */
+export function mergeTargets(patchTargets, previous = []) {
+  return (Array.isArray(patchTargets) ? patchTargets : [])
+    .filter((t) => t && String(t.station_callsign || '').trim())
+    .map((t) => {
+      const station = String(t.station_callsign).trim().toUpperCase();
+      const out = { station_callsign: station, enabled: t.enabled !== false };
+      if (t.operator) out.operator = String(t.operator).trim().toUpperCase();
+
+      // PIN celu ma CZTERY stany i wszystkie trzeba rozróżniać:
+      //  - pola NIE przysłano (undefined) → zostaw dotychczasowy,
+      //  - zamaskowany                    → zostaw dotychczasowy,
+      //  - nowa wartość                   → zapisz ją,
+      //  - przysłany PUSTY                → usuń (kopia poleci PIN-em głównym).
+      //
+      // Rozróżnienie „nie przysłano" od „przysłano puste" jest istotne:
+      // bez niego klient, który o tym polu nie wie (starsze okno, skrypt
+      // wołający /api/config), po cichu kasowałby cudze PIN-y. Usunięcie
+      // musi być jawną decyzją, a okno pyta o nią wprost.
+      const prev = previous.find((p) => String(p.station_callsign).toUpperCase() === station);
+      const przyslany = t.pin !== undefined && t.pin !== null;
+      const zamaskowany = typeof t.pin === 'string' && t.pin.includes('*');
+      const nowy = przyslany && !zamaskowany && String(t.pin).trim() !== '';
+      if (nowy) {
+        out.pin = String(t.pin).trim();
+      } else if (!przyslany || zamaskowany) {
+        if (prev?.pin) out.pin = prev.pin;
+      }
+      // przysłany i pusty → celowo nic nie ustawiamy: PIN usunięty
+      return out;
+    });
+}
+
+/** PIN główny po scaleniu z tym, co przysłało UI (zamaskowany = bez zmian). */
+export function mergeMainPin(patchPin, previousPin) {
+  return keepExisting(patchPin) ? (previousPin || null) : String(patchPin).trim();
+}
+
+/**
  * Scala zmiany z UI, zapisuje config.json i stosuje na żywo, co się da.
  * @returns {{saved:boolean, restartRequired:string[], path:string}}
  */
@@ -92,36 +139,7 @@ export function applyConfig(daemon, patch) {
 
   // --- cele fan-outu ---
   if (Array.isArray(patch.forward?.targets)) {
-    const previous = cfg.forward.targets || [];
-    cfg.forward.targets = patch.forward.targets
-      .filter((t) => t && String(t.station_callsign || '').trim())
-      .map((t) => {
-        const station = String(t.station_callsign).trim().toUpperCase();
-        const out = { station_callsign: station, enabled: t.enabled !== false };
-        if (t.operator) out.operator = String(t.operator).trim().toUpperCase();
-
-        // PIN celu ma CZTERY stany i wszystkie trzeba rozróżniać:
-        //  - pola NIE przysłano (undefined) → zostaw dotychczasowy,
-        //  - zamaskowany                    → zostaw dotychczasowy,
-        //  - nowa wartość                   → zapisz ją,
-        //  - przysłany PUSTY                → usuń (kopia poleci PIN-em głównym).
-        //
-        // Rozróżnienie „nie przysłano" od „przysłano puste" jest istotne:
-        // bez niego klient, który o tym polu nie wie (starsze okno, skrypt
-        // wołający /api/config), po cichu kasowałby cudze PIN-y. Usunięcie
-        // musi być jawną decyzją, a okno pyta o nią wprost.
-        const prev = previous.find((p) => String(p.station_callsign).toUpperCase() === station);
-        const przyslany = t.pin !== undefined && t.pin !== null;
-        const zamaskowany = typeof t.pin === 'string' && t.pin.includes('*');
-        const nowy = przyslany && !zamaskowany && String(t.pin).trim() !== '';
-        if (nowy) {
-          out.pin = String(t.pin).trim();
-        } else if (!przyslany || zamaskowany) {
-          if (prev?.pin) out.pin = prev.pin;
-        }
-        // przysłany i pusty → celowo nic nie ustawiamy: PIN usunięty
-        return out;
-      });
+    cfg.forward.targets = mergeTargets(patch.forward.targets, cfg.forward.targets || []);
   }
   if (Array.isArray(patch.forward?.operations)) {
     cfg.forward.operations = patch.forward.operations;
@@ -176,6 +194,12 @@ export function applyConfig(daemon, patch) {
   // Po zmianie PIN-u nie każemy czekać do następnego cyklicznego PING-a —
   // użytkownik właśnie go wpisał i chce od razu wiedzieć, czy działa.
   if (pinChanged && typeof daemon.refreshPing === 'function') daemon.refreshPing();
+
+  // Uprawnienia sprawdzamy po każdym zapisie: mogła dojść nowa reguła albo
+  // nowy PIN celu. Bez `await` — zapis konfiguracji nie ma czekać na sieć.
+  if (typeof daemon.refreshAccounts === 'function') {
+    Promise.resolve(daemon.refreshAccounts()).catch(() => { /* sprawdzanie to wygoda */ });
+  }
 
   const path = writeConfigFile(cfg);
 

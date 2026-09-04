@@ -107,7 +107,7 @@ Z tego wynikają dwie rzeczy, obie sprawdzone:
 | Pole | Czy serwer je sprawdza |
 |---|---|
 | `station_callsign` | **tak** — musi być na liście stacji konta, do którego należy PIN |
-| `operator` | **nie** — nie jest w ogóle weryfikowane |
+| `operator` | **tylko jako znak** — dowolny poprawny callsign przechodzi, z żadną listą nie jest wiązany |
 
 Pomiar, przy PIN-ie konta `SQ8BWM` i stacji `SQ8BWM` (na liście):
 
@@ -133,6 +133,76 @@ Twojego konta. Dodanie tam stacji jest zmianą w Managerze, nie w tym programie.
 > nie było na liście stacji konta. Program przez chwilę miał z tego powodu bazę
 > operatorów z osobnymi PIN-ami — została usunięta jako niepotrzebna.
 
-Pole `pin` przy celu fan-outu (droga z 0.1.x) nadal działa i pozwala wysłać kopię
-z innego konta. Nie ma go w interfejsie i przy jednym koncie z listą stacji nie
-jest potrzebne.
+Pole `pin` przy celu fan-outu pozwala wysłać kopię z **innego konta** i jest
+dostępne w oknie (zakładka Konfiguracja). Przy jednym koncie z listą stacji nie
+jest potrzebne — przydaje się, gdy kopia ma iść z konta innej osoby.
+
+## Sprawdzanie konfiguracji wobec konta (od 0.1.9)
+
+Serwis rozszerzył `PING`/`STATUS` (**2026-09-04**, na naszą prośbę) i podaje teraz,
+czym konto dysponuje:
+
+```json
+{
+  "operator": "SQ8BWM",
+  "stations": ["SN0LPU", "SN8N", "SQ8BWA", "SQ8BWM"],
+  "activeActions": [
+    { "id": 295, "name": "15 lat Muzeum…", "from": "2026-08-29 00:00:00", "to": "2026-09-06 23:59:00" }
+  ],
+  "pinExpires": null,
+  "apiEnabled": true
+}
+```
+
+Mostek używa tego do sprawdzenia **pary** (PIN celu → znak stacji tego celu).
+Sprawdza się wobec konta, którego kluczem kopia poleci — nie wobec konta
+głównego, bo listy stacji są per konto.
+
+| Stan reguły | Znaczy | Ostrzega przy zapisie |
+|---|---|---|
+| `ok` | stacja jest na liście konta | nie |
+| `missing-station` | konta tej stacji nie mają | **tak** |
+| `bad-pin` | serwis odrzucił PIN celu | **tak** |
+| `api-disabled` | konto ma wyłączone API | **tak** |
+| `no-pin` | brak PIN-u celu i głównego | **tak** |
+| `no-active-action` | uprawnienia są, ale teraz nie ma akcji | nie — zależy od kalendarza |
+| `unknown` | brak łączności albo starszy serwis | nie |
+
+Zasady, na których to stoi:
+
+- **Bez blokady zapisu.** Dane bywają nieaktualne o minutę (dokładnie tak było
+  przy dopisywaniu `SQ8BWA`), serwis może nie odpowiedzieć, a „wpiszę regułę
+  teraz, stację dopiszę wieczorem" to normalna kolejność pracy. Okno pyta,
+  decyduje użytkownik.
+- **`stations: null` ≠ `stations: []`.** Brak pola znaczy „serwis nie podał"
+  (starsza wersja API) i daje `unknown`; pusta lista znaczy „konto nie ma ani
+  jednej stacji" i ostrzega. Zlanie tych przypadków kazałoby ostrzegać przed
+  poprawną konfiguracją na każdym starszym serwerze.
+- **Cudze konta odpytywane tylko na starcie i po zapisie**, nie w pętli co
+  minutę — nie wiadomo, czy `PING` wchodzi w limit 10/min razem z zapisami.
+  Konto główne odświeża się przy cyklicznym PING-u za darmo, tym samym
+  żądaniem.
+- **Danych o cudzych kontach nie zapisujemy na dysk** ani nie pokazujemy dalej
+  niż to potrzebne do komunikatu (sam znak operatora, nigdy listy stacji).
+- **Brak odpowiedzi nigdy nie wstrzymuje wysyłki QSO.** Sprawdzanie jest
+  wygodą, nie warunkiem pracy mostka.
+
+### `action=VALIDATE` — jest, jeszcze nieużywane
+
+Serwis przyjmuje `action=VALIDATE` (POST, `action` w query albo w ciele) i wtedy
+niczego nie zapisuje:
+
+```json
+{ "success": true, "is_validation_only": true, "foundActions": 1,
+  "wouldSaveTo": [295],
+  "message": "Walidacja przebiegła pomyślnie. Żądanie jest poprawne i zostałoby zapisane." }
+```
+
+Sprawdzone 2026-09-04: to samo QSO wysłane dwa razy nie zgłosiło duplikatu,
+a w dzienniku nie pojawiło się nic — czyli nie zapisuje i nie zajmuje numeru
+deduplikacji.
+
+Mostek tego jeszcze nie używa, bo znacznik `is_validation_only` pojawia się
+**tylko przy sukcesie**. Gdy walidacja stwierdzi, że QSO nigdzie nie wejdzie,
+odpowiedź jest nieodróżnialna od nieudanego prawdziwego zapisu — a to właśnie
+ten przypadek jest wart sprawdzania. Zgłoszone autorowi serwisu.

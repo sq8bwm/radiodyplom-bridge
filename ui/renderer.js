@@ -114,6 +114,8 @@ function renderStatus(s) {
 
   renderEvents(s);
   renderProblems(s);
+  renderAccount(s);
+  paintTargetChecks(s.forward?.targets);
 
   renderAbout(s);
 
@@ -358,6 +360,7 @@ function renderTargets(list) {
       <div><label class="t-lbl">${t('label.stationCall')}</label><input type="text" class="t-station" value="${esc(x.station_callsign)}" placeholder="SN0ABC"></div>
       <div><label class="t-lbl">${t('label.operator')}</label><input type="text" class="t-op" value="${esc(x.operator || '')}" placeholder="SQ8BWM"></div>
       <div><label class="t-lbl">${t('label.targetPin')}</label><input type="text" class="t-pin" value="${esc(x.pin || '')}" placeholder="${esc(t('hint.targetPin'))}" title="${esc(t('hint.targetPinLong'))}"></div>
+      <span class="t-chk"></span>
       <button class="act sec t-del">${t('btn.remove')}</button>
     </div>`;
   }).join('');
@@ -370,6 +373,94 @@ function renderTargets(list) {
   $('targets').querySelectorAll('.t-on').forEach((c) => {
     c.onchange = () => c.closest('.three').classList.toggle('off', !c.checked);
   });
+}
+
+/**
+ * Znacznik uprawnień w wierszu reguły, po znaku stacji.
+ *
+ * Świadomie NIE odrysowujemy tu formularza: użytkownik może właśnie w nim
+ * pisać, a podmiana pól gubiłaby wpisywany tekst i kursor.
+ */
+function paintTargetChecks(statusTargets) {
+  const byStation = new Map(
+    (statusTargets || []).map((x) => [String(x.station_callsign || '').toUpperCase(), x.check]),
+  );
+  for (const row of $('targets').querySelectorAll('.three')) {
+    const el = row.querySelector('.t-chk');
+    if (!el) continue;
+    const station = row.querySelector('.t-station').value.trim().toUpperCase();
+    const c = station ? byStation.get(station) : null;
+    const wlaczona = row.querySelector('.t-on')?.checked !== false;
+
+    // Brak oceny to NIE to samo co „w porządku": reguła może być dopiero
+    // wpisywana albo serwis mógł nie odpowiedzieć. Wtedy nie pokazujemy nic.
+    if (!c || c.state === 'unknown') {
+      el.textContent = ''; el.title = ''; el.className = 't-chk';
+      continue;
+    }
+    const kto = c.operator ? ` (${c.operator})` : '';
+    if (c.state === 'ok') {
+      el.textContent = '✓';
+      el.className = 't-chk ok';
+      el.title = t('chk.ok').replace('{konto}', kto.trim() || '—');
+    } else if (c.state === 'no-active-action') {
+      el.textContent = '•';
+      el.className = 't-chk warn';
+      el.title = t('chk.noActiveAction').replace('{konto}', kto.trim() || '—');
+    } else {
+      el.textContent = '!';
+      el.className = 't-chk bad';
+      const klucz = {
+        'missing-station': 'chk.missingStation',
+        'bad-pin': 'chk.badPin',
+        'api-disabled': 'chk.apiDisabled',
+        'no-pin': 'chk.noPin',
+      }[c.state] || 'chk.missingStation';
+      el.title = t(klucz).replace('{stacja}', station).replace('{konto}', kto.trim() || '—');
+    }
+    // Wyłączona reguła: treść i podpowiedź zostają, kolor schodzi na szary.
+    if (!wlaczona && el.textContent) el.className = 't-chk muted';
+  }
+}
+
+/** Panel „Konto na radiodyplom.pl" — czym konto naprawdę dysponuje. */
+function renderAccount(s) {
+  const box = $('accountInfo');
+  const acc = s?.radiodyplom?.account;
+  if (!acc) {
+    box.className = 'empty';
+    box.textContent = s?.radiodyplom?.pingOk === false ? t('account.offline') : t('account.unknown');
+    return;
+  }
+  box.className = '';
+  const wiersze = [];
+  wiersze.push(`<div><b>${t('account.operator')}:</b> ${esc(s.radiodyplom.profile || '—')}</div>`);
+
+  // `null` znaczy „serwis nie podał" (starsze API), `[]` — „konto nie ma ani
+  // jednej stacji". Zlanie tych przypadków w jedno byłoby mylące.
+  if (acc.stations === null) {
+    wiersze.push(`<div><b>${t('account.stations')}:</b> <span class="hint">${t('account.notReported')}</span></div>`);
+  } else if (acc.stations.length === 0) {
+    wiersze.push(`<div class="lvl-warn"><b>${t('account.stations')}:</b> ${t('account.noStations')}</div>`);
+  } else {
+    wiersze.push(`<div><b>${t('account.stations')}:</b> ${acc.stations.map(esc).join(', ')}</div>`);
+  }
+
+  if (acc.activeActions === null) {
+    wiersze.push(`<div><b>${t('account.actions')}:</b> <span class="hint">${t('account.notReported')}</span></div>`);
+  } else if (acc.activeActions.length === 0) {
+    wiersze.push(`<div class="lvl-warn"><b>${t('account.actions')}:</b> ${t('account.noActions')}</div>`);
+  } else {
+    const lista = acc.activeActions.map((a) => {
+      const zakres = a.from && a.to ? ` <span class="hint">(${esc(String(a.from).slice(0, 10))} – ${esc(String(a.to).slice(0, 10))})</span>` : '';
+      return `<div style="margin-left:12px">#${esc(String(a.id))} ${esc(a.name || '')}${zakres}</div>`;
+    }).join('');
+    wiersze.push(`<div><b>${t('account.actions')}:</b></div>${lista}`);
+  }
+
+  if (acc.pinExpires) wiersze.push(`<div><b>${t('account.pinExpires')}:</b> ${esc(String(acc.pinExpires))}</div>`);
+  if (acc.apiEnabled === false) wiersze.push(`<div class="lvl-error"><b>${t('account.apiDisabled')}</b></div>`);
+  box.innerHTML = wiersze.join('');
 }
 
 $('btnAddTarget').onclick = () => {
@@ -435,6 +526,28 @@ async function saveFromForm() {
     if (!ok) return;
   }
   const targets = collected.map(({ _pinWasSet, ...x }) => x);
+
+  // Sprawdzenie uprawnień PRZED zapisem, na tym, co jest w oknie.
+  //
+  // Świadomie BEZ blokady zapisu, z trzech powodów: dane bywają nieaktualne
+  // o minutę (dokładnie tak było przy dopisywaniu SQ8BWA), serwis może nie
+  // odpowiedzieć, a „wpiszę regułę teraz, stację dopiszę wieczorem" to
+  // normalna kolejność pracy. Ostrzegamy i pytamy — decyduje użytkownik.
+  if (window.bridge.checkConfig) {
+    let zle = [];
+    try {
+      const w = await window.bridge.checkConfig({
+        radiodyplom: { pin: $('fPin').value.trim() },
+        forward: { targets },
+      });
+      zle = (w?.checks || []).filter((c) => c.enabled && c.blocking);
+    } catch { /* brak odpowiedzi serwisu nie może wstrzymać zapisu */ }
+
+    if (zle.length) {
+      const opis = zle.map((c) => `${c.station}${c.operator ? ` (${c.operator})` : ''}`).join(', ');
+      if (!window.confirm(t('confirm.targetsRejected').replace('{stacje}', opis))) return;
+    }
+  }
 
   const r = await window.bridge.saveConfig({
     radiodyplom: { pin: $('fPin').value.trim(), dryRun: $('fDryRun').checked },

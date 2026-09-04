@@ -12,7 +12,8 @@ import { LoggerListener } from './udp.js';
 import { Worker } from './worker.js';
 import { StatusApi } from './httpapi.js';
 import { requeueFailed } from './requeue.js';
-import { editableConfig, applyConfig } from './configedit.js';
+import { distinctPins, verifyTargets, blockingTargets } from './accounts.js';
+import { editableConfig, applyConfig, mergeTargets, mergeMainPin } from './configedit.js';
 import { log, setLevel, recentLog } from './log.js';
 import { enableFileLog, closeFileLog, logFilePath } from './logfile.js';
 import { readFileSync } from 'node:fs';
@@ -94,6 +95,9 @@ export async function startDaemon(cfg, opts = {}) {
     api: null,
     lastPing: null,
     profile: null,
+    // Opis kont (PIN → wynik PING-a). TYLKO w pamięci: to informacje
+    // o cudzych kontach, potrzebne wyłącznie do ostrzeżenia w oknie.
+    accounts: new Map(),
     pendingRestart: new Set(),  // ustawienia czekające na restart   // ostatni ZNANY profil – nie gubimy go przy awarii łączności
     pause: () => worker.pause(),
     resume: () => worker.resume(),
@@ -104,7 +108,70 @@ export async function startDaemon(cfg, opts = {}) {
     async refreshPing() {
       handle.lastPing = await client.ping();
       if (handle.lastPing.ok) handle.profile = handle.lastPing.operator;
+      if (cfg.radiodyplom.pin) handle.accounts.set(cfg.radiodyplom.pin, handle.lastPing);
       return handle.lastPing;
+    },
+    /**
+     * Odpytuje konta wszystkich PIN-ów z konfiguracji.
+     *
+     * Wołane na starcie i po zapisie konfiguracji, NIE w pętli co minutę:
+     * cudze konta odpytywalibyśmy wtedy bez powodu, a nie wiem, czy PING
+     * wchodzi w limit tempa razem z zapisami QSO.
+     *
+     * Nigdy nie rzuca. Brak odpowiedzi to „nie wiem", a nie usterka
+     * konfiguracji — i pod żadnym pozorem nie wstrzymuje wysyłki QSO.
+     */
+    async refreshAccounts() {
+      for (const { pin, main } of distinctPins(cfg)) {
+        // Konto główne mamy już z cyklicznego PING-a — nie pytamy dwa razy.
+        if (main && handle.lastPing) {
+          handle.accounts.set(pin, handle.lastPing);
+          continue;
+        }
+        try {
+          handle.accounts.set(pin, await client.ping(pin));
+        } catch (err) {
+          handle.accounts.set(pin, { ok: false, error: err.message });
+        }
+      }
+      // Klucze kont, których już nie ma w konfiguracji, przestają nas dotyczyć.
+      const aktualne = new Set(distinctPins(cfg).map((p) => p.pin));
+      for (const pin of [...handle.accounts.keys()]) {
+        if (!aktualne.has(pin)) handle.accounts.delete(pin);
+      }
+      return handle.accountChecks();
+    },
+    /**
+     * Ocena celów z konfiguracji NIEZAPISANEJ, wprost z okna.
+     *
+     * Po co osobno: użytkownik ma prawo dowiedzieć się o braku uprawnień
+     * PRZED zapisem, a nowy PIN celu wpisany w okno nie jest jeszcze
+     * w konfiguracji — więc żadne dotychczasowe dane go nie opisują.
+     * Odpytujemy tylko PIN-y, których jeszcze nie znamy.
+     */
+    async checkConfig(patch) {
+      const targets = Array.isArray(patch?.forward?.targets)
+        ? mergeTargets(patch.forward.targets, cfg.forward.targets || [])
+        : (cfg.forward.targets || []);
+      const mainPin = mergeMainPin(patch?.radiodyplom?.pin, cfg.radiodyplom.pin);
+
+      for (const { pin } of distinctPins({ radiodyplom: { pin: mainPin }, forward: { targets } })) {
+        if (handle.accounts.has(pin)) continue;
+        try {
+          handle.accounts.set(pin, await client.ping(pin));
+        } catch (err) {
+          handle.accounts.set(pin, { ok: false, error: err.message });
+        }
+      }
+      return verifyTargets({ targets, mainPin, accounts: handle.accounts });
+    },
+    /** Ocena każdego celu wobec uprawnień jego konta. */
+    accountChecks() {
+      return verifyTargets({
+        targets: cfg.forward.targets || [],
+        mainPin: cfg.radiodyplom.pin || null,
+        accounts: handle.accounts,
+      });
     },
     status: () => handle.api.status(),
     getConfig: () => editableConfig(cfg),
@@ -126,6 +193,8 @@ export async function startDaemon(cfg, opts = {}) {
     pkg: readPkg(),
     getPing: () => handle.lastPing,
     getProfile: () => handle.profile,
+    getAccountChecks: () => handle.accountChecks(),
+    checkConfig: (patch) => handle.checkConfig(patch),
     getPendingRestart: () => [...(handle.pendingRestart || [])],
     getLogFile: () => logFilePath(),
     requeue: handle.requeue,
@@ -150,6 +219,9 @@ export async function startDaemon(cfg, opts = {}) {
     const before = handle.lastPing?.ok;
     handle.lastPing = await client.ping();
     if (handle.lastPing.ok) handle.profile = handle.lastPing.operator;
+    // Ten sam request niesie już listę stacji i akcji, więc opis konta
+    // głównego odświeżamy za darmo. Cudzych kont tu NIE ruszamy.
+    if (cfg.radiodyplom.pin) handle.accounts.set(cfg.radiodyplom.pin, handle.lastPing);
     if (before !== handle.lastPing.ok) {
       if (handle.lastPing.ok) log.info('Łączność z API przywrócona');
       else log.warn(`Utracono łączność z API: ${handle.lastPing.error}`);
@@ -157,22 +229,35 @@ export async function startDaemon(cfg, opts = {}) {
   }, pingEveryMs);
   handle.pingTimer.unref?.();
 
-  // Uprawnienia są per konto: PIN ma listę znaków stacji, na które wolno mu
-  // logować. Ostrzeż o celu, którego znaku najpewniej na tej liście nie ma —
-  // serwer odpowie wtedy success:true z pustym savedTo (błąd NOT_SAVED).
-  if (handle.lastPing.ok) {
-    for (const t of cfg.forward.targets || []) {
-      if (t.pin) continue;                       // własny PIN w celu: decyzja użytkownika
-      const station = String(t.station_callsign).toUpperCase();
-      if (station !== String(handle.lastPing.operator || '').toUpperCase()) {
-        log.info(
-          `Cel fan-outu ${station} to nie znak profilu (${handle.lastPing.operator}). `
-          + 'Upewnij się, że masz go na liście stacji swojego konta w Managerze, '
-          + 'inaczej te kopie wrócą jako NOT_SAVED.',
-        );
+  // Sprawdzenie celów wobec uprawnień kont.
+  //
+  // Wcześniej stała tu heurystyka: „znak celu inny niż znak profilu = ostrzeż".
+  // Zgadywała, bo API nie podawało listy stacji — hałasowała przy każdej
+  // poprawnej konfiguracji z kilkoma stacjami i milczała przy złym PIN-ie celu.
+  // Serwis oddaje teraz `stations` i `activeActions`, więc sprawdzamy fakty.
+  await handle.refreshAccounts().then((checks) => {
+    for (const c of checks) {
+      if (!c.enabled || !c.blocking) continue;
+      const czyje = c.pinSource === 'own' ? `PIN celu${c.operator ? ` (${c.operator})` : ''}`
+        : `PIN główny${c.operator ? ` (${c.operator})` : ''}`;
+      if (c.state === 'missing-station') {
+        log.warn(`Cel ${c.station}: konto tego celu nie ma tego znaku na liście stacji `
+          + `(${czyje}). Te kopie wrócą jako NOT_SAVED, dopóki nie dopiszesz stacji `
+          + 'w Managerze na radiodyplom.pl.');
+      } else if (c.state === 'bad-pin') {
+        log.warn(`Cel ${c.station}: serwis odrzucił PIN tego celu. Kopie nie pójdą.`);
+      } else if (c.state === 'api-disabled') {
+        log.warn(`Cel ${c.station}: konto ma wyłączone API. Kopie nie pójdą.`);
+      } else if (c.state === 'no-pin') {
+        log.warn(`Cel ${c.station}: brak PIN-u — ani przy celu, ani głównego.`);
       }
     }
-  }
+    const brak = blockingTargets(checks).length;
+    if (brak === 0 && checks.length) log.info(`Cele fan-outu sprawdzone: ${checks.length}, bez zastrzeżeń`);
+  }).catch((err) => {
+    // Sprawdzanie jest wygodą, nie warunkiem pracy mostka.
+    log.debug(`Nie udało się sprawdzić kont: ${err.message}`);
+  });
 
   return handle;
 }

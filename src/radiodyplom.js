@@ -43,14 +43,44 @@ export class RadiodyplomClient {
     }
   }
 
-  /** Sprawdza klucz. Zwraca {ok, operator?, error?}. */
-  async ping() {
-    const url = `${this.apiUrl}?action=PING&api_key=${encodeURIComponent(this.pin)}`;
+  /**
+   * Sprawdza klucz i pobiera opis konta.
+   *
+   * `pin` pozwala odpytać konto INNE niż główne — cele fan-outu mogą mieć
+   * własne PIN-y, a uprawnienia do znaku stacji są per konto, nie globalne.
+   *
+   * Rozróżnienie `null` od `[]` jest tu kluczowe: `stations: null` znaczy
+   * „serwis nie podał", a `[]` znaczy „konto nie ma ani jednej stacji".
+   * Potraktowanie braku pola jako pustej listy kazałoby ostrzegać przed
+   * poprawną konfiguracją na każdym starszym serwerze.
+   *
+   * @returns {{ok:true, operator?:string, stations:string[]|null,
+   *            activeActions:object[]|null, pinExpires:string|null,
+   *            apiEnabled:boolean|null}
+   *          | {ok:false, error:string, code?:string}}
+   */
+  async ping(pin = this.pin) {
+    const url = `${this.apiUrl}?action=PING&api_key=${encodeURIComponent(pin)}`;
     try {
       const res = await this._fetch(url, { method: 'GET' });
       const data = await res.json();
-      if (data.success) return { ok: true, operator: data.operator };
-      return { ok: false, error: data.error?.message || 'PING nieudany' };
+      if (data.success) {
+        return {
+          ok: true,
+          operator: data.operator,
+          stations: Array.isArray(data.stations)
+            ? data.stations.map((s) => String(s).trim().toUpperCase())
+            : null,
+          activeActions: Array.isArray(data.activeActions) ? data.activeActions : null,
+          pinExpires: data.pinExpires ?? null,
+          apiEnabled: typeof data.apiEnabled === 'boolean' ? data.apiEnabled : null,
+        };
+      }
+      return {
+        ok: false,
+        code: data.error?.code,
+        error: data.error?.message || 'PING nieudany',
+      };
     } catch (err) {
       return { ok: false, error: `Błąd połączenia: ${err.message}` };
     }

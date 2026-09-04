@@ -34,7 +34,8 @@ export function computeState({ paused, online, failed, pingOk }) {
 }
 
 export class StatusApi {
-  constructor({ cfg, store, listener, worker, pkg, getPing, getProfile, requeue, getConfig, saveConfig, getPendingRestart, getLogFile }) {
+  constructor({ cfg, store, listener, worker, pkg, getPing, getProfile, requeue, getConfig, saveConfig,
+    getPendingRestart, getLogFile, getAccountChecks, checkConfig }) {
     this.cfg = cfg;
     this.store = store;
     this.listener = listener;
@@ -47,6 +48,8 @@ export class StatusApi {
     this.requeue = requeue;
     this.getConfig = getConfig;
     this.saveConfig = saveConfig;
+    this.getAccountChecks = getAccountChecks;
+    this.checkConfig = checkConfig;
     this.server = null;
     this.startedAt = Date.now();
   }
@@ -54,6 +57,11 @@ export class StatusApi {
   status() {
     const ping = this.getPing ? this.getPing() : null;
     const counts = this.store.counts();
+    // Ocena celów po znaku stacji: UI dokłada ją do właściwego wiersza reguły.
+    const checks = new Map(
+      (this.getAccountChecks ? this.getAccountChecks() : [])
+        .map((c) => [c.station, c]),
+    );
 
     const { state, reason } = computeState({
       paused: this.worker.paused,
@@ -97,16 +105,30 @@ export class StatusApi {
         pingError: ping && !ping.ok ? ping.error : null,
         dryRun: !!this.cfg.radiodyplom.dryRun,
         pinMissing: !!this.cfg._pinMissing,
+        // Opis konta z PING-a. `stations: null` znaczy „serwis nie podał"
+        // (starsza wersja API), a `[]` — „konto nie ma ani jednej stacji".
+        account: ping?.ok ? {
+          stations: ping.stations ?? null,
+          activeActions: ping.activeActions ?? null,
+          pinExpires: ping.pinExpires ?? null,
+          apiEnabled: ping.apiEnabled ?? null,
+        } : null,
       },
 
       forward: {
         operations: this.cfg.forward.operations,
-        targets: (this.cfg.forward.targets || []).map((t) => ({
-          station_callsign: t.station_callsign,
-          operator: t.operator || null,
-          pin: t.pin ? maskPin(t.pin) : null,
-          enabled: t.enabled !== false,
-        })),
+        targets: (this.cfg.forward.targets || []).map((t) => {
+          const c = checks.get(String(t.station_callsign || '').toUpperCase());
+          return {
+            station_callsign: t.station_callsign,
+            operator: t.operator || null,
+            pin: t.pin ? maskPin(t.pin) : null,
+            enabled: t.enabled !== false,
+            // Znaku operatora cudzego konta NIE podajemy dalej niż to potrzebne
+            // do komunikatu; listy stacji cudzych kont nie podajemy wcale.
+            check: c ? { state: c.state, blocking: c.blocking, operator: c.operator } : null,
+          };
+        }),
       },
 
       queue: {
@@ -203,6 +225,20 @@ export class StatusApi {
       if (req.method === 'GET' && url.pathname === '/api/config') {
         if (!this.getConfig) return send(501, { error: 'Edycja konfiguracji niedostępna' });
         return send(200, this.getConfig());
+      }
+      if (req.method === 'POST' && url.pathname === '/api/config/check') {
+        if (!this.checkConfig) return send(501, { error: 'Sprawdzanie niedostępne' });
+        let body = '';
+        req.on('data', (c) => { body += c; if (body.length > 1e6) req.destroy(); });
+        req.on('end', () => {
+          // Sprawdzanie NIGDY nie może zablokować zapisu: przy błędzie
+          // oddajemy pustą listę ocen, a nie piątkę.
+          Promise.resolve()
+            .then(() => this.checkConfig(JSON.parse(body || '{}')))
+            .then((checksList) => send(200, { ok: true, checks: checksList || [] }))
+            .catch((err) => send(200, { ok: false, error: err.message, checks: [] }));
+        });
+        return undefined;
       }
       if (req.method === 'POST' && url.pathname === '/api/config') {
         if (!this.saveConfig) return send(501, { error: 'Edycja konfiguracji niedostępna' });

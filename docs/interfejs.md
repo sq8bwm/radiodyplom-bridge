@@ -83,6 +83,10 @@ datagram przy każdej operacji w dzienniku, a mostek przekazuje wyłącznie
 `insert` (`forward.operations`). Ponowne wysłanie poprawionego QSO i tak byłoby
 duplikatem — radiodyplom nie ma czego „poprawiać".
 
+**Uwaga na mnożnik:** licznik pokazuje **datagramy**, a jedna poprawka QSO
+w QLogu wysyła ich **dwa** (zmierzone). Cztery pominięcia to więc dwie Twoje
+edycje, nie cztery. Okno mówi o tym wprost pod listą powodów.
+
 Powody są **zliczane, a nie logowane** na poziomie `info`: WSJT-X nadaje
 komunikaty stanu co sekundę i zalałby log. Wcześniej trafiały tylko do `debug`,
 więc przy domyślnych ustawieniach nie dało się odpowiedzieć na pytanie „skąd

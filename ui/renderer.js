@@ -111,13 +111,14 @@ function renderStatus(s) {
   // zrozumieć — a pytanie o to pada.
   const powody = Object.entries(nd.reasons || {})
     .sort((a, b) => b[1] - a[1])
-    .map(([p, n]) => `<div style="margin-left:12px" class="hint">${esc(p)}: <b>${n}</b></div>`)
+    .map(([p, n]) => `<div style="margin-left:12px" class="hint" title="${esc(t('hint.skipReason'))}">${esc(p)}: <b>${n}</b></div>`)
     .join('');
   const nieodczytane = nd.total
     ? `<div style="margin-top:6px">${t('sources.notDecoded').replace('{n}', nd.total)}
          <span class="hint">(${t('sources.ndUnknown').replace('{n}', nd.unknown || 0)}
          · ${t('sources.ndInvalid').replace('{n}', nd.invalid || 0)}
-         · ${t('sources.ndSkipped').replace('{n}', nd.skipped || 0)})</span></div>${powody}`
+         · ${t('sources.ndSkipped').replace('{n}', nd.skipped || 0)})</span></div>${powody}${
+      nd.reasons?.['operacja "update"'] ? `<div class="hint" style="margin-left:12px">${t('hint.qlogUpdate')}</div>` : ''}`
     : '';
   $('sources').className = keys.length ? '' : 'empty';
   $('sources').innerHTML = keys.length

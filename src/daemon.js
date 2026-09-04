@@ -8,7 +8,7 @@
 // a UI jest tylko klientem — nigdy odwrotnie.
 import { Store } from './store.js';
 import { Journal, readRecords, parseDay } from './journal.js';
-import { aggregate } from './stats.js';
+import { aggregate, filterRecords, filterOptions } from './stats.js';
 import { RadiodyplomClient } from './radiodyplom.js';
 import { LoggerListener } from './udp.js';
 import { Worker } from './worker.js';
@@ -172,14 +172,26 @@ export async function startDaemon(cfg, opts = {}) {
      * Statystyki z dziennika wysłanych. Zakres datami QSO (RRRR-MM-DD).
      * Liczone przy odpytaniu — patrz src/stats.js.
      */
-    stats(from = null, to = null) {
+    stats(from = null, to = null, filters = {}) {
       const f = parseDay(from); const t = parseDay(to);
-      const wynik = aggregate(readRecords(cfg.queue.journalDir, { from: f, to: t }));
+      const wszystkie = readRecords(cfg.queue.journalDir, { from: f, to: t });
+
+      // Listy wyboru budujemy z wpisów NIEZAWĘŻONYCH, ale z tego samego
+      // zakresu dat. Inaczej wybranie operatora wyrzuciłoby z listy wszystkich
+      // pozostałych i nie dałoby się już wrócić.
+      const opcje = filterOptions(wszystkie);
+      const uzyte = {
+        operator: filters?.operator && opcje.operators.includes(String(filters.operator).toUpperCase())
+          ? String(filters.operator).toUpperCase() : null,
+        station: filters?.station && opcje.stations.includes(String(filters.station).toUpperCase())
+          ? String(filters.station).toUpperCase() : null,
+      };
+      const wynik = aggregate(filterRecords(wszystkie, uzyte));
       // Nazwy akcji z PING-a — serwis podaje tylko aktywne, dla starszych
       // zostaje sam numer.
       const nazwy = new Map((handle.lastPing?.activeActions || []).map((a) => [String(a.id), a.name]));
       wynik.perAction = wynik.perAction.map((x) => ({ ...x, name: nazwy.get(x.key) || null }));
-      return { ok: true, from: f, to: t, ...wynik };
+      return { ok: true, from: f, to: t, filters: uzyte, options: opcje, ...wynik };
     },
     /** Ocena każdego celu wobec uprawnień jego konta. */
     accountChecks() {

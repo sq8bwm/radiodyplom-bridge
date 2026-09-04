@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { Journal, readRecords, normalizeDate, normalizeTime, qsoKey, parseDay } from '../src/journal.js';
-import { aggregate } from '../src/stats.js';
+import { aggregate, filterRecords, filterOptions } from '../src/stats.js';
 import { Worker } from '../src/worker.js';
 import { setLevel } from '../src/log.js';
 
@@ -209,6 +209,60 @@ describe('aggregate', () => {
       assert.equal(a.total.qso, 0);
       assert.equal(a.total.first, null);
     }
+  });
+});
+
+describe('zawężanie po operatorze i stacji', () => {
+  const dane = [
+    rec(), rec({ station: 'SQ8BWA', operator: 'SQ8BWA' }), rec({ station: 'SN8N', operator: 'SQ8BWA' }),
+    rec({ date: '2026-09-04', time: '10:00', call: 'SP9ABC', station: 'SN8N', operator: 'SQ8BWA' }),
+  ];
+
+  test('po operatorze', () => {
+    const w = filterRecords(dane, { operator: 'SQ8BWA' });
+    assert.equal(w.length, 3);
+    const a = aggregate(w);
+    assert.equal(a.total.qso, 2, 'dwie różne łączności');
+    assert.equal(a.total.copies, 3);
+  });
+
+  test('po znaku stacji', () => {
+    // Kopie jednego QSO mają RÓŻNE znaki stacji, więc filtr po stacji pokazuje
+    // te QSO, które poszły pod tym znakiem — po jednej kopii na QSO.
+    const a = aggregate(filterRecords(dane, { station: 'SN8N' }));
+    assert.equal(a.total.copies, 2);
+    assert.equal(a.total.qso, 2);
+  });
+
+  test('oba filtry razem zawężają, nie sumują', () => {
+    assert.equal(filterRecords(dane, { operator: 'SQ8BWM', station: 'SN8N' }).length, 0,
+      'SQ8BWM nie logował spod SN8N');
+    assert.equal(filterRecords(dane, { operator: 'SQ8BWA', station: 'SN8N' }).length, 2);
+  });
+
+  test('bez filtrów oddaje wejście, wielkość liter bez znaczenia', () => {
+    assert.equal(filterRecords(dane, {}).length, 4);
+    assert.equal(filterRecords(dane).length, 4);
+    assert.equal(filterRecords(dane, { station: ' sn8n ' }).length, 2);
+  });
+
+  test('nieistniejąca wartość daje pusto, nie wszystko', () => {
+    // Gdyby filtr „nie pasuje" oznaczał „pokaż wszystko", użytkownik zobaczyłby
+    // pełne statystyki w przekonaniu, że patrzy na jedną stację.
+    assert.deepEqual(filterRecords(dane, { station: 'SP9XYZ' }), []);
+  });
+
+  test('listy wyboru tylko z wartości, które w danych są', () => {
+    const o = filterOptions(dane);
+    assert.deepEqual(o.operators, ['SQ8BWA', 'SQ8BWM']);
+    assert.deepEqual(o.stations, ['SN8N', 'SQ8BWA', 'SQ8BWM']);
+  });
+
+  test('listy wyboru pomijają puste pola i śmieci', () => {
+    const o = filterOptions([rec({ operator: null }), rec({ station: '' }), ...dane]);
+    assert.ok(!o.operators.includes(''), 'puste nie jest opcją');
+    assert.deepEqual(filterOptions([]).stations, []);
+    assert.deepEqual(filterOptions(null).operators, []);
   });
 });
 

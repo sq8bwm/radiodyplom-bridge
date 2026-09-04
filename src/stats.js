@@ -13,6 +13,30 @@
 // Mieszanie ich jest dokładnie tym błędem, który naprawialiśmy na kartach Stanu.
 import { qsoKey } from './journal.js';
 
+/**
+ * Zawężenie wpisów do wybranego operatora i/albo znaku stacji.
+ *
+ * Uwaga na znaczenie: kopie jednego QSO mają RÓŻNE znaki stacji i różnych
+ * operatorów. Filtr po stacji `SN8N` pokazuje więc te QSO, które poszły
+ * pod tym znakiem — a nie „wszystkie QSO z sesji, w której leciało też SN8N".
+ */
+export function filterRecords(records, { operator = null, station = null } = {}) {
+  const lista = Array.isArray(records) ? records : [];
+  const op = operator ? String(operator).trim().toUpperCase() : null;
+  const st = station ? String(station).trim().toUpperCase() : null;
+  if (!op && !st) return lista;
+  return lista.filter((r) => (!op || String(r.operator || '').toUpperCase() === op)
+    && (!st || String(r.station || '').toUpperCase() === st));
+}
+
+/** Wartości do wyboru w filtrach — tylko te, które w danych naprawdę są. */
+export function filterOptions(records) {
+  const lista = Array.isArray(records) ? records : [];
+  const zbior = (f) => [...new Set(lista.map(f).filter(Boolean))]
+    .map((x) => String(x).toUpperCase()).sort();
+  return { operators: zbior((r) => r.operator), stations: zbior((r) => r.station) };
+}
+
 /** Jeden przekrój: klucz → {qso, copies}. */
 function grupuj(records, keyFn) {
   const mapa = new Map();

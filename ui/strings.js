@@ -24,6 +24,13 @@ const DICT = {
     'range.week': '7 dni',
     'range.month': '30 dni',
     'range.all': 'Wszystko',
+    'label.filterOperator': 'Operator',
+    'label.filterStation': 'Znak stacji',
+    'filter.allOperators': 'wszyscy',
+    'filter.allStations': 'wszystkie',
+    'btn.filterClear': 'Wyczyść zawężenie',
+    'stats.emptyFiltered': 'Brak QSO spełniających zawężenie. Zmień operatora, '
+      + 'znak stacji albo zakres dat.',
     'stats.empty': 'Dziennik jest pusty. Zapełnia się przy każdym wysłanym QSO; '
       + 'historię sprzed wersji 0.1.10 można wczytać z logów narzędziem import-log.',
     'stats.qso': 'QSO',
@@ -284,6 +291,13 @@ const DICT = {
     'range.week': '7 days',
     'range.month': '30 days',
     'range.all': 'All',
+    'label.filterOperator': 'Operator',
+    'label.filterStation': 'Station callsign',
+    'filter.allOperators': 'all',
+    'filter.allStations': 'all',
+    'btn.filterClear': 'Clear filter',
+    'stats.emptyFiltered': 'No QSOs match the filter. Change the operator, the '
+      + 'station callsign or the date range.',
     'stats.empty': 'The journal is empty. It fills up with every QSO sent; history '
       + 'from before 0.1.10 can be imported from the logs with the import-log tool.',
     'stats.qso': 'QSOs',

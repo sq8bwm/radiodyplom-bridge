@@ -207,6 +207,15 @@ describe('API stanu — każda trasa odpowiada', () => {
     assert.equal(b.to, null);
   });
 
+  test('GET /api/stats — filtr przyjmuje tylko wartości obecne w danych', async () => {
+    // Dziennik w teście jest pusty, więc żadna wartość nie jest dozwolona
+    // i filtr musi zostać ODRZUCONY, a nie przepuszczony dalej.
+    const b = await (await get('/api/stats?operator=SQ8BWM&station=NIE-MA')).json();
+    assert.equal(b.filters.operator, null);
+    assert.equal(b.filters.station, null);
+    assert.deepEqual(b.options, { operators: [], stations: [] });
+  });
+
   test('GET /api/config', async () => {
     const r = await get('/api/config');
     assert.equal(r.status, 200);

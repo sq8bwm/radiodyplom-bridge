@@ -20,5 +20,5 @@ contextBridge.exposeInMainWorld('bridge', {
   getConfig: () => ipcRenderer.invoke('config:get'),
   saveConfig: (patch) => ipcRenderer.invoke('config:save', patch),
   checkConfig: (patch) => ipcRenderer.invoke('config:check', patch),
-  stats: (from, to) => ipcRenderer.invoke('stats', from, to),
+  stats: (from, to, filters) => ipcRenderer.invoke('stats', from, to, filters),
 });

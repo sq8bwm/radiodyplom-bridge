@@ -26,6 +26,25 @@ z pełnego przekroju (`distinct` w odpowiedzi API), nie z długości przyciętej
 listy. Napisane raz odwrotnie, pokazywało „i 10 więcej" przy 237 pracowanych
 znakach — liczba wyglądała wiarygodnie i była nieprawdziwa.
 
+## Zawężanie po operatorze i stacji
+
+Dwie listy nad podsumowaniem zawężają **całą zakładkę**, razem z podsumowaniem
+i wszystkimi przekrojami. Do wyboru są tylko wartości, które w wybranym zakresie
+dat naprawdę występują — i pochodzą z danych **niezawężonych**, więc po wybraniu
+operatora pozostali nie znikają z listy i da się wrócić.
+
+Uwaga na znaczenie filtra po stacji: kopie jednego QSO mają **różne** znaki
+stacji. Zawężenie do `SN8N` pokazuje te łączności, które poszły pod tym
+znakiem — a nie „wszystkie QSO z sesji, w której leciało też SN8N". Dlatego przy
+takim zawężeniu liczba QSO i liczba kopii są zwykle równe: na każde QSO
+przypada wtedy jedna kopia.
+
+Wartości nieobecne w danych są **odrzucane**, a nie ignorowane w sposób, który
+pokazywałby pełne statystyki: gdyby „nie pasuje" znaczyło „pokaż wszystko",
+użytkownik patrzyłby na całość w przekonaniu, że widzi jedną stację. Zamiast
+tego pojawia się komunikat, że nic nie pasuje do zawężenia — inny niż ten
+o pustym dzienniku.
+
 ## Skąd się to bierze
 
 Plik na miesiąc, jedna linia na wysłaną kopię, w formacie JSON Lines:
@@ -99,11 +118,14 @@ niczego po kształcie znaku, bo „SN0TEST" bywa prawdziwym znakiem okolicznośc
 ## API
 
 ```
-GET /api/stats?from=2026-09-01&to=2026-09-30
+GET /api/stats?from=2026-09-01&to=2026-09-30&operator=SQ8BWA&station=SN8N
 ```
 
-Zakres jest opcjonalny; przyjmowane są tylko **istniejące** daty (`2026-13-99`
-jest odrzucane, a nie po cichu porównywane jako tekst). Odpowiedź zawiera
+Zakres i oba filtry są opcjonalne. Przyjmowane są tylko **istniejące** daty
+(`2026-13-99` jest odrzucane, a nie po cichu porównywane jako tekst) oraz takie
+wartości filtrów, które w danych występują. Odpowiedź zawiera `filters`
+z faktycznie zastosowanym zawężeniem i `options` z listami do wyboru — okno
+bierze swój stan z odpowiedzi, nie z tego, co kliknięto. Odpowiedź zawiera
 `total` oraz przekroje `perDay`, `perAction`, `perOperator`, `perStation`,
 `perBand`, `perMode`, `perSource` i `topCalls` — każdy jako lista
 `{key, qso, copies}` — oraz `distinct` z liczbą RÓŻNYCH wartości w każdym

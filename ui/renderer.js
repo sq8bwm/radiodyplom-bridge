@@ -455,6 +455,8 @@ function ask(text) {
 
 // Wybrany zakres. `null` = bez ograniczenia (wszystko, co jest w dzienniku).
 let statsDni = null;
+// Zawężenie po operatorze i znaku stacji. `null` = bez zawężenia.
+let statsFiltr = { operator: null, station: null };
 const ZAKRESY = [
   { dni: 1, klucz: 'range.today' },
   { dni: 7, klucz: 'range.week' },
@@ -510,14 +512,57 @@ function renderRangeButtons() {
   });
 }
 
+$('fltOperator').onchange = () => {
+  statsFiltr.operator = $('fltOperator').value || null;
+  refreshStats();
+};
+$('fltStation').onchange = () => {
+  statsFiltr.station = $('fltStation').value || null;
+  refreshStats();
+};
+$('btnFltClear').onclick = () => {
+  statsFiltr = { operator: null, station: null };
+  refreshStats();
+};
+
+/**
+ * Listy wyboru w filtrach.
+ *
+ * Wartości pochodzą z wpisów NIEZAWĘŻONYCH, tylko z wybranego zakresu dat —
+ * inaczej po wybraniu operatora zniknęliby z listy wszyscy pozostali i nie
+ * dałoby się wrócić.
+ */
+function renderStatsFilters(d) {
+  const opcje = d?.options || { operators: [], stations: [] };
+  const wypelnij = (id, wartosci, wybrane, etykietaPustej) => {
+    const el = $(id);
+    el.innerHTML = `<option value="">${esc(etykietaPustej)}</option>${
+      wartosci.map((v) => `<option value="${esc(v)}"${v === wybrane ? ' selected' : ''}>${esc(v)}</option>`).join('')}`;
+    el.disabled = wartosci.length === 0;
+  };
+  wypelnij('fltOperator', opcje.operators, d?.filters?.operator || null, t('filter.allOperators'));
+  wypelnij('fltStation', opcje.stations, d?.filters?.station || null, t('filter.allStations'));
+
+  // Rdzeń odrzuca wartości, których w danych nie ma (np. po zmianie zakresu),
+  // więc stan okna bierzemy z ODPOWIEDZI, nie z tego, co kliknęliśmy.
+  statsFiltr = { operator: d?.filters?.operator || null, station: d?.filters?.station || null };
+  $('btnFltClear').hidden = !statsFiltr.operator && !statsFiltr.station;
+}
+
 async function refreshStats() {
   renderRangeButtons();
   let d = null;
-  try { d = await window.bridge.stats?.(dataOd(statsDni), null); } catch { /* pokażemy brak */ }
+  try {
+    d = await window.bridge.stats?.(dataOd(statsDni), null, statsFiltr);
+  } catch { /* pokażemy brak */ }
+  renderStatsFilters(d);
 
   if (!d || !d.total || d.total.copies === 0) {
     $('statsTotal').className = 'empty';
-    $('statsTotal').textContent = t('stats.empty');
+    // Rozróżniamy „nic nie ma" od „nic nie pasuje do filtra" — inaczej
+    // zawężenie do stacji bez QSO wyglądałoby jak pusty dziennik.
+    const zawezone = statsFiltr.operator || statsFiltr.station;
+    $('statsTotal').textContent = zawezone ? t('stats.emptyFiltered') : t('stats.empty');
     $('statsPanels').innerHTML = '';
     return;
   }

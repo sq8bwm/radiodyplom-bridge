@@ -233,6 +233,7 @@ Daemon wystawia lokalną powierzchnię stanu, z której korzysta interfejs użyt
 | POST | `/api/pause` | wstrzymuje **wysyłkę**; odbiór z loggera i kolejkowanie działają dalej |
 | POST | `/api/resume` | wznawia wysyłkę |
 | POST | `/api/requeue` | przywraca QSO z `failed/` do kolejki |
+| GET | `/api/stats` | statystyki z dziennika wysłanych, z zakresem dat i zawężeniem po operatorze/stacji |
 | POST | `/api/config/check` | ocenia cele z konfiguracji **niezapisanej** (ciało: taki sam obiekt jak przy zapisie) |
 
 Dwie decyzje projektowe, świadome i celowe:

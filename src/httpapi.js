@@ -11,7 +11,7 @@
 import http from 'node:http';
 import { log, recentLog } from './log.js';
 import { readRecords, parseDay } from './journal.js';
-import { aggregate } from './stats.js';
+import { aggregate, filterRecords, filterOptions } from './stats.js';
 
 /** Maskuje PIN do postaci bezpiecznej w UI: "ABCD-****". */
 export function maskPin(pin) {
@@ -259,7 +259,21 @@ export class StatusApi {
         const from = parseDay(url.searchParams.get('from'));
         const to = parseDay(url.searchParams.get('to'));
         const dir = this.cfg.queue?.journalDir;
-        const wynik = aggregate(readRecords(dir, { from, to }));
+        const wszystkie = readRecords(dir, { from, to });
+
+        // Listy wyboru z wpisów NIEZAWĘŻONYCH — inaczej po wybraniu operatora
+        // nie dałoby się już wrócić do pozostałych.
+        const options = filterOptions(wszystkie);
+        // Ze żądania przyjmujemy tylko wartości, które w danych naprawdę są.
+        const wybor = (nazwa, dozwolone) => {
+          const v = String(url.searchParams.get(nazwa) || '').trim().toUpperCase();
+          return v && dozwolone.includes(v) ? v : null;
+        };
+        const filters = {
+          operator: wybor('operator', options.operators),
+          station: wybor('station', options.stations),
+        };
+        const wynik = aggregate(filterRecords(wszystkie, filters));
 
         // Nazwy akcji bierzemy z PING-a, żeby w oknie nie stały same numery.
         // Serwis podaje tylko akcje AKTYWNE, więc dla starszych zostaje numer.
@@ -267,7 +281,7 @@ export class StatusApi {
         const nazwy = new Map((p?.activeActions || []).map((a) => [String(a.id), a.name]));
         wynik.perAction = wynik.perAction.map((x) => ({ ...x, name: nazwy.get(x.key) || null }));
 
-        return send(200, { ok: true, from, to, journalDir: dir, ...wynik });
+        return send(200, { ok: true, from, to, filters, options, journalDir: dir, ...wynik });
       }
       if (req.method === 'GET' && url.pathname === '/api/config') {
         if (!this.getConfig) return send(501, { error: 'Edycja konfiguracji niedostępna' });

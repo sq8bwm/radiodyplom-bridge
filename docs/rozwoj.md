@@ -153,6 +153,25 @@ Wyłączony domyślnie, bo wymaga adresu opiekuna pakietu, który w rozdawanym
 pakiecie jest publiczny. Instrukcja włączenia jest w `electron-builder.yml`.
 
 
+## Praca nad kodem z zewnątrz
+
+Repozytorium jest publiczne, więc **pull requesty są mile widziane** — zwłaszcza
+nowe dekodery loggerów (jeden plik w `src/decoders/`, patrz `loggery.md`).
+
+`main` jest chroniony i **wymaga pull requesta**; wymuszone wypchnięcia
+i usunięcie gałęzi są zablokowane dla wszystkich, także dla właściciela.
+Bezpośrednio do `main` pisze tylko właściciel repozytorium.
+
+Czego oczekuję od zgłoszenia:
+
+- **testy przechodzą** (`npm test`) i nowe zachowanie ma swój test — najlepiej
+  taki, który opisuje, *co* by się zepsuło bez niego;
+- **zero zależności runtime.** Program ma ich nie mieć i to jest świadoma
+  decyzja (patrz „Wymagania");
+- komentarz tam, gdzie kod robi coś nieoczywistego — dlaczego, nie co;
+- **żadnych sekretów.** `config.json`, `data/` i `*.log` są ignorowane, bo log
+  mostka potrafi zawierać PIN-y celów. Przed wysłaniem warto to sprawdzić.
+
 ## Struktura
 ```
 src/index.js          spięcie całości, obsługa sygnałów

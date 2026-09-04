@@ -56,15 +56,22 @@ Wniosek na przyszłość zostaje ten sam: **nie commitować surowych logów prac
 log mostka pokazuje ładunki żądań razem z PIN-ami celów.
 
 
-### Uprawnienia współpracowników — do rozstrzygnięcia
-Po upublicznieniu (2026-09-04) `piotr-maj` i `agapaha` nadal mają prawo **zapisu**
-(`push`) do `main`. Żadne z nich nigdy nic nie commitowało — wszystkie commity są
-SQ8BWM. W repozytorium publicznym do czytania kodu uprawnienia nie są potrzebne
-wcale, więc `push` warto zostawić tylko tym, którzy mają realnie pisać.
+### Zapis do `main` — tylko właściciel, reszta przez pull request
+Ustalone 2026-09-04, po upublicznieniu repozytorium.
 
-Ochrona `main` jest już włączona (blokada force-push i usunięcia gałęzi,
-bez wymuszania pull requestów), więc pomyłka nie zniszczy historii — ale
-bezpośredni commit do `main` nadal jest możliwy dla tych trzech kont.
+`main` wymaga **pull requesta** (zero wymaganych zatwierdzeń — chodzi o ścieżkę,
+nie o recenzję), a `enforce_admins` jest **wyłączone**, więc SQ8BWM jako
+administrator pisze do `main` bezpośrednio. `piotr-maj` i `agapaha` zachowują
+`push`, dzięki czemu mogą wypychać własne gałęzie w tym repozytorium i otwierać
+z nich pull requesty — ale do `main` już nie wejdą wprost.
+
+Dlaczego nie „ogranicz, kto może pisać do tej gałęzi": ta opcja działa
+**wyłącznie w repozytoriach organizacji**. Przy koncie osobistym pole
+`restrictions` API odrzuca, więc wymuszenie pull requesta plus pominięcie dla
+administratora jest jedyną drogą do tego samego efektu.
+
+Zablokowane pozostają też wymuszone wypchnięcie i usunięcie gałęzi — te dwie
+rzeczy dotyczą **wszystkich**, także właściciela (sprawdzone: `GH006`).
 
 ### Podpis kodu dla Windows — nie podpisujemy
 **Decyzja (2026-08-31): nie kupujemy certyfikatu.** Instalator zostaje niepodpisany,

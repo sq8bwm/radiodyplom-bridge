@@ -1,0 +1,8 @@
+# Właściciel całego kodu. W połączeniu z „require review from Code Owners"
+# w ochronie gałęzi `main` znaczy to, że pull request wymaga zatwierdzenia
+# WŁAŚNIE tej osoby — samo zatwierdzenie kogokolwiek innego nie wystarcza.
+#
+# Uwaga: GitHub nie pozwala zatwierdzić WŁASNEGO pull requesta, więc PR-y
+# właściciela scala się uprawnieniem administratora (`gh pr merge --admin`).
+# Reguła działa więc realnie dla zgłoszeń z zewnątrz — po to tu jest.
+* @SQ8BWM

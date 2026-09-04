@@ -42,6 +42,9 @@ document.querySelectorAll('nav button').forEach((b) => {
     b.classList.add('active');
     $(b.dataset.tab).classList.add('active');
     if (b.dataset.tab === 'konfig') loadConfig();
+    // Statystyki liczone są przy odpytaniu, więc odświeżamy przy wejściu —
+    // ale NIE w pętli, bo to przejście po całym dzienniku.
+    if (b.dataset.tab === 'stats') refreshStats();
     if (b.dataset.tab === 'log') {
       // Wejście w zakładkę zawsze pokazuje najnowsze wpisy.
       lastLogHtml = '';
@@ -446,6 +449,105 @@ function ask(text) {
     // Ognisko na bezpieczniejszej odpowiedzi: Enter i Escape anulują.
     $('askNo').focus();
   });
+}
+
+// ---------- statystyki ----------
+
+// Wybrany zakres. `null` = bez ograniczenia (wszystko, co jest w dzienniku).
+let statsDni = null;
+const ZAKRESY = [
+  { dni: 1, klucz: 'range.today' },
+  { dni: 7, klucz: 'range.week' },
+  { dni: 30, klucz: 'range.month' },
+  { dni: null, klucz: 'range.all' },
+];
+
+/** Data UTC sprzed n-1 dni, w postaci RRRR-MM-DD. */
+function dataOd(dni) {
+  if (!dni) return null;
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - (dni - 1));
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Jeden przekrój jako lista pasków.
+ *
+ * Pasek jest proporcjonalny do NAJWIĘKSZEJ wartości w tym przekroju, nie do
+ * sumy — inaczej przy dwudziestu pozycjach wszystkie byłyby nierozróżnialnie
+ * cienkie.
+ */
+function statsPanel(tytul, wiersze, { etykieta = (w) => w.key, limit = 12 } = {}) {
+  if (!wiersze.length) return '';
+  const max = Math.max(...wiersze.map((w) => w.copies), 1);
+  const widoczne = wiersze.slice(0, limit);
+  const reszta = wiersze.length - widoczne.length;
+  return `<div class="panel">
+    <h2>${esc(tytul)}</h2>
+    <div class="st-rows">${widoczne.map((w) => `
+      <div class="st-row">
+        <div class="st-bar" title="${esc(etykieta(w))}">
+          <span class="fill" style="width:${Math.round((w.copies / max) * 100)}%"></span>
+          <span class="lbl">${esc(etykieta(w))}</span>
+        </div>
+        <div class="st-num"><b>${w.qso}</b> ${t('stats.qsoShort')} · ${w.copies} ${t('stats.copiesShort')}</div>
+      </div>`).join('')}</div>
+    ${reszta > 0 ? `<div class="hint">${t('stats.more').replace('{n}', reszta)}</div>` : ''}
+  </div>`;
+}
+
+function renderRangeButtons() {
+  $('statsRange').innerHTML = ZAKRESY.map((z) => `
+    <button class="act sec${statsDni === z.dni ? ' on' : ''}" data-dni="${z.dni ?? ''}">${t(z.klucz)}</button>`).join('');
+  $('statsRange').querySelectorAll('button').forEach((b) => {
+    b.onclick = () => {
+      statsDni = b.dataset.dni === '' ? null : Number(b.dataset.dni);
+      refreshStats();
+    };
+  });
+}
+
+async function refreshStats() {
+  renderRangeButtons();
+  let d = null;
+  try { d = await window.bridge.stats?.(dataOd(statsDni), null); } catch { /* pokażemy brak */ }
+
+  if (!d || !d.total || d.total.copies === 0) {
+    $('statsTotal').className = 'empty';
+    $('statsTotal').textContent = t('stats.empty');
+    $('statsPanels').innerHTML = '';
+    return;
+  }
+
+  const T = d.total;
+  $('statsTotal').className = '';
+  // Średnia liczona przez DNI Z ŁĄCZNOŚCIAMI, nie przez długość zakresu —
+  // inaczej tydzień z jedną sobotą w eterze wyglądałby na katastrofę.
+  const srednia = T.days ? Math.round(T.qso / T.days) : 0;
+  $('statsTotal').innerHTML = `
+    <div class="cards" style="margin:0">
+      <div class="card" title="${esc(t('tip.statsQso'))}">
+        <div class="k">${t('stats.qso')}</div><div class="v">${T.qso}</div>
+        <div class="s">${t('stats.copies')}: ${T.copies}</div></div>
+      <div class="card" title="${esc(t('tip.statsDays'))}">
+        <div class="k">${t('stats.days')}</div><div class="v">${T.days}</div>
+        <div class="s">${t('stats.perDayAvg').replace('{n}', srednia)}</div></div>
+      <div class="card">
+        <div class="k">${t('stats.first')}</div><div class="v" style="font-size:16px">${esc(T.first || '—')}</div>
+        <div class="s">${t('stats.last')}: ${esc(T.last || '—')}</div></div>
+    </div>`;
+
+  const akcja = (w) => (w.name ? `#${w.key} ${w.name}` : `#${w.key}`);
+  $('statsPanels').innerHTML = `<div class="st-grid">
+    ${statsPanel(t('stats.perAction'), d.perAction, { etykieta: akcja })}
+    ${statsPanel(t('stats.perDay'), [...d.perDay].reverse(), { limit: 14 })}
+    ${statsPanel(t('stats.perOperator'), d.perOperator)}
+    ${statsPanel(t('stats.perStation'), d.perStation)}
+    ${statsPanel(t('stats.perBand'), d.perBand)}
+    ${statsPanel(t('stats.perMode'), d.perMode)}
+    ${statsPanel(t('stats.perSource'), d.perSource)}
+    ${statsPanel(t('stats.topCalls'), d.topCalls, { limit: 10 })}
+  </div>`;
 }
 
 // ---------- cele fan-outu ----------

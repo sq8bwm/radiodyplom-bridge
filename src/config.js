@@ -144,6 +144,8 @@ export function loadConfig(opts = {}) {
   cfg.queue.dir = resolvePath(cfg.queue.dir);
   cfg.queue.failedDir = resolvePath(cfg.queue.failedDir);
   cfg.queue.seenFile = resolvePath(cfg.queue.seenFile);
+  // Dziennik wysłanych — źródło statystyk. Domyślnie obok kolejki.
+  cfg.queue.journalDir = resolvePath(cfg.queue.journalDir || './data/sent');
   cfg._source = path;
 
   return cfg;

@@ -10,6 +10,8 @@
 //  - Zero zależności: node:http wystarcza.
 import http from 'node:http';
 import { log, recentLog } from './log.js';
+import { readRecords, parseDay } from './journal.js';
+import { aggregate } from './stats.js';
 
 /** Maskuje PIN do postaci bezpiecznej w UI: "ABCD-****". */
 export function maskPin(pin) {
@@ -249,6 +251,23 @@ export class StatusApi {
       if (req.method === 'POST' && url.pathname === '/api/requeue') {
         const n = this.requeue ? this.requeue() : 0;
         return send(200, { ok: true, restored: n });
+      }
+      if (req.method === 'GET' && url.pathname === '/api/stats') {
+        // Liczymy przy odpytaniu — patrz src/stats.js. Zakres podaje się
+        // datami QSO (RRRR-MM-DD), a nie czasem wysłania: dla aktywatora
+        // liczy się dzień łączności, nie moment, w którym mostek ją dosłał.
+        const from = parseDay(url.searchParams.get('from'));
+        const to = parseDay(url.searchParams.get('to'));
+        const dir = this.cfg.queue?.journalDir;
+        const wynik = aggregate(readRecords(dir, { from, to }));
+
+        // Nazwy akcji bierzemy z PING-a, żeby w oknie nie stały same numery.
+        // Serwis podaje tylko akcje AKTYWNE, więc dla starszych zostaje numer.
+        const p = this.getPing ? this.getPing() : null;
+        const nazwy = new Map((p?.activeActions || []).map((a) => [String(a.id), a.name]));
+        wynik.perAction = wynik.perAction.map((x) => ({ ...x, name: nazwy.get(x.key) || null }));
+
+        return send(200, { ok: true, from, to, journalDir: dir, ...wynik });
       }
       if (req.method === 'GET' && url.pathname === '/api/config') {
         if (!this.getConfig) return send(501, { error: 'Edycja konfiguracji niedostępna' });

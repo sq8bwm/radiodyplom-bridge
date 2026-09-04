@@ -91,6 +91,21 @@
      znacznik zostaje (po włączeniu zaboli), ale nie krzyczy czerwienią. */
   .t-chk.muted { color:var(--muted); }
 
+  /* Statystyki: paski proporcjonalne do największej wartości w przekroju.
+     Same liczby w kolumnie czyta się źle, a wykres byłby przesadą. */
+  .range { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .range button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .st-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
+  .st-rows { display:grid; gap:3px; }
+  .st-row { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; }
+  .st-bar { position:relative; background:var(--bg); border-radius:4px; overflow:hidden;
+            padding:3px 8px; min-width:0; }
+  .st-bar span.fill { position:absolute; inset:0 auto 0 0; background:var(--accent); opacity:.16; }
+  .st-bar span.lbl { position:relative; white-space:nowrap; overflow:hidden;
+                     text-overflow:ellipsis; display:block; }
+  .st-num { font-variant-numeric:tabular-nums; color:var(--muted); font-size:12px; }
+  .st-num b { color:var(--text); font-variant-numeric:tabular-nums; }
+
   /* Pytania zadajemy WŁASNYM okienkiem, nie natywnym `confirm`.
      Natywne, blokujące okienko w Electronie na Linuksie po zamknięciu nie
      oddawało ogniska klawiatury rendererowi: kliknięcia dalej działały,
@@ -160,6 +175,7 @@
   <button data-tab="stan" class="active" data-i18n="tab.state">Stan</button>
   <button data-tab="kolejka" data-i18n="tab.queue">Kolejka</button>
   <button data-tab="konfig" data-i18n="tab.config">Konfiguracja</button>
+  <button data-tab="stats" data-i18n="tab.stats">Statystyki</button>
   <button data-tab="log" data-i18n="tab.log">Log</button>
   <button data-tab="about" data-i18n="tab.about">O programie</button>
 </nav>
@@ -265,6 +281,15 @@
       <button class="act" id="btnSave" data-i18n="btn.save"></button>
       <span id="saveInfo" class="hint"></span>
     </div>
+  </section>
+
+  <section id="stats">
+    <div class="panel">
+      <h2 data-i18n="panel.statsRange"></h2>
+      <div class="range" id="statsRange"></div>
+      <div id="statsTotal" class="empty"></div>
+    </div>
+    <div id="statsPanels"></div>
   </section>
 
   <section id="about">

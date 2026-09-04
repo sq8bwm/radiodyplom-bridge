@@ -2,7 +2,27 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // Klient API radiodyplom.pl (qso_upload.php).
+import net from 'node:net';
 import { log } from './log.js';
+
+// Limit czasu na JEDNĄ próbę połączenia (Happy Eyeballs).
+//
+// Node domyślnie daje 250 ms na próbę do pierwszego adresu i przy dwustosowym
+// DNS-ie przełącza się na drugi. radiodyplom.pl ma adres IPv4 i IPv6, a samo
+// nawiązanie połączenia zajmuje tam zwykle 350–1200 ms — czyli DŁUŻEJ niż ten
+// limit. Efekt: fetch przerywa próbę i oddaje `ETIMEDOUT`, choć serwis działa.
+//
+// Zmierzone 2026-09-04 na żywym serwisie: przy domyślnych 250 ms 3 żądania z 3
+// padały, przy 3000 ms — 3 z 3 przechodziły (890, 199, 1203 ms). W logu
+// użytkownika zostawiło to serię wpisów „Utracono łączność z API", przy
+// serwisie, który cały czas odpowiadał.
+//
+// NIE wyłączamy Happy Eyeballs — w sieci tylko z IPv6 jest potrzebne.
+// Dajemy mu realny budżet. Całe żądanie i tak ogranicza `timeoutMs`.
+const PROBA_POLACZENIA_MS = 3000;
+try {
+  net.setDefaultAutoSelectFamilyAttemptTimeout?.(PROBA_POLACZENIA_MS);
+} catch { /* starszy Node – zostaje domyślne */ }
 
 // Klasyfikacja błędów.
 //

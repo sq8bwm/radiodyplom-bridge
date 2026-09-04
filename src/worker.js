@@ -13,9 +13,11 @@ import { log } from './log.js';
 export const EVENT_RING = 200;
 
 export class Worker {
-  constructor({ store, client, queue, rateLimit, tickMs = 1000 }) {
+  constructor({ store, client, queue, rateLimit, journal = null, tickMs = 1000 }) {
     this.store = store;
     this.client = client;
+    // Dziennik wysłanych (statystyki). Opcjonalny — brak nie może niczego zatrzymać.
+    this.journal = journal;
     this.maxAttempts = queue.maxAttempts;
     this.baseDelayMs = queue.baseDelayMs;
     this.maxDelayMs = queue.maxDelayMs;
@@ -138,7 +140,17 @@ export class Worker {
       this.store.complete(item, { dryRun: !!res.dryRun });
       if (res.dryRun) this.counters.dryRun += 1;
       else if (res.duplicate) this.counters.duplicates += 1;
-      else this.counters.sent += 1;
+      else {
+        this.counters.sent += 1;
+        // Do dziennika trafia TYLKO prawdziwa wysyłka: bez przejść próbnych
+        // (QSO nie opuściło komputera) i bez duplikatów (serwis miał je już
+        // wcześniej, więc drugi wpis zawyżałby statystykę).
+        this.journal?.record({
+          payload: item.payload,
+          savedTo: res.savedTo,
+          source: item.meta?.source || null,
+        });
+      }
       this.lastSent = {
         callsign: call,
         station: item.payload.station_callsign,

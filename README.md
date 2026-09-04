@@ -19,6 +19,10 @@ akcji dyplomowej. Bez eksportu ADIF, bez wgrywania plików, bez pamiętania o ni
   pod więcej niż jednym znakiem.
 - **Widać, co się dzieje.** Liczniki, kolejka, powody odrzuceń i log do pliku —
   zamiast zgadywania, czy coś doszło.
+- **Sprawdza konfigurację wobec Twojego konta** — ostrzega o znaku stacji, którego
+  serwis nie przyjmie, zanim pierwsze QSO wróci odrzucone.
+- **Statystyki** — ile QSO w który dzień, na której akcji, spod której stacji,
+  na jakim pasmie.
 - **Tryb próbny**, żeby najpierw sprawdzić mapowanie pól, a dopiero potem wysyłać.
 
 | Protokół | Loggery |
@@ -104,6 +108,7 @@ Interfejs jest po **polsku i angielsku**, przełącznik w nagłówku.
 | [Rozmnażanie QSO](docs/fan-out.md) | jedna łączność jako kilka wpisów |
 | [Kolejka i log](docs/kolejka.md) | deduplikacja, ponawianie, zachowanie przy błędach |
 | [Interfejs i API](docs/interfejs.md) | okno, zasobnik, lokalne API stanu |
+| [Statystyki](docs/statystyki.md) | ile QSO, na której akcji, spod której stacji |
 | [Windows i sieć](docs/windows-i-siec.md) | rozgłoszenia, multicast, zapora, autostart |
 | [Rozwój](docs/rozwoj.md) | wymagania, testy, budowanie paczek |
 

@@ -7,6 +7,8 @@
 // w swoim procesie głównym. Dzięki temu logika żyje w jednym miejscu,
 // a UI jest tylko klientem — nigdy odwrotnie.
 import { Store } from './store.js';
+import { Journal, readRecords, parseDay } from './journal.js';
+import { aggregate } from './stats.js';
 import { RadiodyplomClient } from './radiodyplom.js';
 import { LoggerListener } from './udp.js';
 import { Worker } from './worker.js';
@@ -56,8 +58,9 @@ export async function startDaemon(cfg, opts = {}) {
 
   const client = new RadiodyplomClient(cfg.radiodyplom);
 
+  const journal = new Journal({ dir: cfg.queue.journalDir }).init();
   const worker = new Worker({
-    store, client, queue: cfg.queue, rateLimit: cfg.rateLimit,
+    store, client, queue: cfg.queue, rateLimit: cfg.rateLimit, journal,
   });
 
   const listener = new LoggerListener({
@@ -165,6 +168,19 @@ export async function startDaemon(cfg, opts = {}) {
       }
       return verifyTargets({ targets, mainPin, accounts: handle.accounts });
     },
+    /**
+     * Statystyki z dziennika wysłanych. Zakres datami QSO (RRRR-MM-DD).
+     * Liczone przy odpytaniu — patrz src/stats.js.
+     */
+    stats(from = null, to = null) {
+      const f = parseDay(from); const t = parseDay(to);
+      const wynik = aggregate(readRecords(cfg.queue.journalDir, { from: f, to: t }));
+      // Nazwy akcji z PING-a — serwis podaje tylko aktywne, dla starszych
+      // zostaje sam numer.
+      const nazwy = new Map((handle.lastPing?.activeActions || []).map((a) => [String(a.id), a.name]));
+      wynik.perAction = wynik.perAction.map((x) => ({ ...x, name: nazwy.get(x.key) || null }));
+      return { ok: true, from: f, to: t, ...wynik };
+    },
     /** Ocena każdego celu wobec uprawnień jego konta. */
     accountChecks() {
       return verifyTargets({
@@ -252,8 +268,21 @@ export async function startDaemon(cfg, opts = {}) {
         log.warn(`Cel ${c.station}: brak PIN-u — ani przy celu, ani głównego.`);
       }
     }
-    const brak = blockingTargets(checks).length;
-    if (brak === 0 && checks.length) log.info(`Cele fan-outu sprawdzone: ${checks.length}, bez zastrzeżeń`);
+    // „Bez zastrzeżeń" wolno napisać TYLKO o celach, które naprawdę udało się
+    // sprawdzić. Przy nieudanym PING-u wszystkie wychodzą jako `unknown`,
+    // a komunikat o braku zastrzeżeń czytałby się jak potwierdzenie — realnie
+    // tak się stało 2026-09-04 przy chwilowej awarii sieci.
+    const wlaczone = checks.filter((c) => c.enabled);
+    const niewiadome = wlaczone.filter((c) => c.state === 'unknown').length;
+    const zastrzezenia = blockingTargets(checks).length;
+    if (!wlaczone.length) { /* nie ma o czym pisać */ }
+    else if (niewiadome === wlaczone.length) {
+      log.info(`Nie udało się sprawdzić uprawnień dla celów (${wlaczone.length}) `
+        + '— brak odpowiedzi serwisu. Wysyłka działa normalnie.');
+    } else if (zastrzezenia === 0) {
+      log.info(`Cele fan-outu sprawdzone: ${wlaczone.length - niewiadome} z ${wlaczone.length}`
+        + `, bez zastrzeżeń${niewiadome ? ` (${niewiadome} bez odpowiedzi)` : ''}`);
+    }
   }).catch((err) => {
     // Sprawdzanie jest wygodą, nie warunkiem pracy mostka.
     log.debug(`Nie udało się sprawdzić kont: ${err.message}`);

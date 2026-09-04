@@ -210,6 +210,17 @@ describe('RadiodyplomClient — klasyfikacja odpowiedzi', () => {
     assert.ok(wpisy.includes('SP1AAA'), 'a reszta ładunku jest przydatna i zostaje');
   });
 
+  test('limit jednej próby połączenia jest podniesiony z domyślnych 250 ms', async () => {
+    // REGRESJA zmierzona na żywym serwisie 2026-09-04: Node daje domyślnie
+    // 250 ms na próbę połączenia do pierwszego adresu, a radiodyplom.pl
+    // (dwustosowy DNS) nawiązuje je w 350–1200 ms. Trzy żądania z trzech
+    // padały wtedy jako ETIMEDOUT, mimo działającego serwisu — w logu
+    // użytkownika została seria „Utracono łączność z API".
+    const net = await import('node:net');
+    assert.ok(net.default.getDefaultAutoSelectFamilyAttemptTimeout() >= 1000,
+      'sam import klienta musi podnieść limit');
+  });
+
   // --- PING: opis konta (rozszerzenie API z 2026-09-04) ---
 
   test('PING oddaje listę stacji i akcji, znaki wielkimi literami', async () => {

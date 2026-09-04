@@ -22,6 +22,7 @@
     "dir": "./data/queue",
     "failedDir": "./data/failed",
     "seenFile": "./data/seen.json",
+    "journalDir": "./data/sent",
     "maxAttempts": 20,
     "baseDelayMs": 5000,
     "maxDelayMs": 900000

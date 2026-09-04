@@ -147,37 +147,21 @@ ucinane), z żadną listą nie jest wiązane.
 (`INVALID_CALLSIGN`, HTTP 400). Dziś mostek wyśle to i odłoży do `failed/`.
 Warto sprawdzać kształt znaku po naszej stronie, zanim QSO opuści komputer.
 
-### Zakładka Statystyki — QSO per dzień, operator, akcja
-Zamówione 2026-09-04. Dziś **nie mamy z czego tego policzyć**: `store` trzyma
-tylko klucze deduplikacji i liczniki, bez historii pojedynczych QSO.
+### Statystyki — zrobione, co jeszcze warto dołożyć
+Zakładka i importer historii gotowe w 0.1.10 —
+[docs/statystyki.md](docs/statystyki.md). Historia z logów wczytana: 1114 kopii,
+372 QSO, 31.08–03.09 (z 1119 wpisów logu odsiane 2 przejścia próbne i 3 kopie
+QSO testowego `SN0TEST`).
 
-Projekt:
+Do rozważenia, gdy pojawi się potrzeba:
 
-- **Dziennik wysłanych**: `data/sent-RRRR-MM.jsonl`, jedna linia na wysłaną
-  kopię, dopisywana w `worker._process` tam, gdzie dziś powstaje `lastSent`:
-  `{at, call, station, operator, action, band, mode, source}`.
-  **Przejścia próbne do dziennika NIE trafiają** — zamówione wprost 2026-09-04:
-  QSO, które nie opuściło komputera, nie ma czego wliczać do statystyki.
-  (Liczba przejść próbnych jest osobno w `seen.json`, gdyby kiedyś była
-  potrzebna.)
-  Dopisywanie jest odporne na ubicie procesu (bez przepisywania pliku),
-  plik na miesiąc trzyma odczyty tanie. 1119 rekordów to ~130 kB.
-- **Agregacje w pamięci przy odpytaniu**, nie liczniki na bieżąco: per dzień,
-  per akcja, per operator, per stacja, per band/mode, per logger. Liczniki
-  trzymane na żywo trzeba by migrować przy każdej nowej przekrojówce.
-- Osobna zakładka; `/api/stats?from=&to=` jako źródło.
-
-**Historię da się odzyskać w całości.** Dwa pliki logu zawierają dokładnie
-1119 wpisów „zapisane" — tyle, ile pokazuje licznik:
-
-| Plik | Wpisów |
-|---|---|
-| `~/.local/share/radiodyplom-bridge/data/bridge.log` | 978 |
-| `20260831-log.log` (katalog projektu) | 141 |
-
-Linie „Nowe QSO" niosą `band`, `mode`, `operator` i znak stacji, a „zapisane" —
-numery akcji i logger. Jednorazowy importer odtworzy dziennik wstecz. Zrobić to
-**przed** czyszczeniem logów, bo to jedyna kopia tych danych.
+- **Eksport do CSV/ADIF** — dziennik jest w JSON Lines, więc to kilka linii kodu.
+- **Wykres w czasie** zamiast listy pasków; dziś przy 14 dniach lista wystarcza.
+- **Porównanie z serwisem** — ile QSO widzi radiodyplom na danej akcji. Wymaga
+  endpointu, którego nie ma; sensowne dopiero razem z resztą zapytania do autora.
+- **Wygasanie dziennika.** Przy tempie 300 QSO/dzień to ~1 MB na miesiąc, więc
+  jeszcze długo nie problem. Podział na pliki miesięczne jest już zrobiony, więc
+  usuwanie starych będzie trywialne.
 
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.

@@ -59,3 +59,19 @@ zapisywalny, a kolejka musi mieć gdzie trwać.
 
 Kolejka jest odporna na twarde ubicie procesu (zapis atomowy), więc restart maszyny
 nie uszkodzi danych — niewysłane QSO zostaną dosłane po starcie.
+
+## „Utracono łączność z API" przy działającym serwisie
+
+Node daje domyślnie **250 ms** na próbę nawiązania połączenia z pierwszym
+adresem hosta (Happy Eyeballs, `autoSelectFamilyAttemptTimeout`).
+`radiodyplom.pl` ma adres IPv4 i IPv6, a samo połączenie zajmuje tam zwykle
+**350–1200 ms** — czyli dłużej niż ten limit. Efekt: `fetch` przerywał próbę
+i oddawał `ETIMEDOUT`, choć serwis odpowiadał.
+
+Zmierzone 2026-09-04: przy domyślnych 250 ms padały 3 żądania z 3, przy 3000 ms
+przechodziły 3 z 3. W logu zostawiało to serię wpisów „Utracono łączność z API"
+bez żadnej realnej awarii. Mostek podnosi ten limit od wersji 0.1.10
+(`src/radiodyplom.js`).
+
+Kolejki to nie dotykało — QSO czekały i szły przy następnej próbie — ale
+mylące wpisy w logu i czerwona ikona brały się właśnie z tego.

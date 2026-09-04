@@ -27,7 +27,7 @@ const cfg = {
     { station_callsign: 'SN8N' },
     { station_callsign: 'SP9XYZ', pin: 'BBBB-2222' },
   ] },
-  queue: { maxAttempts: 20 },
+  queue: { maxAttempts: 20, journalDir: '/tmp/rd-nie-ma-takiego-katalogu' },
   rateLimit: { maxPerMinute: 9, minSpacingMs: 700 },
   logLevel: 'error',
   ui: { recentEvents: 7 },
@@ -190,6 +190,23 @@ describe('API stanu — każda trasa odpowiada', () => {
     assert.deepEqual(body.checks, []);
   });
 
+  test('GET /api/stats — pusty dziennik nie wywala trasy', async () => {
+    const r = await get('/api/stats');
+    assert.equal(r.status, 200);
+    const b = await r.json();
+    assert.equal(b.ok, true);
+    assert.equal(b.total.qso, 0);
+    assert.deepEqual(b.perDay, []);
+  });
+
+  test('GET /api/stats — zły zakres jest ignorowany, nie przyjmowany', async () => {
+    // Data z żądania idzie do porównań łańcuchowych; wpuszczenie czegokolwiek
+    // dawałoby ciche, niezrozumiałe wyniki.
+    const b = await (await get('/api/stats?from=wczoraj&to=2026-13-99')).json();
+    assert.equal(b.from, null);
+    assert.equal(b.to, null);
+  });
+
   test('GET /api/config', async () => {
     const r = await get('/api/config');
     assert.equal(r.status, 200);
@@ -201,7 +218,7 @@ describe('API stanu — każda trasa odpowiada', () => {
     for (const [m, p] of [['GET', '/api/status'], ['GET', '/api/log'], ['GET', '/api/config'],
       ['POST', '/api/pause'], ['POST', '/api/resume'], ['POST', '/api/requeue'],
       ['POST', '/api/problems/ack'], ['POST', '/api/failed/discard'],
-      ['POST', '/api/config/check']]) {
+      ['POST', '/api/config/check'], ['GET', '/api/stats']]) {
       const r = await fetch(base + p, { method: m });
       assert.ok(r.status < 500, `${m} ${p} → ${r.status}`);
     }

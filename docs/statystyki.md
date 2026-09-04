@@ -1,0 +1,104 @@
+# Statystyki
+
+Zakładka **Statystyki** w oknie programu odpowiada na pytania „ile QSO w sobotę",
+„ile na której akcji", „kto pracował spod której stacji".
+
+## QSO to nie kopia
+
+Wszędzie podawane są **dwie liczby**, bo to dwa różne pytania:
+
+| Liczba | Znaczy |
+|---|---|
+| **QSO** | ile łączności przeprowadził operator |
+| **kopie** | ile razy mostek wysłał je na serwis |
+
+Jedno QSO rozmnożone na trzy znaki stacji to **trzy kopie, ale jedno QSO**.
+Mieszanie tych liczb było dokładnie tym, co naprawialiśmy na kartach zakładki
+Stan — tutaj od początku stoją obok siebie.
+
+Średnia „QSO na dzień" liczona jest przez **dni z łącznościami**, nie przez
+długość zakresu. Tydzień z jedną sobotą w eterze inaczej wyglądałby na
+katastrofę.
+
+## Skąd się to bierze
+
+Plik na miesiąc, jedna linia na wysłaną kopię, w formacie JSON Lines:
+
+```
+<dataDir>/data/sent/sent-2026-09.jsonl
+```
+
+```json
+{"at":"2026-09-03T20:30:02.246Z","date":"2026-09-03","time":"20:30",
+ "call":"SP8PKX","station":"SQ8BWM","operator":"SQ8BWM","actions":["295"],
+ "band":"80m","mode":"SSB","source":"QLog"}
+```
+
+Dopisywanie jednej linii jest odporne na ubicie procesu — pliku nie
+przepisujemy. Ucięta ostatnia linia jest pomijana przy czytaniu, więc awaria
+w trakcie zapisu nie odbiera dostępu do całej reszty.
+
+**Czego w dzienniku nie ma i dlaczego:**
+
+- **przejść próbnych** — QSO, które nie opuściło komputera, nie jest wysłane;
+- **duplikatów odbitych przez serwis** — te QSO serwis miał już wcześniej,
+  drugi wpis zawyżałby liczby;
+- **odrzuceń** — nic się nie zapisało, nie ma czego liczyć;
+- **PIN-ów.** Nigdy.
+
+Statystyki liczone są **przy odpytaniu**, nie jako liczniki na bieżąco. Liczniki
+trzeba by migrować przy każdej nowej przekrojówce; dziennik pozwala dodać nowy
+przekrój bez ruszania danych. Zakładka odświeża się przy wejściu, a nie w pętli —
+to przejście po całym dzienniku.
+
+Zakres podaje się **datami QSO** (`RRRR-MM-DD`), nie czasem wysłania: dla
+aktywatora liczy się dzień łączności, a nie moment, w którym mostek ją dosłał.
+Data QSO idzie z pola ADIF, czyli jest w UTC.
+
+## Odtworzenie historii z logów
+
+Dziennik powstał w wersji 0.1.10. Wcześniejsze QSO da się odzyskać z plików logu —
+jest w nich wszystko poza datą samej łączności:
+
+```bash
+node src/tools/import-log.js --dry  ~/.local/share/radiodyplom-bridge/data/bridge.log
+node src/tools/import-log.js        ~/.local/share/radiodyplom-bridge/data/bridge.log
+```
+
+| Przełącznik | Działanie |
+|---|---|
+| `--dry` | tylko pokazuje, co by zapisał |
+| `--dir KATALOG` | inny katalog dziennika |
+| `--skip-call ZNAK` | pomija wskazany znak (można wielokrotnie) |
+
+Narzędzie paruje wpisy „Nowe QSO" (mają znak stacji, pasmo, emisję i operatora)
+z potwierdzeniami „zapisane" (mają numery akcji), w kolejności, per znak.
+Przejścia próbne odsiewa — do wersji 0.1.6 meldowały się jako „zapisane".
+
+**Powtórne uruchomienie nie dubluje wpisów**: klucz porównania to
+`data|godzina|znak|stacja`, więc odporny na to, że czas wysłania czytany jest
+raz z logu, a raz z zegara działającego programu.
+
+Dwa ograniczenia, o których warto wiedzieć:
+
+- **Czas łączności bierze się z logu**, bo log nie niesie `qso_date` ani
+  `time_on`. Jest w UTC, tak jak ADIF, a mostek wysyła QSO w kilka sekund po
+  zalogowaniu — dzień wychodzi ten sam. Wpisy odtworzone mają `imported: true`.
+- **Ten sam znak pracowany dwa razy w tej samej minucie** policzy się jako jedno
+  QSO, bo klucz QSO to `data|godzina|znak` z dokładnością do minuty.
+
+QSO testowe wyrzuca się jawnie, przez `--skip-call` — narzędzie samo nie odsiewa
+niczego po kształcie znaku, bo „SN0TEST" bywa prawdziwym znakiem okolicznościowym.
+
+## API
+
+```
+GET /api/stats?from=2026-09-01&to=2026-09-30
+```
+
+Zakres jest opcjonalny; przyjmowane są tylko **istniejące** daty (`2026-13-99`
+jest odrzucane, a nie po cichu porównywane jako tekst). Odpowiedź zawiera
+`total` oraz przekroje `perDay`, `perAction`, `perOperator`, `perStation`,
+`perBand`, `perMode`, `perSource` i `topCalls` — każdy jako lista
+`{key, qso, copies}`. Do `perAction` dokładana jest nazwa akcji z `PING`-a,
+o ile serwis ją podaje (podaje tylko dla akcji **aktywnych**).

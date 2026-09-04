@@ -10,6 +10,7 @@ Tutaj leżą szczegóły.
 | [Rozmnażanie QSO](fan-out.md) | jedna łączność jako kilka odrębnych wpisów |
 | [Kolejka i log](kolejka.md) | deduplikacja, ponawianie, zachowanie przy błędach |
 | [Interfejs i API](interfejs.md) | okno, zasobnik, lokalne API stanu |
+| [Statystyki](statystyki.md) | dziennik wysłanych, przekroje, odtworzenie historii z logów |
 | [Windows i sieć](windows-i-siec.md) | rozgłoszenia, multicast, zapora, autostart |
 | [Rozwój](rozwoj.md) | wymagania, testy, budowanie paczek |
 

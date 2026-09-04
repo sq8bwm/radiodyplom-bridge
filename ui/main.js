@@ -180,6 +180,9 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
   ipcMain.handle('ackProblems', () => { const n = daemon?.ackProblems?.() ?? 0; refreshTray(); return n; });
   ipcMain.handle('requeue', () => { const n = daemon.requeue(); refreshTray(); return n; });
   ipcMain.handle('config:get', () => daemon?.getConfig() ?? null);
+  ipcMain.handle('stats', (_e, from, to) => {
+    try { return daemon?.stats?.(from, to) ?? null; } catch { return null; }
+  });
   // Sprawdzenie uprawnień dla konfiguracji jeszcze NIEZAPISANEJ. Nigdy nie
   // rzuca do okna: brak odpowiedzi serwisu nie może przeszkodzić w zapisie.
   ipcMain.handle('config:check', async (_e, patch) => {

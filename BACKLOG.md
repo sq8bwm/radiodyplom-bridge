@@ -34,7 +34,14 @@ Techniczna strona, gdyby kiedyś wróciło: `git filter-branch --tree-filter`
 przeszedłby po 30 commitach, podmieniając pole `license` i dokładając `LICENSE`.
 Wykonalne w minutę; problem nie jest techniczny.
 
-### Stary PIN SQ8BWA w obiektach GitHuba — sprawa zamknięta
+### Stary PIN SQ8BWA w obiektach GitHuba — do odśmiecenia przez GitHub Support
+**Uwaga: 2026-09-04 repozytorium stało się PUBLICZNE**, więc nieosiągalny blob
+jest teraz dostępny dla każdego, kto zna jego SHA — a nie tylko dla trojga
+współpracowników. PIN jest wymieniony i bezwartościowy, ale ekspozycja się
+zmieniła, więc zgłoszenie do GitHub Support przestało być opcjonalne.
+Gotowa treść zgłoszenia leży w scratchpadzie sesji (patrz historia rozmowy);
+warunki są dobre: 0 forków, 0 otwartych pull requestów.
+
 **Stan na 2026-09-03.** Blob nadal daje się pobrać po SHA (sprawdzone: wymuszone
 wypchnięcie nie odśmieca magazynu GitHuba). Zawiera **wyłącznie** stary PIN
 konta SQ8BWA, dwa razy — sprawdzone zawartością: PIN-u SQ8BWM tam nie ma,
@@ -48,6 +55,16 @@ do GitHub Support).
 Wniosek na przyszłość zostaje ten sam: **nie commitować surowych logów pracy** —
 log mostka pokazuje ładunki żądań razem z PIN-ami celów.
 
+
+### Uprawnienia współpracowników — do rozstrzygnięcia
+Po upublicznieniu (2026-09-04) `piotr-maj` i `agapaha` nadal mają prawo **zapisu**
+(`push`) do `main`. Żadne z nich nigdy nic nie commitowało — wszystkie commity są
+SQ8BWM. W repozytorium publicznym do czytania kodu uprawnienia nie są potrzebne
+wcale, więc `push` warto zostawić tylko tym, którzy mają realnie pisać.
+
+Ochrona `main` jest już włączona (blokada force-push i usunięcia gałęzi,
+bez wymuszania pull requestów), więc pomyłka nie zniszczy historii — ale
+bezpośredni commit do `main` nadal jest możliwy dla tych trzech kont.
 
 ### Podpis kodu dla Windows — nie podpisujemy
 **Decyzja (2026-08-31): nie kupujemy certyfikatu.** Instalator zostaje niepodpisany,

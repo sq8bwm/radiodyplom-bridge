@@ -160,10 +160,37 @@ to dotyczy naszego ponawiania: QSO leżące długo w `failed/` może już nie we
 Pole `operator` jest walidowane jako znak krótkofalarski (max 15 znaków,
 ucinane), z żadną listą nie jest wiązane.
 
-### Ostrzeżenie o złym znaku operatora przed wysyłką
-`operator` jest walidowany jako callsign — zła wartość z loggera **odbija QSO**
-(`INVALID_CALLSIGN`, HTTP 400). Dziś mostek wyśle to i odłoży do `failed/`.
-Warto sprawdzać kształt znaku po naszej stronie, zanim QSO opuści komputer.
+### Ostrzeżenie o złym znaku operatora — bez własnego wzorca znaku
+Pole `operator` jest walidowane przez serwis jako znak krótkofalarski: wartość
+niebędąca znakiem odbija QSO (`INVALID_CALLSIGN`, HTTP 400), a dłuższa niż
+15 znaków jest po cichu **ucinana**. Dziś mostek wysyła to bez ostrzeżenia.
+
+**Nie piszemy własnego wzorca znaku.** Ustalone 2026-09-04, po pytaniu „jak
+chcesz rozpoznawać zły znak":
+
+- Regexa serwisu nie znamy. Każda reguła strukturalna (prefiks litera+cyfra,
+  długość sufiksu) ma dziesiątki wyjątków: znaki okolicznościowe, `/P`, `/MM`,
+  `3Z0X`. Autor serwisu wprost mówi, że przechodzą `SP1ZOSIA` i `SP1BLABLABLA`.
+- Koszty są niesymetryczne: uznanie poprawnego znaku za zły to zablokowane albo
+  opóźnione QSO, a przepuszczenie złego to jedno odbicie do `failed/`, ratowane
+  jednym kliknięciem. Surowość jest więc droższa od pobłażliwości.
+
+Co robić, w kolejności wartości:
+
+1. **Znaki poza `A–Z`, `0–9`, `/`** — ostrzegać. To jedyne, co zmierzyliśmy jako
+   odrzucone (`NIE ZNAK!` — spacja i wykrzyknik).
+2. **Dłuższe niż 15 znaków** — ostrzegać, i to jest ważniejsze od punktu 1:
+   serwer nie odrzuca, tylko ucina, więc QSO zapisuje się pod **innym**
+   operatorem niż zamierzony, bez żadnego sygnału błędu.
+3. **W polu „Operator" w oknie konfiguracji** surowość jest bezpieczna —
+   wpisuje je człowiek, więc pytanie przy zapisie (jak przy znakach stacji) to
+   czysty zysk. Nic nie leci, nic nie ginie.
+4. **Dla wartości z loggera — żadnej blokady wysyłki.** Tylko wpis w zdarzeniach
+   i w logu.
+
+**Docelowo właściwe rozwiązanie:** nie odtwarzać reguł serwisu, a zapytać go
+przez `action=VALIDATE`. To jedyne źródło prawdy o tym, co przyjmie. Czeka na
+`is_validation_only` na ścieżce odrzucenia — patrz pozycja o walidacji wyżej.
 
 ### Statystyki — zrobione, co jeszcze warto dołożyć
 Zakładka i importer historii gotowe w 0.1.10 —

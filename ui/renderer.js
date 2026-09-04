@@ -256,8 +256,16 @@ function fillTable(tbodyId, emptyId, items, cols) {
   $(emptyId).hidden = (items || []).length > 0;
 }
 
+// Ostatni znany stan. Trzymamy go, żeby po odrysowaniu formularza celów
+// (dodanie albo usunięcie wiersza) domalować znaczniki uprawnień od razu,
+// a nie po najbliższym odświeżeniu — inaczej gasną i wyglądają na zepsute.
+let ostatniStatus = null;
+
 async function refresh() {
-  try { renderStatus(await window.bridge.status()); } catch { /* rdzeń wstaje */ }
+  try {
+    ostatniStatus = await window.bridge.status();
+    renderStatus(ostatniStatus);
+  } catch { /* rdzeń wstaje */ }
 }
 
 /**
@@ -396,6 +404,50 @@ function forceUpper(input) {
   });
 }
 
+/**
+ * Pytanie „tak / anuluj" WŁASNYM okienkiem, zamiast natywnego `confirm`.
+ *
+ * Dlaczego nie natywne: w Electronie na Linuksie po zamknięciu blokującego
+ * okienka renderer nie odzyskiwał ogniska klawiatury. Kliknięcia działały
+ * dalej, ale w żadnym polu nie dało się nic wpisać — okno stawało się
+ * bezużyteczne do końca sesji. Odtworzone 2026-09-04 na ścieżce:
+ * dodaj cel bez uprawnień → Zapisz → Anuluj → dopisz cokolwiek.
+ *
+ * Ognisko wraca tam, gdzie było przed pytaniem, żeby po anulowaniu dało się
+ * pisać dalej w tym samym polu.
+ *
+ * @returns {Promise<boolean>}
+ */
+function ask(text) {
+  return new Promise((resolve) => {
+    const box = $('ask');
+    $('askText').textContent = text;
+    $('askYes').textContent = t('btn.confirmYes');
+    $('askNo').textContent = t('btn.confirmNo');
+    const wczesniej = document.activeElement;
+
+    const koniec = (odp) => {
+      box.hidden = true;
+      document.removeEventListener('keydown', naKlawisz, true);
+      try { wczesniej?.focus?.(); } catch { /* element mógł zniknąć */ }
+      resolve(odp);
+    };
+    // Tylko Escape przechwytujemy. Enter zostawiamy przyciskowi z ogniskiem —
+    // inaczej „Anuluj" pod ogniskiem potwierdzałoby po naciśnięciu Enter.
+    const naKlawisz = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); koniec(false); }
+    };
+
+    $('askYes').onclick = () => koniec(true);
+    $('askNo').onclick = () => koniec(false);
+    box.onclick = (e) => { if (e.target === box) koniec(false); };
+    document.addEventListener('keydown', naKlawisz, true);
+    box.hidden = false;
+    // Ognisko na bezpieczniejszej odpowiedzi: Enter i Escape anulują.
+    $('askNo').focus();
+  });
+}
+
 // ---------- cele fan-outu ----------
 function renderTargets(list) {
   $('targets').innerHTML = list.map((x) => {
@@ -421,6 +473,8 @@ function renderTargets(list) {
   $('targets').querySelectorAll('.t-on').forEach((c) => {
     c.onchange = () => c.closest('.three').classList.toggle('off', !c.checked);
   });
+  // Znaczniki wracają natychmiast, bez czekania na odświeżenie stanu.
+  if (ostatniStatus) paintTargetChecks(ostatniStatus.forward?.targets);
 }
 
 /**
@@ -570,7 +624,7 @@ async function saveFromForm() {
   // nieodwracalna z okna (sekretu nie da się odczytać z powrotem), więc pytamy.
   const zPinem = collected.filter((x) => x._pinWasSet && !x.pin).map((x) => x.station_callsign);
   if (zPinem.length) {
-    const ok = window.confirm(t('confirm.dropTargetPin').replace('{stacje}', zPinem.join(', ')));
+    const ok = await ask(t('confirm.dropTargetPin').replace('{stacje}', zPinem.join(', ')));
     if (!ok) return;
   }
   const targets = collected.map(({ _pinWasSet, ...x }) => x);
@@ -593,7 +647,7 @@ async function saveFromForm() {
 
     if (zle.length) {
       const opis = zle.map((c) => `${c.station}${c.operator ? ` (${c.operator})` : ''}`).join(', ');
-      if (!window.confirm(t('confirm.targetsRejected').replace('{stacje}', opis))) return;
+      if (!await ask(t('confirm.targetsRejected').replace('{stacje}', opis))) return;
     }
   }
 
@@ -627,7 +681,7 @@ $('btnRequeue').onclick = async () => {
   // zamknięte w deduplikacji — czyli ponowienie po cichu je WYRZUCA, choć
   // klika się je właśnie po to, żeby je uratować. Pytamy wprost.
   if (s?.radiodyplom?.dryRun && (s.queue?.failed ?? 0) > 0) {
-    if (!window.confirm(t('confirm.requeueDryRun'))) return;
+    if (!await ask(t('confirm.requeueDryRun'))) return;
   }
   // Bez tej informacji „nic się nie stało" było nieodróżnialne od zepsutego
   // przycisku — i realnie tak wyglądało.
@@ -645,7 +699,7 @@ $('btnDiscardFailed').onclick = async () => {
   const s = await window.bridge.status();
   const n = s?.queue?.failed ?? 0;
   if (!n) return;
-  if (!window.confirm(t('confirm.discardFailed').replace('{n}', n))) return;
+  if (!await ask(t('confirm.discardFailed').replace('{n}', n))) return;
   const r = await window.bridge.discardFailed();
   flashHint(`${t('hint.discarded')} ${r.removed}`);
   refresh();
@@ -665,7 +719,7 @@ $('logbox').addEventListener('scroll', updateLogFollow);
 
 $('btnQuit').onclick = async () => {
   // Potwierdzenie, bo zamknięcie przerywa przekazywanie QSO.
-  if (window.confirm(t('confirm.quit'))) await window.bridge.quit();
+  if (await ask(t('confirm.quit'))) await window.bridge.quit();
 };
 
 // ---------- start ----------

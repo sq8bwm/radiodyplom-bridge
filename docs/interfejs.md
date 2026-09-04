@@ -36,6 +36,20 @@ Brak łączności rozpoznawany jest **dwiema drogami**, żeby nie umknął w ża
 Błąd trwały (zły znak, brak uprawnień) **nie** gasi łączności — to problem z danymi,
 nie z siecią, i dlatego daje stan żółty, a nie czerwony.
 
+### Pytania zadaje własne okienko, nie natywne `confirm`
+
+Wszystkie potwierdzenia (zapis mimo braku uprawnień, usunięcie PIN-u celu,
+ponowienie w trybie próbnym, usunięcie odrzuconych, zakończenie programu)
+rysuje **sama strona**. Escape i kliknięcie w tło anulują, ognisko wraca do pola,
+z którego przyszło pytanie, a przyciski są przetłumaczone.
+
+Powód nie jest kosmetyczny. Natywne, blokujące `window.confirm` w Electronie
+na Linuksie po zamknięciu **nie oddawało ogniska klawiatury** rendererowi:
+kliknięcia działały dalej, ale w żadnym polu nie dało się nic wpisać — okno
+stawało się bezużyteczne. Odtworzone 2026-09-04 na ścieżce: dodaj cel bez
+uprawnień → Zapisz → Anuluj → dopisz cokolwiek. Przywracanie ogniska z kodu
+byłoby łataniem objawu, więc natywnych okienek nie używamy wcale.
+
 ### Karty liczbowe — co która liczy i za jaki czas
 
 Każda karta ma drugą linię i podpowiedź pod kursorem, bo bez nich mieszały się

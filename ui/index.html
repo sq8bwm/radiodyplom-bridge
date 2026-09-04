@@ -93,11 +93,14 @@
 
   /* Statystyki: paski proporcjonalne do największej wartości w przekroju.
      Same liczby w kolumnie czyta się źle, a wykres byłby przesadą. */
-  .range { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-  .st-filters { display:flex; gap:14px; flex-wrap:wrap; align-items:end; margin-bottom:12px; }
-  .st-filters label { display:flex; flex-direction:column; gap:3px; font-size:11px;
-                      color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  .st-filters select { min-width:140px; }
+  .range { display:flex; gap:6px; flex-wrap:wrap; }
+  /* Zakres dat, oba zawężenia i czyszczenie w JEDNYM rzędzie — to jedna
+     decyzja („co pokazujemy"), więc nie ma powodu rozbijać jej na dwa wiersze.
+     `align-items:end` wyrównuje przyciski do dolnej linii pól z podpisem. */
+  .st-controls { display:flex; gap:14px; flex-wrap:wrap; align-items:end; margin-bottom:12px; }
+  .st-controls label { display:flex; flex-direction:column; gap:3px; font-size:11px;
+                       color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .st-controls select { min-width:130px; }
   .range button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   .st-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
   .st-rows { display:grid; gap:3px; }
@@ -290,8 +293,8 @@
   <section id="stats">
     <div class="panel">
       <h2 data-i18n="panel.statsRange"></h2>
-      <div class="range" id="statsRange"></div>
-      <div class="st-filters">
+      <div class="st-controls">
+        <div class="range" id="statsRange"></div>
         <label><span data-i18n="label.filterOperator"></span>
           <select id="fltOperator"></select></label>
         <label><span data-i18n="label.filterStation"></span>

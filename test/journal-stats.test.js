@@ -168,6 +168,34 @@ describe('aggregate', () => {
     assert.equal(bwa.qso, 1);
   });
 
+  test('distinct podaje PRAWDZIWĄ liczbę różnych wartości, nie długość listy', () => {
+    // REGRESJA: `topCalls` było przycinane do 20, okno pokazywało 10 i pisało
+    // „i 10 więcej" — przy 237 pracowanych znakach. Liczba wyglądała
+    // wiarygodnie i była nieprawdziwa. Źródłem musi być pełny przekrój.
+    const duzo = [];
+    for (let i = 0; i < 120; i++) {
+      duzo.push(rec({ call: `SP${i}AA`, date: '2026-09-03', time: `10:${String(i % 60).padStart(2, '0')}` }));
+    }
+    const a = aggregate(duzo);
+    assert.equal(a.distinct.calls, 120, 'pełna liczba znaków');
+    assert.equal(a.topCalls.length, 50, 'lista przycięta, ale to nie ta liczba');
+    assert.ok(a.distinct.calls > a.topCalls.length, 'i musi być większa od listy');
+  });
+
+  test('distinct dla każdego przekroju', () => {
+    const a = aggregate(dane);
+    assert.equal(a.distinct.days, 2);
+    assert.equal(a.distinct.actions, 2, '295 i 300');
+    assert.equal(a.distinct.operators, 2);
+    assert.equal(a.distinct.stations, 3);
+    assert.equal(a.distinct.bands, 2);
+    assert.equal(a.distinct.modes, 2);
+    assert.equal(a.distinct.calls, 2);
+    // Liczby muszą zgadzać się z długością nieprzyciętych list.
+    assert.equal(a.distinct.days, a.perDay.length);
+    assert.equal(a.distinct.stations, a.perStation.length);
+  });
+
   test('puste pola nie tworzą przekroju „null"', () => {
     const a = aggregate([rec({ operator: null, band: '' })]);
     assert.deepEqual(a.perOperator, []);

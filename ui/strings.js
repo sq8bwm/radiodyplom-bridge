@@ -42,6 +42,10 @@ const DICT = {
     'stats.perMode': 'Po emisjach',
     'stats.perSource': 'Po loggerach',
     'stats.topCalls': 'Najczęściej pracowane',
+    'stats.calls': 'Różnych znaków',
+    'stats.stationsCount': 'spod {n} stacji',
+    'tip.statsCalls': 'Ile RÓŻNYCH znaków korespondentów. Lista „najczęściej '
+      + 'pracowane" pokazuje tylko czoło tej listy.',
     'stats.more': '… i {n} więcej',
     'tip.statsQso': 'Liczba ŁĄCZNOŚCI. Kopie to ta sama łączność wysłana na kilka '
       + 'znaków stacji — jedno QSO na trzy stacje to trzy kopie.',
@@ -298,6 +302,10 @@ const DICT = {
     'stats.perMode': 'By mode',
     'stats.perSource': 'By logger',
     'stats.topCalls': 'Most worked',
+    'stats.calls': 'Unique callsigns',
+    'stats.stationsCount': 'from {n} stations',
+    'tip.statsCalls': 'How many DIFFERENT callsigns were worked. The “most worked” '
+      + 'list shows only the top of it.',
     'stats.more': '… and {n} more',
     'tip.statsQso': 'The number of CONTACTS. Copies are the same contact sent under '
       + 'several station callsigns — one QSO to three stations is three copies.',

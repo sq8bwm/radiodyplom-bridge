@@ -39,7 +39,34 @@ export function aggregate(records = []) {
   const lista = Array.isArray(records) ? records : [];
   const wszystkieQso = new Set(lista.map(qsoKey));
 
+  // Znaki korespondentów liczymy w całości, a listę dopiero potem przycinamy.
+  //
+  // Po co osobno: przycięta lista NIE MOŻE być źródłem liczby „i ile więcej".
+  // Tak było na początku — API oddawało 20 najczęstszych, okno pokazywało 10
+  // i pisało „i 10 więcej", przy 237 pracowanych znakach. Liczba wyglądała
+  // wiarygodnie i była nieprawdziwa.
+  const znaki = grupuj(lista, (r) => [r.call]).sort(wgKopii);
+  const dni = grupuj(lista, (r) => [r.date]).sort(wgKlucza);
+  const akcje = grupuj(lista, (r) => (Array.isArray(r.actions) && r.actions.length ? r.actions : [null])).sort(wgKopii);
+  const operatorzy = grupuj(lista, (r) => [r.operator]).sort(wgKopii);
+  const stacje = grupuj(lista, (r) => [r.station]).sort(wgKopii);
+  const pasma = grupuj(lista, (r) => [r.band]).sort(wgKopii);
+  const emisje = grupuj(lista, (r) => [r.mode]).sort(wgKopii);
+  const zrodla = grupuj(lista, (r) => [r.source]).sort(wgKopii);
+
   return {
+    // Ile RÓŻNYCH wartości ma każdy przekrój — niezależnie od tego, ile
+    // pozycji zmieściło się na liście. Stąd bierze się „i ile więcej".
+    distinct: {
+      days: dni.length,
+      actions: akcje.length,
+      operators: operatorzy.length,
+      stations: stacje.length,
+      bands: pasma.length,
+      modes: emisje.length,
+      sources: zrodla.length,
+      calls: znaki.length,
+    },
     total: {
       qso: wszystkieQso.size,
       copies: lista.length,
@@ -50,15 +77,16 @@ export function aggregate(records = []) {
       last: lista.reduce((m, r) => (r.date && (!m || r.date > m) ? r.date : m), null),
     },
     // Dni rosnąco — wykres czasu czyta się od lewej.
-    perDay: grupuj(lista, (r) => [r.date]).sort(wgKlucza),
+    perDay: dni,
     // Jedna kopia może trafić do kilku akcji, więc liczy się w każdej z nich.
-    perAction: grupuj(lista, (r) => (Array.isArray(r.actions) && r.actions.length ? r.actions : [null])).sort(wgKopii),
-    perOperator: grupuj(lista, (r) => [r.operator]).sort(wgKopii),
-    perStation: grupuj(lista, (r) => [r.station]).sort(wgKopii),
-    perBand: grupuj(lista, (r) => [r.band]).sort(wgKopii),
-    perMode: grupuj(lista, (r) => [r.mode]).sort(wgKopii),
-    perSource: grupuj(lista, (r) => [r.source]).sort(wgKopii),
-    // Najczęściej pracowane znaki — przydaje się do wyłapania pomyłki w loggerze.
-    topCalls: grupuj(lista, (r) => [r.call]).sort(wgKopii).slice(0, 20),
+    perAction: akcje,
+    perOperator: operatorzy,
+    perStation: stacje,
+    perBand: pasma,
+    perMode: emisje,
+    perSource: zrodla,
+    // Najczęściej pracowane znaki. Przycięte, bo przy kilku latach pracy byłyby
+    // to tysiące wierszy — ale `distinct.calls` niesie pełną liczbę.
+    topCalls: znaki.slice(0, 50),
   };
 }

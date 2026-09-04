@@ -477,11 +477,14 @@ function dataOd(dni) {
  * sumy — inaczej przy dwudziestu pozycjach wszystkie byłyby nierozróżnialnie
  * cienkie.
  */
-function statsPanel(tytul, wiersze, { etykieta = (w) => w.key, limit = 12 } = {}) {
+function statsPanel(tytul, wiersze, { etykieta = (w) => w.key, limit = 12, ile = null } = {}) {
   if (!wiersze.length) return '';
   const max = Math.max(...wiersze.map((w) => w.copies), 1);
   const widoczne = wiersze.slice(0, limit);
-  const reszta = wiersze.length - widoczne.length;
+  // „i ile więcej" liczymy z PRAWDZIWEJ liczby różnych wartości, a nie
+  // z długości listy — ta bywa już przycięta po drodze. Napisane raz źle,
+  // pokazywało „i 10 więcej" przy 237 pracowanych znakach.
+  const reszta = (ile ?? wiersze.length) - widoczne.length;
   return `<div class="panel">
     <h2>${esc(tytul)}</h2>
     <div class="st-rows">${widoczne.map((w) => `
@@ -532,21 +535,25 @@ async function refreshStats() {
       <div class="card" title="${esc(t('tip.statsDays'))}">
         <div class="k">${t('stats.days')}</div><div class="v">${T.days}</div>
         <div class="s">${t('stats.perDayAvg').replace('{n}', srednia)}</div></div>
+      <div class="card" title="${esc(t('tip.statsCalls'))}">
+        <div class="k">${t('stats.calls')}</div><div class="v">${d.distinct?.calls ?? '—'}</div>
+        <div class="s">${t('stats.stationsCount').replace('{n}', d.distinct?.stations ?? 0)}</div></div>
       <div class="card">
         <div class="k">${t('stats.first')}</div><div class="v" style="font-size:16px">${esc(T.first || '—')}</div>
         <div class="s">${t('stats.last')}: ${esc(T.last || '—')}</div></div>
     </div>`;
 
   const akcja = (w) => (w.name ? `#${w.key} ${w.name}` : `#${w.key}`);
+  const ile = d.distinct || {};
   $('statsPanels').innerHTML = `<div class="st-grid">
-    ${statsPanel(t('stats.perAction'), d.perAction, { etykieta: akcja })}
-    ${statsPanel(t('stats.perDay'), [...d.perDay].reverse(), { limit: 14 })}
-    ${statsPanel(t('stats.perOperator'), d.perOperator)}
-    ${statsPanel(t('stats.perStation'), d.perStation)}
-    ${statsPanel(t('stats.perBand'), d.perBand)}
-    ${statsPanel(t('stats.perMode'), d.perMode)}
-    ${statsPanel(t('stats.perSource'), d.perSource)}
-    ${statsPanel(t('stats.topCalls'), d.topCalls, { limit: 10 })}
+    ${statsPanel(t('stats.perAction'), d.perAction, { etykieta: akcja, ile: ile.actions })}
+    ${statsPanel(t('stats.perDay'), [...d.perDay].reverse(), { limit: 14, ile: ile.days })}
+    ${statsPanel(t('stats.perOperator'), d.perOperator, { ile: ile.operators })}
+    ${statsPanel(t('stats.perStation'), d.perStation, { ile: ile.stations })}
+    ${statsPanel(t('stats.perBand'), d.perBand, { ile: ile.bands })}
+    ${statsPanel(t('stats.perMode'), d.perMode, { ile: ile.modes })}
+    ${statsPanel(t('stats.perSource'), d.perSource, { ile: ile.sources })}
+    ${statsPanel(t('stats.topCalls'), d.topCalls, { limit: 10, ile: ile.calls })}
   </div>`;
 }
 

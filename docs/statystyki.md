@@ -20,6 +20,12 @@ Stan — tutaj od początku stoją obok siebie.
 długość zakresu. Tydzień z jedną sobotą w eterze inaczej wyglądałby na
 katastrofę.
 
+Podsumowanie podaje też **liczbę różnych znaków korespondentów** — lista
+„najczęściej pracowane" pokazuje tylko czoło, a „… i N więcej" liczone jest
+z pełnego przekroju (`distinct` w odpowiedzi API), nie z długości przyciętej
+listy. Napisane raz odwrotnie, pokazywało „i 10 więcej" przy 237 pracowanych
+znakach — liczba wyglądała wiarygodnie i była nieprawdziwa.
+
 ## Skąd się to bierze
 
 Plik na miesiąc, jedna linia na wysłaną kopię, w formacie JSON Lines:
@@ -100,5 +106,7 @@ Zakres jest opcjonalny; przyjmowane są tylko **istniejące** daty (`2026-13-99`
 jest odrzucane, a nie po cichu porównywane jako tekst). Odpowiedź zawiera
 `total` oraz przekroje `perDay`, `perAction`, `perOperator`, `perStation`,
 `perBand`, `perMode`, `perSource` i `topCalls` — każdy jako lista
-`{key, qso, copies}`. Do `perAction` dokładana jest nazwa akcji z `PING`-a,
+`{key, qso, copies}` — oraz `distinct` z liczbą RÓŻNYCH wartości w każdym
+przekroju. `topCalls` jest przycięte do 50 pozycji, więc do „ile jeszcze"
+trzeba brać `distinct.calls`, a nie długość listy. Do `perAction` dokładana jest nazwa akcji z `PING`-a,
 o ile serwis ją podaje (podaje tylko dla akcji **aktywnych**).

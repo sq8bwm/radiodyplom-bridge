@@ -227,38 +227,27 @@ znana wyłącznie wtedy, gdy właśnie coś zalogowano. Jeśli spot ma być
 niezależny od QSO, trzeba będzie osobnego źródła (CAT z radia albo pole
 w oknie) — i to jest największa nieznana tej pozycji.
 
-### Jakie operacje naprawdę wysyła QLog — do sprawdzenia
-**Obserwacja 2026-09-04.** Okno pokazało **4 pominięte świadomie** datagramy,
-a operator pamięta **dwie** poprawki rekordów w QLogu i **żadnego usunięcia**.
-Liczby się nie zgadzają, a rozbicia na powody wtedy jeszcze nie było (weszło
-tego samego dnia, działa od 0.1.12), więc retroaktywnie już się tego nie
-ustali.
+### QLog wysyła DWA datagramy na jedną edycję — zmierzone, zamknięte
+**Rozstrzygnięte 2026-09-04 pomiarem.** Jedna poprawka rekordu w QLogu daje
+**dwa** datagramy z `operation: "update"`.
 
-**Wniosek wstępny: datagram ≠ jedna czynność użytkownika.** Wcześniejsze
-tłumaczenie („pominięte = tyle razy poprawiłeś QSO") było zbyt pewne.
+Dwie niezależne obserwacje, zgodne:
 
-Hipotezy do sprawdzenia, w kolejności prawdopodobieństwa:
+| Czynność operatora | Datagramy pominięte |
+|---|---|
+| 2 poprawki (z pamięci) | 4 |
+| **1 poprawka (kontrolowana)** | **2** |
 
-1. **QLog wysyła więcej niż jeden datagram na jedną edycję** — np. osobno przy
-   zmianie pola i przy zapisie rekordu.
-2. **`update` leci przy czynnościach, które nie są edycją QSO** — zmiana stanu
-   QSL, synchronizacja z eQSL/LoTW, przeliczenie czegoś w tle.
-3. Operacja o innej nazwie niż `insert`/`update`/`delete`, której nie znamy —
-   dziś wpadałaby do tego samego kubełka.
+Zamyka to rozbieżność, która wyszła przy pierwszym pytaniu: okno pokazywało
+4 pominięcia, a operator pamiętał dwie edycje i żadnego usunięcia. Wszystko się
+zgadza — **datagram nie jest tym samym co czynność użytkownika**.
 
-Jak sprawdzić, bez zgadywania:
+Wniosek na przyszłość: licznik pominięć liczy **datagramy** i tak ma być, bo to
+one przychodzą na port. Ale przy czytaniu liczby trzeba pamiętać o mnożniku,
+i dlatego jest o tym podpowiedź w oknie oraz wzmianka w `docs/loggery.md`.
 
-- Od 0.1.12 panel ŹRÓDŁA wypisuje powody z liczbami — wystarczy zrobić w QLogu
-  **jedną** edycję i zobaczyć, o ile urośnie licznik.
-- Dla pełnego obrazu: `logLevel: "debug"` pokazuje każdy pominięty datagram
-  z nazwą operacji.
-- Gdyby trzeba było zobaczyć surowe datagramy, wystarczy kilkulinijkowy nasłuch
-  na kopii portu — decydują dane, nie domysły.
-
-Po co to w ogóle: jeśli QLog wysyła `update` przy czynnościach niebędących
-edycją QSO, to liczba „pominięte świadomie" myli — sugeruje, że użytkownik coś
-robił z dziennikiem, choć nie robił. Wtedy warto rozbić ten licznik albo
-nazwać go inaczej.
+Nie sprawdzone i na razie bez potrzeby: czy `delete` też daje dwa datagramy
+i czy inne loggery mają podobne zachowanie.
 
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.

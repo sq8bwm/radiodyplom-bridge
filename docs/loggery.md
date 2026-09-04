@@ -34,6 +34,20 @@ WSJT-X wysyła „QSO Logged” dopiero po zatwierdzeniu okna **Log QSO** — to
 zachowanie samego WSJT-X, nie ograniczenie daemona.
 
 
+## Co QLog wysyła poza nowym QSO
+
+QLog nadaje datagram przy **każdej** operacji w dzienniku, nie tylko przy
+dodaniu łączności. Mostek przekazuje wyłącznie `insert` (`forward.operations`),
+bo poprawionego QSO nie ma po co wysyłać drugi raz — radiodyplom przyjął już
+oryginał, a powtórka byłaby duplikatem.
+
+**Jedna poprawka rekordu w QLogu = DWA datagramy** `operation: "update"`
+(zmierzone 2026-09-04 na dwóch niezależnych obserwacjach: 1 edycja → 2
+datagramy, 2 edycje → 4). To ważne przy czytaniu licznika „pominięte świadomie"
+w panelu **Źródła**: liczy on **datagramy**, a nie Twoje czynności.
+
+Niesprawdzone: czy `delete` też przychodzi podwójnie.
+
 ## Normalizacja danych
 Loggery podają dane w różnych postaciach, więc dekodery je ujednolicają:
 

@@ -270,6 +270,10 @@ const DICT = {
     'sources.ndUnknown': 'nieznany format: {n}',
     'sources.ndInvalid': 'brak wymaganych pól: {n}',
     'sources.ndSkipped': 'pominięte świadomie: {n}',
+    'hint.skipReason': 'Liczba DATAGRAMÓW, nie Twoich czynności — jedna zmiana '
+      + 'w loggerze potrafi wysłać ich kilka.',
+    'hint.qlogUpdate': 'QLog wysyła DWA datagramy na jedną poprawkę QSO '
+      + '(zmierzone), więc podziel tę liczbę przez dwa.',
     'hint.dryRun': 'Nic nie leci na serwer. Uwaga: QSO przepuszczone próbnie zostaje '
       + 'zamknięte w deduplikacji i NIE poleci po wyłączeniu trybu próbnego. '
       + 'Jeśli chcesz tylko przytrzymać QSO na później, użyj „Wstrzymaj”.',
@@ -542,6 +546,10 @@ const DICT = {
     'sources.ndUnknown': 'unknown format: {n}',
     'sources.ndInvalid': 'missing required fields: {n}',
     'sources.ndSkipped': 'deliberately skipped: {n}',
+    'hint.skipReason': 'A count of DATAGRAMS, not of your actions — one change '
+      + 'in the logger can send several.',
+    'hint.qlogUpdate': 'QLog sends TWO datagrams per edited QSO (measured), so '
+      + 'halve this number.',
     'hint.dryRun': 'Nothing is sent to the server. Note: a QSO passed through in dry run '
       + 'is marked as handled and will NOT be sent after you turn dry run off. '
       + 'To merely hold QSOs for later, use “Pause”.',

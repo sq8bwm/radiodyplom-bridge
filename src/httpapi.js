@@ -57,6 +57,8 @@ export class StatusApi {
   status() {
     const ping = this.getPing ? this.getPing() : null;
     const counts = this.store.counts();
+    const st = this.listener.stats || {};
+    const nieodczytane = (st.unknown ?? 0) + (st.invalid ?? 0) + (st.skipped ?? 0);
     // Ocena celów po znaku stacji: UI dokłada ją do właściwego wiersza reguły.
     const checks = new Map(
       (this.getAccountChecks ? this.getAccountChecks() : [])
@@ -87,12 +89,38 @@ export class StatusApi {
       repository: this.pkg.repository?.url || this.pkg.repository || null,
       uptimeSec: Math.round((Date.now() - this.startedAt) / 1000),
 
+      // Liczby „w tej sesji" wystawione OSOBNO i nazwane wprost.
+      //
+      // Po co: karta „wysłane" bierze licznik trwały (przeżywa restart i liczy
+      // kopie fan-outu), a „odebrane z loggera" — licznik procesu. Zestawione
+      // w jednym rzędzie sugerowały ten sam przedział czasu i tę samą
+      // jednostkę; realnie pokazywały 1119 przy 191. Wyliczenie różnicy
+      // w oknie skończyłoby się dwiema wersjami tej samej arytmetyki.
+      session: {
+        since: new Date(this.startedAt).toISOString(),
+        qso: st.accepted ?? 0,               // QSO przyjęte z loggerów
+        copies: this.worker.counters?.sent ?? 0,  // kopie faktycznie wysłane
+        dryRun: this.worker.counters?.dryRun ?? 0,   // przejścia próbne tej sesji
+        duplicates: this.worker.counters?.duplicates ?? 0,
+        received: st.received ?? 0,          // wszystkie datagramy
+        notDecoded: nieodczytane,            // datagramy, z których nie wyszło QSO
+      },
+
       listener: {
         host: this.listener.host,
         port: this.listener.port,
         multicastGroups: this.listener.multicastGroups,
         localOnly: this.listener.host === '127.0.0.1',
         stats: this.listener.stats,
+        // Rozbicie tego, co przyszło, ale QSO z tego nie powstało. Bez tego
+        // różnica między „odebrane" a „źródła" nie była widoczna NIGDZIE
+        // w oknie, a w logu siedziała na poziomie DEBUG.
+        notDecoded: {
+          total: nieodczytane,
+          unknown: st.unknown ?? 0,   // żaden dekoder nie rozpoznał formatu
+          invalid: st.invalid ?? 0,   // rozpoznany, ale bez wymaganych pól
+          skipped: st.skipped ?? 0,   // pominięty świadomie (np. edycja QSO)
+        },
       },
 
       radiodyplom: {

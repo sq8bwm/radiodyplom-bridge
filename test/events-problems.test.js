@@ -18,8 +18,13 @@ function fakeStore() {
     items: [],
     completed: 0,
     failed: 0,
+    dryRuns: 0,
     list() { return this.items; },
-    complete() { this.completed += 1; this.items = []; },
+    complete(_item, opts = {}) {
+      this.completed += 1;
+      if (opts.dryRun) this.dryRuns += 1;
+      this.items = [];
+    },
     fail() { this.failed += 1; this.items = []; },
     update() {},
   };
@@ -77,6 +82,35 @@ describe('bufor ostatnich zdarzeń', () => {
     await w2._process(makeItem());
     assert.equal(w2.store.failed, 0);
     assert.equal(w2.store.completed, 1);
+  });
+
+  test('tryb próbny mówi o tym magazynowi, więc nie wchodzi do „wysłanych"', () => {
+    // Sedno: bez przekazania tej flagi licznik trwały rósł przy przejściach
+    // próbnych i statystyka twierdziła, że QSO doszło na serwer.
+    return (async () => {
+      const w2 = makeWorker(fakeClient({ ok: true, dryRun: true }));
+      await w2._process(makeItem());
+      assert.equal(w2.store.dryRuns, 1);
+
+      const w3 = makeWorker(fakeClient({ ok: true, savedTo: ['295'] }));
+      await w3._process(makeItem());
+      assert.equal(w3.store.dryRuns, 0, 'prawdziwa wysyłka nie może być liczona jako próbna');
+    })();
+  });
+
+  test('licznik sesji też nie miesza próbnych z wysłanymi', async () => {
+    // Niekonsekwencja wyłapana na żywym ruchu: licznik trwały pomijał próbne,
+    // a sesyjny je wliczał — karta mówiła „w tej sesji: 2 kopii" przy
+    // „WYSŁANE 0". Dwa liczniki tej samej rzeczy muszą liczyć tak samo.
+    const w = makeWorker(fakeClient({ ok: true, dryRun: true }));
+    await w._process(makeItem());
+    assert.equal(w.counters.dryRun, 1);
+    assert.equal(w.counters.sent, 0, 'próbne NIE jest wysłane');
+
+    const w2 = makeWorker(fakeClient({ ok: true, savedTo: ['295'] }));
+    await w2._process(makeItem());
+    assert.equal(w2.counters.sent, 1);
+    assert.equal(w2.counters.dryRun, 0);
   });
 
   test('duplikat jest osobnym rodzajem, nie sukcesem', async () => {

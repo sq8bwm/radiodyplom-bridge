@@ -55,6 +55,10 @@
   .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; }
   .card .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
   .card .v { font-size:22px; font-weight:600; margin-top:2px; }
+  /* Druga linia karty: skąd ta liczba i ile z niej jest z tej sesji.
+     Bez tego licznik trwały stał obok licznika procesu i wyglądał na to samo. */
+  .card .s { font-size:11px; color:var(--muted); margin-top:3px; min-height:14px; }
+  .card { cursor:help; }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px;
            padding:12px 14px; margin-top:12px; }
   .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.04em;
@@ -149,11 +153,11 @@
 <main>
   <section id="stan" class="active">
     <div class="cards">
-      <div class="card"><div class="k" data-i18n="card.sent"></div><div class="v" id="cSent">0</div></div>
-      <div class="card"><div class="k" data-i18n="card.pending"></div><div class="v" id="cPending">0</div></div>
-      <div class="card"><div class="k" data-i18n="card.failed"></div><div class="v" id="cFailed">0</div></div>
-      <div class="card"><div class="k" data-i18n="card.received"></div><div class="v" id="cRecv">0</div></div>
-      <div class="card"><div class="k" data-i18n="card.skipped"></div><div class="v" id="cSkipped">0</div></div>
+      <div class="card" id="kSent"><div class="k" data-i18n="card.sent"></div><div class="v" id="cSent">0</div><div class="s" id="sSent"></div></div>
+      <div class="card" id="kPending"><div class="k" data-i18n="card.pending"></div><div class="v" id="cPending">0</div><div class="s" id="sPending"></div></div>
+      <div class="card" id="kFailed"><div class="k" data-i18n="card.failed"></div><div class="v" id="cFailed">0</div><div class="s" id="sFailed"></div></div>
+      <div class="card" id="kRecv"><div class="k" data-i18n="card.received"></div><div class="v" id="cRecv">0</div><div class="s" id="sRecv"></div></div>
+      <div class="card" id="kSkipped"><div class="k" data-i18n="card.skipped"></div><div class="v" id="cSkipped">0</div><div class="s" id="sSkipped"></div></div>
     </div>
     <div class="panel">
       <h2 data-i18n="panel.account"></h2>

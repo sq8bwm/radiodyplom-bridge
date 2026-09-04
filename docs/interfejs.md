@@ -36,6 +36,29 @@ Brak łączności rozpoznawany jest **dwiema drogami**, żeby nie umknął w ża
 Błąd trwały (zły znak, brak uprawnień) **nie** gasi łączności — to problem z danymi,
 nie z siecią, i dlatego daje stan żółty, a nie czerwony.
 
+### Karty liczbowe — co która liczy i za jaki czas
+
+Każda karta ma drugą linię i podpowiedź pod kursorem, bo bez nich mieszały się
+trzy różne rzeczy: licznik trwały z licznikiem procesu, kopie z QSO, oraz
+wysyłka prawdziwa z próbną.
+
+| Karta | Liczba główna | Druga linia |
+|---|---|---|
+| WYSŁANE | **kopie** wysłane od początku (trwałe) | `w tej sesji: N kopii`, plus duplikaty i przejścia próbne tej sesji, jeśli były |
+| W KOLEJCE | oczekujące | `na dysku, przeżywa restart` |
+| ODRZUCONE | odrzucone przez serwis | `na dysku, przeżywa restart` |
+| ODEBRANE Z LOGGERA | **QSO** przyjęte w tej sesji | `datagramów: R · nieodczytane: N` |
+| POMINIĘTE (DUPLIKATY) | deduplikacja | `w tej sesji` |
+
+**Przejścia próbne nie wchodzą do „wysłanych"** — ani do licznika trwałego, ani
+do sesyjnego. QSO, które nie opuściło komputera, nie jest wysłane. Liczba
+przejść próbnych od początku jest w podpowiedzi karty.
+
+Panel **ŹRÓDŁA** pokazuje pod dekoderami wiersz `bez QSO`, z podziałem na
+nieznany format, brak wymaganych pól i świadome pominięcie (np. edycja QSO
+w loggerze — QLog wysyła wtedy operację inną niż `insert`). Wcześniej ta różnica
+nie była widoczna nigdzie w oknie, a w logu siedziała na poziomie DEBUG.
+
 ### Panel „Konto na radiodyplom.pl"
 
 Na zakładce **Stan**, z odpowiedzi `PING`. Pokazuje, czym konto naprawdę

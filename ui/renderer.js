@@ -90,14 +90,7 @@ function renderStatus(s) {
   $('dryBadge').title = t('hint.dryRun');
   $('btnPause').textContent = paused ? t('btn.resume') : t('btn.pause');
 
-  $('cSent').textContent = s.queue.sent;
-  // W trybie próbnym nic nie poleciało, więc sama etykieta „wysłane" myli.
-  document.querySelector('[data-i18n="card.sent"]').textContent =
-    s.radiodyplom.dryRun ? `${t('card.sent')} ${t('card.sentDry')}` : t('card.sent');
-  $('cPending').textContent = s.queue.pending;
-  $('cFailed').textContent = s.queue.failed;
-  $('cRecv').textContent = s.listener.stats.received;
-  $('cSkipped').textContent = s.queue.skipped ?? 0;
+  renderCards(s);
   $('logPath').textContent = s.logFile || '';
 
   const mc = s.listener.multicastGroups?.length
@@ -107,10 +100,19 @@ function renderStatus(s) {
 
   const by = s.listener.stats.bySource || {};
   const keys = Object.keys(by);
+  const nd = s.listener.notDecoded || {};
+  // Datagramy, z których QSO nie powstało. Wcześniej różnica między „odebrane"
+  // a tym panelem nie była widoczna nigdzie — w logu siedziała na DEBUG.
+  const nieodczytane = nd.total
+    ? `<div style="margin-top:6px">${t('sources.notDecoded').replace('{n}', nd.total)}
+         <span class="hint">(${t('sources.ndUnknown').replace('{n}', nd.unknown || 0)}
+         · ${t('sources.ndInvalid').replace('{n}', nd.invalid || 0)}
+         · ${t('sources.ndSkipped').replace('{n}', nd.skipped || 0)})</span></div>`
+    : '';
   $('sources').className = keys.length ? '' : 'empty';
   $('sources').innerHTML = keys.length
-    ? keys.map((k) => `<div>${esc(k)}: <b>${by[k]}</b></div>`).join('')
-    : t('empty.sources');
+    ? keys.map((k) => `<div>${esc(k)}: <b>${by[k]}</b></div>`).join('') + nieodczytane
+    : t('empty.sources') + nieodczytane;
 
   renderEvents(s);
   renderProblems(s);
@@ -147,6 +149,52 @@ function describeEvent(e) {
     default:
       return { cls: '', text: `${esc(e.kind)} ${who}` };
   }
+}
+
+/**
+ * Karty liczbowe na zakładce Stan.
+ *
+ * Każda karta mówi w drugiej linii, CZEGO liczy i za jaki czas. Wcześniej
+ * licznik trwały („wysłane", liczący kopie fan-outu od początku) stał w jednym
+ * rzędzie z licznikiem procesu („odebrane z loggera”) i wyglądał na to samo —
+ * realnie pokazywały 1119 przy 191.
+ */
+function renderCards(s) {
+  const sesja = s.session || {};
+  const nd = s.listener.notDecoded || {};
+
+  // WYSŁANE: licznik trwały, w kopiach. Przejścia próbne mają własny licznik,
+  // bo QSO, które nie opuściło komputera, nie jest wysłane.
+  $('cSent').textContent = s.queue.sent;
+  // Druga linia mówi WYŁĄCZNIE o tej sesji — mieszanie jej z licznikiem
+  // trwałym byłoby powtórzeniem błędu, który właśnie naprawiamy.
+  let podSent = t('sub.sentSession').replace('{n}', sesja.copies ?? 0);
+  if (sesja.duplicates) podSent += t('sub.sentDuplicates').replace('{n}', sesja.duplicates);
+  if (sesja.dryRun) podSent += t('sub.sentDry').replace('{n}', sesja.dryRun);
+  $('sSent').textContent = podSent;
+  $('kSent').title = s.queue.dryRun
+    ? `${t('tip.sent')} ${t('tip.sentDryTotal').replace('{n}', s.queue.dryRun)}`
+    : t('tip.sent');
+
+  $('cPending').textContent = s.queue.pending;
+  $('sPending').textContent = t('sub.onDisk');
+  $('kPending').title = t('tip.pending');
+
+  $('cFailed').textContent = s.queue.failed;
+  $('sFailed').textContent = t('sub.onDisk');
+  $('kFailed').title = t('tip.failed');
+
+  // ODEBRANE: liczymy QSO, nie datagramy — dopiero wtedy ta karta jest
+  // porównywalna z panelem ŹRÓDŁA. Datagramy schodzą do drugiej linii.
+  $('cRecv').textContent = sesja.qso ?? 0;
+  $('sRecv').textContent = t('sub.datagrams')
+    .replace('{r}', sesja.received ?? 0)
+    .replace('{n}', nd.total ?? 0);
+  $('kRecv').title = t('tip.received');
+
+  $('cSkipped').textContent = s.queue.skipped ?? 0;
+  $('sSkipped').textContent = t('sub.session');
+  $('kSkipped').title = t('tip.skipped');
 }
 
 function renderEvents(s) {

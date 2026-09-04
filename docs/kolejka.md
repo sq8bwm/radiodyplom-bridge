@@ -81,9 +81,22 @@ Wyłączenie: `"logFile": { "enabled": false }`.
 
 ## Licznik „wysłane"
 
-Liczy **realnie wysłane** QSO. Trwałe odrzucenia trafiają do zbioru
-deduplikacji, ale nie do tego licznika — wcześniej był nim rozmiar tego zbioru,
-więc rósł przy każdym odrzuceniu i sugerował, że QSO doszło.
+Liczy **realnie wysłane kopie**. Trzy rzeczy, które do niego NIE wchodzą:
+
+| Co | Dlaczego |
+|---|---|
+| trwałe odrzucenia | trafiają do zbioru deduplikacji, ale QSO nie doszło. Wcześniej licznik był rozmiarem tego zbioru, więc rósł przy każdym odrzuceniu |
+| **przejścia próbne** | QSO nie opuściło komputera. Mają własny licznik `dryRun` w `seen.json`, żeby informacja nie przepadła |
+| duplikaty odbite przez serwis | serwer już to QSO miał; osobny licznik sesji |
+
+Jednostką są **kopie**, nie QSO: jedno QSO rozmnożone na trzy stacje to trzy
+kopie. Licznik jest **trwały** — leży w `seen.json` i przeżywa restart.
+
+To ostatnie łatwo pomylić z licznikami procesu („odebrane z loggera", „źródła"),
+które zerują się przy każdym starcie. Realny przypadek: karta pokazywała 1119
+wysłanych przy 191 odebranych — pierwsza liczba była sumą od początku i w kopiach,
+druga z tego procesu i w datagramach. Dlatego każda karta na zakładce Stan ma dziś
+drugą linię mówiącą, czego i za jaki czas liczy.
 
 ## Trzy przyciski w panelu Odrzucone
 

@@ -195,6 +195,21 @@ describe('RadiodyplomClient — klasyfikacja odpowiedzi', () => {
     assert.equal(seen.api_key, 'CEL-PIN');
   });
 
+  test('tryb próbny NIE zapisuje PIN-u do logu', async () => {
+    // Znalezione w prawdziwym logu z 2026-08-31: `[dry-run] POST pominięty`
+    // wypisywał cały ładunek razem z api_key. Log trafia do plików, zgłoszeń
+    // błędów i załączników — sekret nie ma prawa tam być.
+    const { recentLog, setLevel: lvl } = await import('../src/log.js');
+    lvl('info');
+    const dry = new RadiodyplomClient({ apiUrl: 'http://x', pin: 'TAJNY-PIN', dryRun: true });
+    await dry.upload({ callsign: 'SP1AAA', station_callsign: 'SN0LPU', api_key: 'TAJNY-PIN' });
+    lvl('error');
+
+    const wpisy = JSON.stringify(recentLog(20));
+    assert.ok(!wpisy.includes('TAJNY-PIN'), 'PIN nie może wystąpić w logu');
+    assert.ok(wpisy.includes('SP1AAA'), 'a reszta ładunku jest przydatna i zostaje');
+  });
+
   // --- PING: opis konta (rozszerzenie API z 2026-09-04) ---
 
   test('PING oddaje listę stacji i akcji, znaki wielkimi literami', async () => {

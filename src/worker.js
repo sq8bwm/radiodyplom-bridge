@@ -29,7 +29,9 @@ export class Worker {
     this.running = false;
     this.busy = false;
     this.paused = false;                       // wstrzymanie wysyłki z UI
-    this.counters = { sent: 0, duplicates: 0, failed: 0, retries: 0 };
+    // `dryRun` osobno od `sent`: przejście próbne niczego nie wysłało, więc
+    // liczone razem kłamałoby dokładnie tam, gdzie użytkownik szuka pewności.
+    this.counters = { sent: 0, dryRun: 0, duplicates: 0, failed: 0, retries: 0 };
     this.lastSent = null;                      // ostatnie udane QSO (dla UI)
     this.lastError = null;                     // ostatni błąd (dla UI)
 
@@ -133,8 +135,9 @@ export class Worker {
 
     if (res.ok) {
       this.online = true;
-      this.store.complete(item);
-      if (res.duplicate) this.counters.duplicates += 1;
+      this.store.complete(item, { dryRun: !!res.dryRun });
+      if (res.dryRun) this.counters.dryRun += 1;
+      else if (res.duplicate) this.counters.duplicates += 1;
       else this.counters.sent += 1;
       this.lastSent = {
         callsign: call,

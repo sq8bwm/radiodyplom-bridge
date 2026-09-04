@@ -93,7 +93,10 @@ export class RadiodyplomClient {
    */
   async upload(payload) {
     if (this.dryRun) {
-      log.info('[dry-run] POST pominięty', payload);
+      // PIN-u NIE logujemy. Log trafia do pliku, a plik ląduje w zgłoszeniach
+      // błędów i załącznikach do maili — sekret nie ma prawa tam być.
+      const { api_key: _pin, ...bezPinu } = payload;
+      log.info('[dry-run] POST pominięty', bezPinu);
       return { ok: true, dryRun: true };
     }
 

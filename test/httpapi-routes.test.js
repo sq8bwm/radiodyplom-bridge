@@ -42,7 +42,7 @@ before(async () => {
   api = new StatusApi({
     cfg,
     store: {
-      counts: () => ({ pending: 0, failed: 4, sent: 0, skipped: 0 }),
+      counts: () => ({ pending: 0, failed: 4, sent: 1119, dryRun: 2, skipped: 7 }),
       list: () => [],
       listFailed: () => [{ payload: { callsign: 'SP1AAA', station_callsign: 'SN0LPU' },
         lastErrorCode: 'NOT_SAVED', lastError: 'brak akcji' }],
@@ -50,11 +50,12 @@ before(async () => {
       ackFailed() { acked += 1; return 3; },
       discardFailed() { discarded += 1; return { removed: 4, calls: ['SP1AAA'] }; },
     },
-    listener: { host: '127.0.0.1', port: 12778, multicastGroups: [], stats: { received: 0, bySource: {} } },
+    listener: { host: '127.0.0.1', port: 12778, multicastGroups: [],
+      stats: { received: 191, accepted: 189, skipped: 2, invalid: 0, unknown: 0, bySource: { QLog: 189 } } },
     worker: {
       paused: false,
       online: true,
-      counters: { sent: 0, duplicates: 0, failed: 0, retries: 0 },
+      counters: { sent: 567, dryRun: 3, duplicates: 0, failed: 0, retries: 0 },
       lastSent: null,
       lastError: null,
       recentEvents: (n) => Array.from({ length: n }, (_, i) => ({ kind: 'sent', callsign: `SP${i}` })),
@@ -96,6 +97,28 @@ describe('API stanu — każda trasa odpowiada', () => {
     assert.equal(s.problems.last.code, 'NOT_SAVED', 'szczegóły z najnowszego odrzuconego');
     assert.equal(s.recentEventsMax, 7);
     assert.equal(s.recentEvents.length, 7, 'liczba zdarzeń idzie z konfiguracji');
+  });
+
+  test('GET /api/status — liczby sesji oddzielone od trwałych', async () => {
+    // REGRESJA (zrzut z 2026-09-03): karta „wysłane" pokazywała 1119 przy 191
+    // odebranych, bo pierwsza liczba jest trwała i w kopiach, a druga — z tego
+    // procesu i w datagramach. Status musi je rozdzielać, inaczej każde okno
+    // wymyśla tę arytmetykę na nowo.
+    const s = await (await get('/api/status')).json();
+    assert.equal(s.queue.sent, 1119, 'licznik trwały');
+    assert.equal(s.queue.dryRun, 2, 'przejścia próbne osobno');
+    assert.equal(s.session.copies, 567, 'kopie wysłane w tej sesji');
+    assert.equal(s.session.qso, 189, 'QSO przyjęte z loggerów w tej sesji');
+    assert.equal(s.session.received, 191, 'wszystkie datagramy');
+    assert.equal(s.session.notDecoded, 2, '191 − 189: datagramy bez QSO');
+    assert.equal(s.session.dryRun, 3, 'przejścia próbne tej sesji osobno od kopii');
+    assert.ok(s.session.since, 'od kiedy liczymy');
+  });
+
+  test('GET /api/status — rozbicie datagramów bez QSO', async () => {
+    const s = await (await get('/api/status')).json();
+    assert.deepEqual(s.listener.notDecoded, { total: 2, unknown: 0, invalid: 0, skipped: 2 },
+      'różnica musi być widoczna z podziałem na przyczyny');
   });
 
   test('GET /api/log', async () => {

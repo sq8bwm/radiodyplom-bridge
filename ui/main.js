@@ -24,7 +24,15 @@ let quitting = false;
 
 // Jedna instancja – dwie próbowałyby zająć ten sam port UDP i tylko jedna
 // dostawałaby datagramy, co byłoby bardzo mylące w diagnostyce.
-if (!app.requestSingleInstanceLock()) {
+//
+// UWAGA: samo `app.quit()` NIE przerywa wykonywania tego modułu. Bez flagi
+// niżej `app.whenReady()` i tak startował cały rdzeń — przejmował blokadę
+// katalogu danych, bindował port UDP i kolejkę — a potem proces umierał.
+// QSO odebrane w tym okienku wpadłoby do kolejki, której nikt już nie
+// obsługuje. Zaobserwowane 2026-09-04 przy dwóch instancjach na różnych
+// konfiguracjach (różne porty, więc blokady nie zdążyły zaprotestować).
+const mamyBlokadeInstancji = app.requestSingleInstanceLock();
+if (!mamyBlokadeInstancji) {
   app.quit();
 } else {
   app.on('second-instance', () => showWindow());
@@ -129,7 +137,7 @@ function showWindow() {
   win.on('closed', () => { win = null; });
 }
 
-app.whenReady().then(async () => {
+if (mamyBlokadeInstancji) app.whenReady().then(async () => {
   // Po instalacji katalog programu jest tylko do odczytu — konfiguracja i dane
   // muszą trafić do katalogu użytkownika. W trybie deweloperskim zostaje projekt.
   if (app.isPackaged) process.env.RD_CONFIG_DIR = app.getPath('userData');

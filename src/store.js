@@ -29,6 +29,9 @@ export class Store {
     // nie z licznika w pamięci. Pierwsza wersja trzymała to w workerze
     // i przepadało przy restarcie, choć odrzucone QSO zostawały na dysku.
     this.ackedFailed = 0;
+    // Przejścia próbne liczone OSOBNO. QSO, które nigdy nie opuściło komputera,
+    // nie jest wysłane i nie ma go czego wliczać do statystyki.
+    this.dryRunCount = 0;
   }
 
   init() {
@@ -48,6 +51,7 @@ export class Store {
           this.seen = new Set(data.seen);
           this.sentCount = Number.isFinite(data.sent) ? data.sent : data.seen.length;
           this.ackedFailed = Number.isFinite(data.ackedFailed) ? data.ackedFailed : 0;
+          this.dryRunCount = Number.isFinite(data.dryRun) ? data.dryRun : 0;
         }
       } catch (err) {
         log.warn('Nie mogę wczytać seen.json, startuję z pustym', err.message);
@@ -141,7 +145,7 @@ export class Store {
     };
     return {
       pending: count(this.dir), failed: count(this.failedDir),
-      sent: this.sentCount, skipped: this.skipped,
+      sent: this.sentCount, dryRun: this.dryRunCount, skipped: this.skipped,
     };
   }
 
@@ -173,6 +177,7 @@ export class Store {
     this._atomicWrite(this.seenFile, {
       seen: [...this.seen],
       sent: this.sentCount,
+      dryRun: this.dryRunCount,
       ackedFailed: this.ackedFailed,
     });
   }
@@ -257,9 +262,16 @@ export class Store {
     return n;
   }
 
-  /** Sukces: usuń z kolejki, zapisz klucz jako obsłużony. */
-  complete(item) {
-    this.sentCount += 1;
+  /**
+   * Sukces: usuń z kolejki, zapisz klucz jako obsłużony.
+   *
+   * @param {object} item
+   * @param {{dryRun?:boolean}} opts  przejście próbne liczy się osobno —
+   *   nic nie poszło na serwer, więc do „wysłanych" nie należy.
+   */
+  complete(item, { dryRun = false } = {}) {
+    if (dryRun) this.dryRunCount += 1;
+    else this.sentCount += 1;
     this._markSeen(item.key);
     this.pendingKeys.delete(item.key);
     try { unlinkSync(item._file); } catch { /* już usunięty */ }

@@ -346,6 +346,52 @@ describe('licznik wysłanych jest osobny od deduplikacji', () => {
     s2.release();
   });
 
+  test('przejście PRÓBNE nie zwiększa licznika wysłanych', () => {
+    // Zamówione wprost: QSO, które nigdy nie opuściło komputera, nie jest
+    // wysłane i nie ma go czego wliczać do statystyki. Licznik próbnych jest
+    // osobny, żeby informacja nie przepadła („dlaczego nic nie dochodzi?").
+    const s = new Store(paths());
+    s.init();
+    s.enqueue(item('a', 'SP1AAA'));
+    s.enqueue(item('b', 'SP2BBB'));
+    const [i1, i2] = s.list();
+
+    s.complete(i1, { dryRun: true });
+    s.complete(i2);
+
+    const c = s.counts();
+    assert.equal(c.sent, 1, 'tylko prawdziwa wysyłka');
+    assert.equal(c.dryRun, 1, 'próbne policzone osobno');
+    assert.equal(s.seen.size, 2, 'deduplikacja obejmuje oba — próbne też zamyka klucz');
+    s.release();
+  });
+
+  test('licznik próbnych też przeżywa restart', () => {
+    const cfg = paths();
+    const s = new Store(cfg);
+    s.init();
+    s.enqueue(item('x', 'SP3CCC'));
+    s.complete(s.list()[0], { dryRun: true });
+    s.release();
+
+    const s2 = new Store(cfg);
+    s2.init();
+    assert.equal(s2.counts().sent, 0);
+    assert.equal(s2.counts().dryRun, 1);
+    s2.release();
+  });
+
+  test('seen.json bez pola dryRun (0.1.8 i starsze) daje zero, nie NaN', () => {
+    const cfg = paths();
+    mkdirSync(join(dir, 'data'), { recursive: true });
+    writeFileSync(cfg.seenFile, JSON.stringify({ seen: ['k1'], sent: 1119, ackedFailed: 0 }));
+    const s = new Store(cfg);
+    s.init();
+    assert.equal(s.counts().sent, 1119, 'dotychczasowej statystyki nie ruszamy');
+    assert.equal(s.counts().dryRun, 0);
+    s.release();
+  });
+
   test('starszy seen.json (tablica) jest wczytywany bez utraty statystyki', () => {
     const cfg = paths();
     mkdirSync(join(dir, 'data'), { recursive: true });

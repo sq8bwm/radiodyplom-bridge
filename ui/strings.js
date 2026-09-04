@@ -196,7 +196,30 @@ const DICT = {
     'panel.view': 'Widok',
     'label.recentEvents': 'Ile ostatnich zdarzeń pokazywać',
     'hint.recentEvents': 'Od 5 do 200. Dotyczy panelu „Ostatnie zdarzenia" na zakładce Stan.',
-    'card.sentDry': '(próbnie)',
+    'sub.sentSession': 'w tej sesji: {n} kopii',
+    'sub.sentDuplicates': ' · duplikatów: {n}',
+    'sub.sentDry': ' · próbnie (nie wysłane): {n}',
+    'sub.onDisk': 'na dysku, przeżywa restart',
+    'sub.datagrams': 'datagramów: {r} · nieodczytane: {n}',
+    'sub.session': 'w tej sesji',
+    'tip.sent': 'Licznik OD POCZĄTKU — przeżywa restart programu. Liczy KOPIE, '
+      + 'nie QSO: jedno QSO rozmnożone na trzy stacje to trzy kopie. Przejścia '
+      + 'próbne mają osobny licznik i tu się NIE wliczają.',
+    'tip.pending': 'QSO czekające na wysyłkę. Leżą na dysku, więc przeżywają restart '
+      + 'i zamknięcie programu.',
+    'tip.failed': 'Kopie odrzucone przez serwis. Leżą na dysku; można je ponowić '
+      + 'albo usunąć w zakładce Kolejka.',
+    'tip.received': 'QSO przyjęte z loggerów W TEJ SESJI — zeruje się przy restarcie. '
+      + 'W drugiej linii: wszystkie datagramy oraz te, z których QSO nie powstało '
+      + '(nieznany format, brak wymaganych pól albo świadome pominięcie, '
+      + 'np. edycja QSO w loggerze).',
+    'tip.skipped': 'Kopie pominięte przez deduplikację, bo poszły już wcześniej. '
+      + 'Licznik tej sesji.',
+    'tip.sentDryTotal': 'Próbnie od początku: {n}.',
+    'sources.notDecoded': 'bez QSO: {n}',
+    'sources.ndUnknown': 'nieznany format: {n}',
+    'sources.ndInvalid': 'brak wymaganych pól: {n}',
+    'sources.ndSkipped': 'pominięte świadomie: {n}',
     'hint.dryRun': 'Nic nie leci na serwer. Uwaga: QSO przepuszczone próbnie zostaje '
       + 'zamknięte w deduplikacji i NIE poleci po wyłączeniu trybu próbnego. '
       + 'Jeśli chcesz tylko przytrzymać QSO na później, użyj „Wstrzymaj”.',
@@ -395,7 +418,30 @@ const DICT = {
     'panel.view': 'View',
     'label.recentEvents': 'How many recent events to show',
     'hint.recentEvents': 'Between 5 and 200. Applies to the “Recent events” panel on the Status tab.',
-    'card.sentDry': '(dry run)',
+    'sub.sentSession': 'this session: {n} copies',
+    'sub.sentDuplicates': ' · duplicates: {n}',
+    'sub.sentDry': ' · dry run (not sent): {n}',
+    'sub.onDisk': 'on disk, survives a restart',
+    'sub.datagrams': 'datagrams: {r} · not decoded: {n}',
+    'sub.session': 'this session',
+    'tip.sent': 'Counter SINCE THE BEGINNING — it survives a restart. It counts COPIES, '
+      + 'not QSOs: one QSO fanned out to three stations is three copies. Dry-run '
+      + 'passes have their own counter and are NOT included here.',
+    'tip.pending': 'QSOs waiting to be sent. They live on disk, so they survive '
+      + 'a restart and closing the program.',
+    'tip.failed': 'Copies rejected by the service. They live on disk; you can requeue '
+      + 'or discard them on the Queue tab.',
+    'tip.received': 'QSOs accepted from loggers THIS SESSION — it resets on restart. '
+      + 'Second line: all datagrams and those that produced no QSO (unknown format, '
+      + 'missing required fields, or a deliberate skip such as editing a QSO in '
+      + 'the logger).',
+    'tip.skipped': 'Copies skipped by deduplication because they were already sent. '
+      + 'Counter for this session.',
+    'tip.sentDryTotal': 'Dry-run passes since the beginning: {n}.',
+    'sources.notDecoded': 'no QSO: {n}',
+    'sources.ndUnknown': 'unknown format: {n}',
+    'sources.ndInvalid': 'missing required fields: {n}',
+    'sources.ndSkipped': 'deliberately skipped: {n}',
     'hint.dryRun': 'Nothing is sent to the server. Note: a QSO passed through in dry run '
       + 'is marked as handled and will NOT be sent after you turn dry run off. '
       + 'To merely hold QSOs for later, use “Pause”.',

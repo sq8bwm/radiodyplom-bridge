@@ -147,6 +147,50 @@ ucinane), z żadną listą nie jest wiązane.
 (`INVALID_CALLSIGN`, HTTP 400). Dziś mostek wyśle to i odłoży do `failed/`.
 Warto sprawdzać kształt znaku po naszej stronie, zanim QSO opuści komputer.
 
+### Zakładka Statystyki — QSO per dzień, operator, akcja
+Zamówione 2026-09-04. Dziś **nie mamy z czego tego policzyć**: `store` trzyma
+tylko klucze deduplikacji i liczniki, bez historii pojedynczych QSO.
+
+Projekt:
+
+- **Dziennik wysłanych**: `data/sent-RRRR-MM.jsonl`, jedna linia na wysłaną
+  kopię, dopisywana w `worker._process` tam, gdzie dziś powstaje `lastSent`:
+  `{at, call, station, operator, action, band, mode, source, dryRun}`.
+  Dopisywanie jest odporne na ubicie procesu (bez przepisywania pliku),
+  plik na miesiąc trzyma odczyty tanie. 1119 rekordów to ~130 kB.
+- **Agregacje w pamięci przy odpytaniu**, nie liczniki na bieżąco: per dzień,
+  per akcja, per operator, per stacja, per band/mode, per logger. Liczniki
+  trzymane na żywo trzeba by migrować przy każdej nowej przekrojówce.
+- Osobna zakładka; `/api/stats?from=&to=` jako źródło.
+
+**Historię da się odzyskać w całości.** Dwa pliki logu zawierają dokładnie
+1119 wpisów „zapisane" — tyle, ile pokazuje licznik:
+
+| Plik | Wpisów |
+|---|---|
+| `~/.local/share/radiodyplom-bridge/data/bridge.log` | 978 |
+| `20260831-log.log` (katalog projektu) | 141 |
+
+Linie „Nowe QSO" niosą `band`, `mode`, `operator` i znak stacji, a „zapisane" —
+numery akcji i logger. Jednorazowy importer odtworzy dziennik wstecz. Zrobić to
+**przed** czyszczeniem logów, bo to jedyna kopia tych danych.
+
+### Karty na zakładce Stan mieszają trzy różne rzeczy
+Wyszło przy pytaniu o zrzut z 2026-09-03 (1119 wysłanych przy 191 odebranych):
+
+- **WYSŁANE** to licznik **trwały** (`seen.json`), liczy **kopie fan-outu**
+  (189 QSO × 3 cele = 567) i wlicza duplikaty odbite przez serwer oraz przejścia
+  próbne. **ODEBRANE Z LOGGERA** i **ŹRÓDŁA** są **za jeden proces** i zerują
+  się przy każdym starcie. Zestawione w jednym rzędzie sugerują, że to ten sam
+  przedział czasu i ta sama jednostka — a nie jest.
+- **POMINIĘTE (DUPLIKATY)** pokazuje deduplikację `store`, nie pominięcia
+  dekodera. Różnica `received − bySource` (wtedy 2 datagramy: operacja inna niż
+  `insert`, czyli edycja albo usunięcie QSO w loggerze) **nie jest widoczna
+  nigdzie w oknie**, a w logu siedzi na poziomie DEBUG.
+
+Do zrobienia: rozdzielić „od początku" od „w tej sesji", liczyć QSO obok kopii,
+pokazać pominięcia dekodera przy ŹRÓDŁACH i dodać podpowiedzi pod kursorem.
+
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.
 Nieobsłużone (własne protokoły, **specyfikacji nie weryfikowałam**):

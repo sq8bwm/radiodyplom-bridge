@@ -131,6 +131,8 @@ export class StatusApi {
           unknown: st.unknown ?? 0,   // żaden dekoder nie rozpoznał formatu
           invalid: st.invalid ?? 0,   // rozpoznany, ale bez wymaganych pól
           skipped: st.skipped ?? 0,   // pominięty świadomie (np. edycja QSO)
+          // Powody pominięć, żeby dało się odpowiedzieć „skąd te cztery".
+          reasons: st.skipReasons || {},
         },
       },
 

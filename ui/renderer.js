@@ -106,11 +106,18 @@ function renderStatus(s) {
   const nd = s.listener.notDecoded || {};
   // Datagramy, z których QSO nie powstało. Wcześniej różnica między „odebrane"
   // a tym panelem nie była widoczna nigdzie — w logu siedziała na DEBUG.
+  // Powody pominięć wypisujemy wprost, a nie chowamy w logu na poziomie debug.
+  // „Pominięte świadomie: 4" bez podania CZEGO nie da się zweryfikować ani
+  // zrozumieć — a pytanie o to pada.
+  const powody = Object.entries(nd.reasons || {})
+    .sort((a, b) => b[1] - a[1])
+    .map(([p, n]) => `<div style="margin-left:12px" class="hint">${esc(p)}: <b>${n}</b></div>`)
+    .join('');
   const nieodczytane = nd.total
     ? `<div style="margin-top:6px">${t('sources.notDecoded').replace('{n}', nd.total)}
          <span class="hint">(${t('sources.ndUnknown').replace('{n}', nd.unknown || 0)}
          · ${t('sources.ndInvalid').replace('{n}', nd.invalid || 0)}
-         · ${t('sources.ndSkipped').replace('{n}', nd.skipped || 0)})</span></div>`
+         · ${t('sources.ndSkipped').replace('{n}', nd.skipped || 0)})</span></div>${powody}`
     : '';
   $('sources').className = keys.length ? '' : 'empty';
   $('sources').innerHTML = keys.length

@@ -51,7 +51,8 @@ before(async () => {
       discardFailed() { discarded += 1; return { removed: 4, calls: ['SP1AAA'] }; },
     },
     listener: { host: '127.0.0.1', port: 12778, multicastGroups: [],
-      stats: { received: 191, accepted: 189, skipped: 2, invalid: 0, unknown: 0, bySource: { QLog: 189 } } },
+      stats: { received: 191, accepted: 189, skipped: 2, invalid: 0, unknown: 0,
+        bySource: { QLog: 189 }, skipReasons: { 'operacja "update"': 2 } } },
     worker: {
       paused: false,
       online: true,
@@ -119,8 +120,9 @@ describe('API stanu — każda trasa odpowiada', () => {
 
   test('GET /api/status — rozbicie datagramów bez QSO', async () => {
     const s = await (await get('/api/status')).json();
-    assert.deepEqual(s.listener.notDecoded, { total: 2, unknown: 0, invalid: 0, skipped: 2 },
-      'różnica musi być widoczna z podziałem na przyczyny');
+    assert.deepEqual(s.listener.notDecoded,
+      { total: 2, unknown: 0, invalid: 0, skipped: 2, reasons: { 'operacja "update"': 2 } },
+      'różnica musi być widoczna z podziałem na przyczyny i z POWODEM');
   });
 
   test('GET /api/status — nowsze wydanie w stanie', async () => {

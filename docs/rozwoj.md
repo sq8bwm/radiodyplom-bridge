@@ -96,6 +96,26 @@ stwierdzić, że pobrał dokładnie to, co zostało zbudowane. Pliki pomocnicze
 electron-buildera (`.blockmap`, `builder-debug.yml`, katalogi `*-unpacked`) są
 pomijane; liczone są tylko gotowe paczki.
 
+### Sprawdzenie wydania po wgraniu — bez ściągania 440 MB
+
+Po utworzeniu wydania warto potwierdzić, że GitHub ma dokładnie te pliki, które
+zbudowaliśmy. Pobieranie wszystkich załączników do tego celu jest kosztowne
+i **zawodne** — przy zerwaniu łączności pobiera się plik ucięty i sumy nie
+pasują, co wygląda jak zepsute wydanie, a jest tylko przerwanym transferem
+(zdarzyło się 2026-09-04 przy 0.1.10).
+
+GitHub podaje sumę `sha256` **każdego załącznika** w API, więc rozstrzyga to
+jedno żądanie:
+
+```bash
+gh api repos/<user>/<repo>/releases/tags/<tag> \
+  --jq '.assets[] | "\(.digest)  \(.name)  \(.size)"'
+```
+
+Zwrócone `sha256:…` porównujemy z `release/SHA256SUMS`, a rozmiary z plikami
+lokalnymi. Zgodność jednego i drugiego znaczy, że odbiorca dostanie to samo,
+co zbudowaliśmy — i nie trzeba niczego pobierać.
+
 ### Gdzie po instalacji leżą dane
 Katalog programu jest wtedy tylko do odczytu, więc konfiguracja i kolejka idą do
 katalogu użytkownika. Sterują tym dwie rzeczy: `RD_CONFIG_DIR` (Electron podstawia

@@ -1,5 +1,53 @@
 # Windows i praca w sieci shacku
 
+## Windows 7 i 8 — program się nie uruchomi
+
+Objaw: okienko systemu *„…\RadioDyplom Bridge.exe nie jest prawidłową aplikacją
+systemu Win32"*. To komunikat **Windowsa, nie programu** — system odmawia
+wczytania pliku, zanim nasz kod wystartuje. Dlatego identycznie zachowuje się
+wersja instalowana i przenośna, a ponowne pobranie nic nie zmienia.
+
+Wymagany jest **Windows 10 lub nowszy, 64-bitowy**.
+
+Powód nie leży po naszej stronie i nie da się go obejść zmianą w programie:
+
+| | |
+|---|---|
+| Electron 22 | `Windows (Windows 7 and up)` — ostatni z obsługą, bez wsparcia od X 2023 |
+| Electron 23 i nowsze | `Windows (Windows 10 and up)` |
+| wersja w mostku | 44 |
+
+Tryb bez okna też nie pomoże — sam Node już nie działa na „siódemce”:
+Node 16 wymaga Windows 8.1, Node 18 i nowsze — Windows 10. Nasz kod korzysta
+z rzeczy nowszych niż Node 16 (`AbortSignal.timeout`, ustawienia Happy
+Eyeballs), więc powrót do starego Node oznaczałby inny program, na dziurawym
+Chromium bez łatek.
+
+### Wyjście: mostek na innym komputerze
+
+Logger wysyła QSO **po UDP**, a to leci przez sieć jak każdy inny pakiet.
+Mostek nie musi stać na tej samej maszynie:
+
+```
+[Windows 7: QLog] ──UDP──► [Win10 / Linux / Raspberry Pi: mostek] ──► radiodyplom.pl
+```
+
+Co ustawić:
+
+1. Na komputerze z mostkiem — `udp.host: "0.0.0.0"` (nasłuch na całą sieć
+   lokalną, zamiast tylko na siebie) i przepuszczenie portu `12060/UDP`
+   w zaporze; szczegóły niżej w tym dokumencie.
+2. W loggerze na Windows 7 — jako adres docelowy **IP tej maszyny** zamiast
+   `127.0.0.1`.
+
+Mostek zużywa na tyle mało, że spokojnie pracuje na Raspberry Pi.
+
+> **Uwaga o adresie 0.0.0.0.** Otwiera port na całą sieć lokalną — każdy w tej
+> sieci może wtedy dopisać QSO do Twojej akcji. W domowej sieci to zwykle
+> w porządku, w klubowej albo hotelowej warto się zastanowić.
+
+Poza tym: Windows 7 nie dostaje poprawek bezpieczeństwa **od stycznia 2020**.
+
 Skąd odbierać datagramy, multicast, zapora, autostart i zachowanie przy zajętym porcie.
 
 [← powrót do README](../README.md)

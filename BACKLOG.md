@@ -249,6 +249,35 @@ i dlatego jest o tym podpowiedź w oknie oraz wzmianka w `docs/loggery.md`.
 Nie sprawdzone i na razie bez potrzeby: czy `delete` też daje dwa datagramy
 i czy inne loggery mają podobne zachowanie.
 
+### Windows 7 i 8 — nie obsługujemy i nie da się
+Zgłoszone 2026-09-05: na 64-bitowym Windows 7 program nie startuje ani
+zainstalowany, ani przenośny — *„nie jest prawidłową aplikacją systemu Win32"*.
+To komunikat systemu, nie programu; Windows odmawia wczytania pliku, zanim nasz
+kod wystartuje.
+
+Sprawdzone w README samego Electrona, nie z pamięci:
+
+| | |
+|---|---|
+| Electron 22 | `Windows (Windows 7 and up)` — ostatni, bez wsparcia od X 2023 |
+| Electron 23+ | `Windows (Windows 10 and up)` |
+| u nas | 44 |
+
+**Tryb bez okna też nie ratuje**: Node 16 wymaga Windows 8.1, Node 18+ wymaga
+Windows 10 (tabela w `BUILDING.md` Node'a). Nasz kod używa `AbortSignal.timeout`
+i ustawień Happy Eyeballs, czyli rzeczy nowszych niż Node 16.
+
+Budowa na Electronie 22 odpada: Chromium bez łatek od dwóch lat plus
+przepisywanie kodu pod stary Node. Nieproporcjonalne i szkodliwe.
+
+**Rozwiązanie dla użytkownika:** mostek na innej maszynie w tej samej sieci,
+logger wysyła UDP przez sieć. Opisane w
+[docs/windows-i-siec.md](docs/windows-i-siec.md#windows-7-i-8--program-się-nie-uruchomi).
+
+**Nasza wina była jedna i już naprawiona:** nigdzie nie było napisane, jakiego
+Windowsa program wymaga. Użytkownik pobierał i dostawał komunikat, z którego nic
+nie wynika.
+
 ### Kolejne dekodery loggerów
 Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.
 Nieobsłużone (własne protokoły, **specyfikacji nie weryfikowałam**):

@@ -49,6 +49,11 @@ Pobierz z **[wydań](https://github.com/sq8bwm/radiodyplom-bridge/releases)**:
 Na Linuksie `.deb` dodaje pozycję do menu (**Internet / Sieć**). AppImage niczego
 nie instaluje — uruchamiasz plik i tyle, więc w menu się nie pojawi.
 
+**Windows 10 lub nowszy** (64-bitowy). Na Windows 7 i 8 program się nie uruchomi —
+system odmówi wczytania pliku komunikatem *„nie jest prawidłową aplikacją systemu
+Win32"*. Nie da się tego obejść, ale mostek **nie musi stać na tym samym
+komputerze co logger** — patrz [Windows i sieć](docs/windows-i-siec.md#windows-7-i-8--program-się-nie-uruchomi).
+
 Instalatory **nie są podpisane certyfikatem**, więc Windows pokaże SmartScreen
 („Nieznany wydawca") — *Więcej informacji → Uruchom mimo to*. Do każdego wydania
 dołączony jest plik sum kontrolnych:

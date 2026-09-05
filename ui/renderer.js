@@ -17,7 +17,7 @@ function applyLang() {
   });
   $('fPin').placeholder = getLang() === 'pl' ? 'np. ABCD-1234' : 'e.g. ABCD-1234';
   $('fMulticast').placeholder = t('hint.multicast');
-  $('btnQuit').title = t('hint.closeToTray');
+  if (!$('btnQuit').hidden) $('btnQuit').title = t('hint.closeToTray');
   refresh();
   if ($('konfig').classList.contains('active')) loadConfig();
 }
@@ -41,6 +41,11 @@ document.querySelectorAll('nav button').forEach((b) => {
     document.querySelectorAll('section').forEach((x) => x.classList.remove('active'));
     b.classList.add('active');
     $(b.dataset.tab).classList.add('active');
+    // Zakładka w adresie: w przeglądarce odświeżenie strony (F5) wracało
+    // inaczej zawsze na „Stan", a zakładkę statystyk czy logu da się teraz
+    // dodać do zakładek przeglądarki. W Electronie nieszkodliwe.
+    try { history.replaceState(null, '', `#${b.dataset.tab}`); } catch { /* file:// bywa oporne */ }
+
     if (b.dataset.tab === 'konfig') loadConfig();
     // Statystyki liczone są przy odpytaniu, więc odświeżamy przy wejściu —
     // ale NIE w pętli, bo to przejście po całym dzienniku.
@@ -893,7 +898,12 @@ $('btnDiscardFailed').onclick = async () => {
 $('probBadge').onclick = () => {
   document.querySelector('nav button[data-tab="kolejka"]').click();
 };
-$('btnOpenLog').onclick = () => window.bridge.openLog();
+// W przeglądarce nie ma pulpitu: menedżera plików nie otworzymy, a zamknięcie
+// usługi z karty byłoby pułapką — przypadkowe kliknięcie przerwałoby
+// przekazywanie QSO w środku pracy w eterze. Oba przyciski chowamy zamiast
+// zostawiać martwe.
+if (!window.bridge.openLog) $('btnOpenLog').hidden = true;
+else $('btnOpenLog').onclick = () => window.bridge.openLog();
 $('btnLogEnd').onclick = () => {
   const el = $('logbox');
   el.scrollTop = el.scrollHeight;
@@ -901,6 +911,7 @@ $('btnLogEnd').onclick = () => {
 };
 $('logbox').addEventListener('scroll', updateLogFollow);
 
+if (!window.bridge.quit) $('btnQuit').hidden = true;
 $('btnQuit').onclick = async () => {
   // Potwierdzenie, bo zamknięcie przerywa przekazywanie QSO.
   if (await ask(t('confirm.quit'))) await window.bridge.quit();
@@ -914,4 +925,15 @@ $('btnQuit').onclick = async () => {
   applyLang();
   setInterval(refresh, 2000);
   setInterval(() => { if ($('log').classList.contains('active')) refreshLog(); }, 2000);
+
+  // Otwarcie pod adresem z kotwicą (np. …:12061/#stats) pokazuje od razu tę
+  // zakładkę, a odświeżenie strony w przeglądarce na niej zostaje.
+  //
+  // MUSI być na końcu modułu: kliknięcie w zakładkę woła funkcje korzystające
+  // ze stałych zadeklarowanych niżej w pliku (`const ZAKRESY`). Postawione na
+  // górze wywracało się na martwym polu deklaracji i Statystyki rysowały się
+  // puste — bez widocznego błędu, bo wyjątek ginął w uchwycie zdarzenia.
+  const zadana = (location.hash || '').replace('#', '');
+  const przycisk = zadana && document.querySelector(`nav button[data-tab="${CSS.escape(zadana)}"]`);
+  if (przycisk) przycisk.click();
 })();

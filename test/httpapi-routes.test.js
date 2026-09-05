@@ -244,6 +244,30 @@ describe('API stanu — każda trasa odpowiada', () => {
     }
   });
 
+  test('strona interfejsu jest oddawana po HTTP', async () => {
+    // Dla maszyn bez pulpitu: to samo okno, ale w przeglądarce.
+    for (const [sciezka, typ] of [
+      ['/', 'text/html'], ['/index.html', 'text/html'],
+      ['/renderer.js', 'text/javascript'], ['/strings.js', 'text/javascript'],
+      ['/bridge-http.js', 'text/javascript'],
+    ]) {
+      const r = await get(sciezka);
+      assert.equal(r.status, 200, sciezka);
+      assert.match(r.headers.get('content-type'), new RegExp(typ), sciezka);
+      assert.equal(r.headers.get('cache-control'), 'no-store',
+        'strona ma pokazywać bieżący stan, nie wersję sprzed aktualizacji');
+    }
+  });
+
+  test('poza listą dozwolonych plików nie ma nic', async () => {
+    // Świadomie lista dozwolonych zamiast mapowania ścieżki na dysk — przy
+    // mapowaniu każda literówka w sprawdzaniu `..` oddaje cudze pliki.
+    for (const s of ['/main.js', '/preload.cjs', '/../package.json', '/etc/passwd',
+      '/..%2Fpackage.json', '/icons/tray-ok.png']) {
+      assert.equal((await get(s)).status, 404, s);
+    }
+  });
+
   test('nieznana trasa to 404, nie wywrotka', async () => {
     assert.equal((await get('/api/nie-ma-takiej')).status, 404);
   });

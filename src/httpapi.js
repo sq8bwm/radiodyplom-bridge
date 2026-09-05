@@ -10,6 +10,9 @@
 //  - Zero zależności: node:http wystarcza.
 import http from 'node:http';
 import { log, recentLog } from './log.js';
+import { readFileSync, existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { readRecords, parseDay } from './journal.js';
 import { aggregate, filterRecords, filterOptions } from './stats.js';
 
@@ -34,6 +37,21 @@ export function computeState({ paused, online, failed, pingOk }) {
   if (failed > 0) return { state: 'warn', reason: `Odrzucone QSO: ${failed}` };
   return { state: 'ok', reason: 'Działa' };
 }
+
+// Pliki interfejsu oddawane po HTTP.
+//
+// Świadomie LISTA DOZWOLONYCH, a nie mapowanie ścieżki z żądania na dysk:
+// przy mapowaniu każda literówka w sprawdzaniu `..` kończy się oddaniem
+// czegokolwiek z systemu plików. Tu nie ma czego przeoczyć — nazwa spoza
+// tej listy nie istnieje.
+const UI_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'ui');
+const PLIKI_UI = new Map([
+  ['/', ['index.html', 'text/html; charset=utf-8']],
+  ['/index.html', ['index.html', 'text/html; charset=utf-8']],
+  ['/renderer.js', ['renderer.js', 'text/javascript; charset=utf-8']],
+  ['/strings.js', ['strings.js', 'text/javascript; charset=utf-8']],
+  ['/bridge-http.js', ['bridge-http.js', 'text/javascript; charset=utf-8']],
+]);
 
 export class StatusApi {
   constructor({ cfg, store, listener, worker, pkg, getPing, getProfile, requeue, getConfig, saveConfig,
@@ -326,6 +344,24 @@ export class StatusApi {
         });
         return undefined;
       }
+      // Interfejs w przeglądarce — dla maszyn bez pulpitu (malinka) i przez
+      // tunel SSH. Serwer nadal słucha WYŁĄCZNIE na 127.0.0.1.
+      if (req.method === 'GET' && PLIKI_UI.has(url.pathname)) {
+        const [nazwa, typ] = PLIKI_UI.get(url.pathname);
+        const sciezka = join(UI_DIR, nazwa);
+        if (!existsSync(sciezka)) {
+          // W paczce bez interfejsu katalogu `ui/` nie ma i to nie jest błąd.
+          return send(404, { error: 'Ta wersja nie zawiera interfejsu' });
+        }
+        res.writeHead(200, {
+          'Content-Type': typ,
+          // Strona ma pokazywać bieżący stan, nie wersję sprzed aktualizacji.
+          'Cache-Control': 'no-store',
+        });
+        res.end(readFileSync(sciezka));
+        return undefined;
+      }
+
       return send(404, { error: 'Nieznany endpoint' });
     } catch (err) {
       log.error('Błąd API stanu', err.message);

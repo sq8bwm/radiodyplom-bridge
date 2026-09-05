@@ -5,7 +5,12 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+<!-- `connect-src 'self'` jest potrzebne WYŁĄCZNIE w przeglądarce: strona woła
+     wtedy własne API pod tym samym adresem. W Electronie most idzie przez IPC
+     i nic się nie pobiera, więc to nic tam nie rozluźnia. Bez tego `default-src
+     'none'` blokował fetch i okno rysowało się puste — bez żadnego widocznego
+     błędu, bo blokada CSP nie wywala strony. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self';">
 <title>RadioDyplom Bridge</title>
 <style>
   :root {
@@ -363,6 +368,10 @@
   </div>
 </div>
 
+<!-- Most do rdzenia. W Electronie tworzy go preload.cjs i ten plik sam się
+     wyłącza; w przeglądarce buduje go z żądań do lokalnego API. Musi być
+     PRZED renderer.js. -->
+<script src="bridge-http.js"></script>
 <script type="module" src="renderer.js"></script>
 </body>
 </html>

@@ -117,6 +117,7 @@ Interfejs jest po **polsku i angielsku**, przełącznik w nagłówku.
 | [Interfejs i API](docs/interfejs.md) | okno, zasobnik, lokalne API stanu |
 | [Statystyki](docs/statystyki.md) | ile QSO, na której akcji, spod której stacji |
 | [Windows i sieć](docs/windows-i-siec.md) | rozgłoszenia, multicast, zapora, autostart |
+| [Raspberry Pi / bez okna](docs/malinka.md) | mostek jako usługa na małym komputerze |
 | [Rozwój](docs/rozwoj.md) | wymagania, testy, budowanie paczek |
 
 Znane usterki i plany: [BACKLOG.md](BACKLOG.md).

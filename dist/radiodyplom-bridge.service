@@ -1,14 +1,49 @@
+# Mostek QSO jako usługa systemowa — tryb bez interfejsu graficznego.
+#
+# Instalowane przez pakiet radiodyplom-bridge-headless. Uruchomienie:
+#   sudo systemctl enable --now radiodyplom-bridge
+#
+# PIN NIE leży w tym pliku ani w config.json, tylko w
+# /etc/radiodyplom-bridge/pin.env (prawa 0640) — patrz docs/malinka.md.
 [Unit]
-Description=Mostek logger -> radiodyplom.pl
+Description=Mostek QSO: logger -> radiodyplom.pl
+Documentation=https://github.com/SQ8BWM/radiodyplom-bridge
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=%h/radiodyplom
-ExecStart=/usr/bin/node %h/radiodyplom/src/index.js
+User=radiodyplom
+Group=radiodyplom
+
+Environment=RD_CONFIG_DIR=/etc/radiodyplom-bridge
+# Myślnik: brak pliku nie jest błędem (PIN można też wpisać w config.json).
+EnvironmentFile=-/etc/radiodyplom-bridge/pin.env
+
+ExecStart=/usr/bin/radiodyplom-bridge-headless
 Restart=on-failure
 RestartSec=10
 
+# Kolejka QSO i dziennik. systemd tworzy katalog i nadaje właściciela sam.
+StateDirectory=radiodyplom-bridge
+
+# Ograniczenia: program czyta konfigurację, pisze do swojego katalogu danych
+# i gada z siecią. Nic poza tym nie jest mu potrzebne.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target

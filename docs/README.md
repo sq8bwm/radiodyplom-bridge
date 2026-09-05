@@ -12,6 +12,7 @@ Tutaj leżą szczegóły.
 | [Interfejs i API](interfejs.md) | okno, zasobnik, lokalne API stanu |
 | [Statystyki](statystyki.md) | dziennik wysłanych, przekroje, odtworzenie historii z logów |
 | [Windows i sieć](windows-i-siec.md) | rozgłoszenia, multicast, zapora, autostart |
+| [Raspberry Pi / bez okna](malinka.md) | paczka headless, usługa systemd, sterowanie przez API |
 | [Rozwój](rozwoj.md) | wymagania, testy, budowanie paczek |
 
 Znane usterki i plany: [BACKLOG.md](../BACKLOG.md).

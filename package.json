@@ -17,6 +17,7 @@
     "ui": "electron ui/main.js",
     "pack:linux": "electron-builder --linux && npm run checksums",
     "pack:win": "electron-builder --win && npm run checksums",
+    "pack:headless": "node src/tools/build-headless-deb.js",
     "pack": "electron-builder --linux --win && npm run checksums",
     "test": "node --test test/*.test.js",
     "checksums": "node src/tools/checksums.js"

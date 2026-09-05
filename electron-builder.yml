@@ -36,7 +36,10 @@ win:
 nsis:
   # Bez spacji w nazwie: GitHub zamienia je na kropki przy wgrywaniu załączników,
   # a wtedy SHA256SUMS nie pasuje do tego, co odbiorca pobierze.
-  artifactName: radiodyplom-bridge-${version}-setup.${ext}
+  # Architektura W NAZWIE: paczki są tylko x64, a bez tego ktoś z arm64
+  # pobierał plik, który u niego nie zadziała, i dowiadywał się o tym dopiero
+  # z komunikatu systemu („architecture does not match", „Exec format error").
+  artifactName: radiodyplom-bridge-${version}-${arch}-setup.${ext}
   oneClick: false                  # użytkownik ma wybrać katalog i skróty
   perMachine: false                # instalacja dla użytkownika = bez UAC
   allowToChangeInstallationDirectory: true
@@ -49,10 +52,10 @@ nsis:
   deleteAppDataOnUninstall: false
 
 portable:
-  artifactName: radiodyplom-bridge-${version}-portable.${ext}
+  artifactName: radiodyplom-bridge-${version}-${arch}-portable.${ext}
 
 linux:
-  artifactName: radiodyplom-bridge-${version}.${ext}
+  artifactName: radiodyplom-bridge-${version}-${arch}.${ext}
   target:
     - AppImage
     - deb

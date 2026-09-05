@@ -93,6 +93,23 @@ GitHub zamienia spacje na kropki przy wgrywaniu załączników do wydania, przez
 plik sum kontrolnych przestawał pasować do tego, co odbiorca pobiera. Windows buduje się **z
 Linuksa** — electron-builder sam dociąga NSIS, wine nie jest potrzebne.
 
+### Architektura w nazwie pliku
+
+Paczki z interfejsem są **tylko x64**, ale nazwy tego nie mówiły — ktoś z arm64
+pobierał `.deb` i dowiadywał się dopiero z `dpkg`: *„package architecture (amd64)
+does not match system"*, albo z AppImage: *„Exec format error"*. Zgłoszone
+2026-09-05, poprawione w 0.1.13 przez `${arch}` w `artifactName`.
+
+`${arch}` podstawia się **inaczej dla każdego celu** i tak ma zostać — to nie
+nasza niekonsekwencja, tylko trzy konwencje, których nie ustalaliśmy:
+
+| Plik | Architektura w nazwie |
+|---|---|
+| `.deb` | `amd64` — zgodnie z tym, co paczka deklaruje w `Architecture` |
+| `.AppImage` | `x86_64` |
+| `.exe` | `x64` |
+| headless `.deb` | `all` — czysty JavaScript, działa wszędzie |
+
 ### Konwencja nazw wydania
 
 | Miejsce | Postać | Przykład |
@@ -108,6 +125,12 @@ jest zbędne, a nazwy plików dystrybucyjnych też są bez `v`.
 Przy 0.1.9 i 0.1.10 tytuły wyszły bez `v`, a przy 0.1.7 i 0.1.8 z `v`; różnicę
 wyrównano wstecz 2026-09-04 (`gh release edit --title`). Zmiana tytułu nie
 dotyka tagu, załączników ani sum kontrolnych — sprawdzone.
+
+> **Paczkę headless buduje osobny skrypt** (`npm run pack:headless`), więc
+> `SHA256SUMS` powstające na końcu `npm run pack` jej NIE obejmowało — złapane
+> przy 0.1.13, plik sum miał cztery pozycje zamiast pięciu. Dlatego budowanie
+> headless samo przelicza sumy na końcu, a `npm run pack:all` robi wszystko
+> w jednym poleceniu.
 
 Każde pakowanie kończy się wygenerowaniem **`release/SHA256SUMS`** (osobno:
 `npm run checksums`). Plik jest w formacie zgodnym z `sha256sum`, więc odbiorca

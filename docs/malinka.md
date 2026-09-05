@@ -54,8 +54,8 @@ sudo apt install -y nodejs
 ## 2. Instalacja mostka
 
 ```bash
-wget https://github.com/SQ8BWM/radiodyplom-bridge/releases/latest/download/radiodyplom-bridge-headless_0.1.13_all.deb
-sudo dpkg -i radiodyplom-bridge-headless_*.deb
+wget https://github.com/SQ8BWM/radiodyplom-bridge/releases/latest/download/radiodyplom-bridge-headless-0.1.13-all.deb
+sudo dpkg -i radiodyplom-bridge-headless-*.deb
 ```
 
 Instalacja **nie uruchamia** usługi — bez PIN-u nie miałaby co robić.
@@ -200,8 +200,8 @@ curl -s -X POST localhost:12061/api/requeue
 ## 9. Aktualizacja
 
 ```bash
-wget https://github.com/SQ8BWM/radiodyplom-bridge/releases/latest/download/radiodyplom-bridge-headless_NOWA_all.deb
-sudo dpkg -i radiodyplom-bridge-headless_*.deb
+wget https://github.com/SQ8BWM/radiodyplom-bridge/releases/latest/download/radiodyplom-bridge-headless-NOWA-all.deb
+sudo dpkg -i radiodyplom-bridge-headless-*.deb
 sudo systemctl restart radiodyplom-bridge
 ```
 

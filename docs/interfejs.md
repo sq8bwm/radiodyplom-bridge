@@ -265,6 +265,29 @@ Raspberry Pi w shacku czy jako usługa systemd — i to jest zachowanie docelowe
 a nie tryb awaryjny.
 
 
+## To samo okno w przeglądarce
+
+Pod adresem API (`http://127.0.0.1:12061/`) mostek oddaje **tę samą stronę**,
+którą w Electronie rysuje okno. Te same pliki, inny sposób pokazania — most do
+rdzenia buduje wtedy `ui/bridge-http.js` z żądań do `/api/*` zamiast z IPC.
+
+Po co: na maszynie bez pulpitu (Raspberry Pi, serwer) to **jedyny interfejs
+graficzny**, jaki jest — Electron wymaga środowiska graficznego, a dla 32-bitowego
+ARM w ogóle nie istnieje (Electron buduje tylko `x64` i `arm64`). Bez tego
+konfiguracja na malince to edycja JSON-a przez SSH.
+
+Dostęp zdalny **wyłącznie tunelem SSH** — serwer nadal słucha tylko na
+`127.0.0.1`. Szczegóły w [malinka.md](malinka.md).
+
+Dwie rzeczy różnią się od okna na pulpicie, obie celowo:
+
+- **nie ma przycisku „Zakończ"** — zamykanie usługi z karty przeglądarki to
+  pułapka, a przypadkowe kliknięcie przerywa przekazywanie QSO;
+- **nie ma „Pokaż plik logu"** — przeglądarka nie otworzy menedżera plików;
+  log jest w zakładce Log.
+
+Zakładkę można podać kotwicą (`/#stats`) i przeżywa odświeżenie strony.
+
 ## API stanu (dla UI)
 
 Daemon wystawia lokalną powierzchnię stanu, z której korzysta interfejs użytkownika

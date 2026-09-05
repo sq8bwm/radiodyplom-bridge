@@ -137,7 +137,46 @@ hostname -I
 
 Szczegóły dla poszczególnych loggerów: [loggery.md](loggery.md).
 
-## 7. Sprawdzanie bez okna
+## 7. To samo okno, ale w przeglądarce
+
+Mostek oddaje swój interfejs pod tym samym adresem co API:
+
+```
+http://localhost:12061/
+```
+
+To **dokładnie ta strona, którą znasz z pulpitu** — zakładka Konfiguracja ze
+sprawdzaniem uprawnień konta i znacznikami przy regułach, Statystyki z filtrami,
+Kolejka, Log. Nie trzeba edytować JSON-a przez SSH.
+
+Ponieważ API słucha wyłącznie na `127.0.0.1`, z innego komputera dobijesz się
+tunelem SSH:
+
+```bash
+ssh -L 12061:localhost:12061 pi@malinka
+```
+
+…i otwierasz `http://localhost:12061/` u siebie. Tunel jest tu **całym
+zabezpieczeniem**: nic nie wystawiamy na sieć, a szyfrowaniem zajmuje się SSH.
+
+Zakładkę można podać w adresie i zostaje po odświeżeniu:
+
+| Adres | Otwiera |
+|---|---|
+| `…:12061/#konfig` | Konfiguracja |
+| `…:12061/#stats` | Statystyki |
+| `…:12061/#log` | Log |
+
+Dwóch przycisków w przeglądarce **nie ma** i to jest celowe: **Zakończ** (na
+malince od tego jest `systemctl stop`, a przypadkowe kliknięcie przerwałoby
+przekazywanie QSO w środku pracy) oraz **Pokaż plik logu** (przeglądarka nie
+otworzy menedżera plików — log widać w zakładce Log).
+
+> Interfejs jest w pakiecie z Electronem i w kodzie źródłowym. Pakiet
+> `-headless` niesie sam rdzeń, więc pod adresem `/` odpowie wtedy komunikatem,
+> że ta wersja nie zawiera interfejsu — API działa normalnie.
+
+## 8. Sprawdzanie z wiersza poleceń
 
 Całe API stanu działa tak samo jak w wersji z interfejsem:
 
@@ -158,7 +197,7 @@ curl -s -X POST localhost:12061/api/requeue
 > interfejs sterujący wysyłką na Twoim PIN-ie. Żeby zajrzeć zdalnie, użyj
 > tunelu SSH: `ssh -L 12061:localhost:12061 pi@malinka`.
 
-## 8. Aktualizacja
+## 9. Aktualizacja
 
 ```bash
 wget https://github.com/SQ8BWM/radiodyplom-bridge/releases/latest/download/radiodyplom-bridge-headless_NOWA_all.deb
@@ -169,7 +208,7 @@ sudo systemctl restart radiodyplom-bridge
 Konfiguracja i dane **nie są ruszane** — `postinst` nie nadpisuje istniejącego
 `config.json` ani `pin.env`.
 
-## 9. Odinstalowanie
+## 10. Odinstalowanie
 
 ```bash
 sudo apt remove radiodyplom-bridge-headless          # program

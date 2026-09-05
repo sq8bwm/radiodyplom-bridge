@@ -272,7 +272,9 @@ przepisywanie kodu pod stary Node. Nieproporcjonalne i szkodliwe.
 
 **Rozwiązanie dla użytkownika:** mostek na innej maszynie w tej samej sieci,
 logger wysyła UDP przez sieć. Opisane w
-[docs/windows-i-siec.md](docs/windows-i-siec.md#windows-7-i-8--program-się-nie-uruchomi).
+[docs/windows-i-siec.md](docs/windows-i-siec.md#windows-7-i-8--program-się-nie-uruchomi),
+a od 0.1.13 jest do tego gotowy pakiet bez interfejsu
+([docs/malinka.md](docs/malinka.md)) — 64 kB, `Architecture: all`, usługa systemd.
 
 **Nasza wina była jedna i już naprawiona:** nigdzie nie było napisane, jakiego
 Windowsa program wymaga. Użytkownik pobierał i dostawał komunikat, z którego nic

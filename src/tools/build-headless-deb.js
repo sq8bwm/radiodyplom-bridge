@@ -25,7 +25,7 @@ const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
 const NAZWA = 'radiodyplom-bridge-headless';
 const WERSJA = pkg.version;
 const OUT = join(ROOT, 'release');
-const BUDOWA = join(OUT, `${NAZWA}_${WERSJA}`);
+const BUDOWA = join(OUT, `${NAZWA}-${WERSJA}-budowa`);
 
 // `dpkg-deb` nie jest w Node — bez niego nie ma czego budować.
 try {
@@ -204,10 +204,21 @@ chmodSync(join(debian, 'postrm'), 0o755);
 
 // --- budowa ---
 mkdirSync(OUT, { recursive: true });
-const plik = join(OUT, `${NAZWA}_${WERSJA}_all.deb`);
+// Nazwa w tej samej konwencji co pozostałe paczki wydania (myślniki, nie
+// podkreślniki Debiana) i z architekturą na końcu. `all` czyta się wprost:
+// ta jedna działa wszędzie, w odróżnieniu od tamtych, które są tylko x64.
+const plik = join(OUT, `${NAZWA}-${WERSJA}-all.deb`);
 execFileSync('dpkg-deb', ['--build', '--root-owner-group', BUDOWA, plik], { stdio: 'inherit' });
 rmSync(BUDOWA, { recursive: true, force: true });
 
 const rozmiar = readFileSync(plik).length;
 console.log(`\nZbudowano: ${plik}`);
 console.log(`Rozmiar:   ${(rozmiar / 1024).toFixed(0)} kB`);
+
+// Sumy przeliczamy TU, na końcu.
+//
+// `npm run pack` generuje je po zbudowaniu paczek Electrona, więc paczka
+// headless — budowana osobno, później — wypadała poza `SHA256SUMS`.
+// Złapane przy wydaniu 0.1.13: plik z sumami miał cztery pozycje zamiast
+// pięciu, a jedyna paczka dla malinki byłaby bez możliwości sprawdzenia.
+execFileSync(process.execPath, [join(ROOT, 'src', 'tools', 'checksums.js')], { stdio: 'inherit' });

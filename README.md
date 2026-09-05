@@ -41,10 +41,15 @@ Pobierz z **[wydań](https://github.com/sq8bwm/radiodyplom-bridge/releases)**:
 
 | Plik | System |
 |---|---|
-| `radiodyplom-bridge-*-setup.exe` | Windows — instalator |
-| `radiodyplom-bridge-*-portable.exe` | Windows — bez instalacji |
-| `radiodyplom-bridge-*.AppImage` | Linux — uniwersalny |
-| `radiodyplom-bridge-*.deb` | Debian / Ubuntu |
+| `radiodyplom-bridge-*-x64-setup.exe` | Windows 10+ — instalator |
+| `radiodyplom-bridge-*-x64-portable.exe` | Windows 10+ — bez instalacji |
+| `radiodyplom-bridge-*-x86_64.AppImage` | Linux — uniwersalny |
+| `radiodyplom-bridge-*-amd64.deb` | Debian / Ubuntu |
+| `radiodyplom-bridge-headless-*-all.deb` | **bez interfejsu** — Raspberry Pi, serwer ([opis](docs/malinka.md)) |
+
+Wersje z interfejsem są **tylko 64-bitowe na procesory Intel/AMD** — stąd `x64`,
+`amd64` i `x86_64` w nazwach (to samo, trzy konwencje). Paczka `headless` ma
+`all`, bo to czysty JavaScript: działa też na **arm64 i armhf**, czyli na malince.
 
 Na Linuksie `.deb` dodaje pozycję do menu (**Internet / Sieć**). AppImage niczego
 nie instaluje — uruchamiasz plik i tyle, więc w menu się nie pojawi.

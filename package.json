@@ -1,6 +1,6 @@
 {
   "name": "radiodyplom-bridge",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Mostek: odbiera QSO z loggerow po UDP (QLog, N1MM/DXLog/BBlogger, WSJT-X/JTDX/MSHV) i przekazuje na radiodyplom.pl z kolejkowaniem, buforowaniem i ponawianiem.",
   "type": "module",
   "main": "ui/main.js",
@@ -18,6 +18,7 @@
     "pack:linux": "electron-builder --linux && npm run checksums",
     "pack:win": "electron-builder --win && npm run checksums",
     "pack:headless": "node src/tools/build-headless-deb.js",
+    "pack:all": "npm run pack && npm run pack:headless",
     "pack": "electron-builder --linux --win && npm run checksums",
     "test": "node --test test/*.test.js",
     "checksums": "node src/tools/checksums.js"

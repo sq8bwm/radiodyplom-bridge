@@ -191,92 +191,43 @@ Co robić, w kolejności wartości:
 przez `action=VALIDATE`. To jedyne źródło prawdy o tym, co przyjmie. Czeka na
 `is_validation_only` na ścieżce odrzucenia — patrz pozycja o walidacji wyżej.
 
-### Interfejs w sieci: zewnętrzny adres, HTTPS i logowanie — zamówione
+### Interfejs w sieci: zewnętrzny adres, HTTPS i logowanie — ZROBIONE w 0.1.15
 
-Zamówione 2026-09-07. Dziś **nie da się** i jest to zabite na sztywno:
+Zamówione 2026-09-07, zrobione tego samego dnia. Opis dla użytkownika:
+[docs/interfejs-w-sieci.md](docs/interfejs-w-sieci.md).
 
-```js
-// src/httpapi.js — „Zawsze 127.0.0.1, niezależnie od konfiguracji"
-this.server.listen(this.cfg.api.port, '127.0.0.1', …)
-```
+Co powstało, w kolejności ustalonej wcześniej:
 
-**Dlaczego to nie jest samo dopisanie `api.host`.** To API nie jest tylko do
-czytania i **nie ma żadnego uwierzytelniania**. Kto się do niego dostanie, może
-przez `POST /api/config` podmienić PIN i przekierować QSO na inne konto,
-wstrzymać przekazywanie (`/api/pause`) albo bezpowrotnie wyrzucić odrzucone
-QSO (`/api/failed/discard`). Dla porównania: `udp.host: 0.0.0.0` pozwala obcemu
-tylko **dopisać** QSO — tutaj oddaje się pilota do konfiguracji mostka.
+1. **`api.host`** — domyślnie `127.0.0.1`, zmiana wymaga restartu.
+2. **Tryb tylko do odczytu domyślny w sieci** (`api.readOnly`). Zapis wymaga
+   jawnego `false` — wtedy każdy, kto zna hasło, może zmienić PIN.
+3. **Hasło** — `scryptSync` z `node:crypto`, porównanie `timingSafeEqual`,
+   hasz w konfiguracji, nigdy jawne hasło. Blokada po pięciu nieudanych próbach
+   z jednego adresu, z podwajaniem kary do 15 minut; dotyczy też prawidłowego
+   hasła, inaczej byłaby bez sensu.
+4. **CSRF** — token w nagłówku `X-CSRF-Token`, wydawany po zalogowaniu i trzymany
+   tylko w pamięci strony. Ciasteczko sesji: `HttpOnly`, `SameSite=Strict`,
+   `Secure` przy TLS.
+5. **TLS** — `node:https`, certyfikat własny wystawiany przez `openssl` przy
+   pierwszym starcie w tym trybie, do `<dane>/tls/` z prawami `0600`. Odcisk
+   SHA-256 w logu do porównania w przeglądarce.
 
-Co musi powstać razem, bo osobno każde daje złudzenie bezpieczeństwa:
+**Fail-closed jest tu regułą, nie ozdobą:** brak hasła albo TLS-a = nasłuch
+zostaje na `127.0.0.1` i program mówi w logu dlaczego. Sprawdzone testem
+i doświadczalnie na uruchomionym programie.
 
-1. **`api.host` z jawną zgodą** — domyślnie `127.0.0.1`, zmiana wymaga restartu
-   (jak `udp.host`) i ostrzeżenia w oknie, nie cichego zapisu.
-2. **Tryb tylko do odczytu jako domyślny przy nasłuchu w sieci.** Stan,
-   statystyki i log — tak; `POST` cokolwiek — nie. To załatwia większość
-   przypadków (podglądam mostek z telefonu) przy zerowym ryzyku.
-3. **Logowanie.** Hasło **haszowane** w konfiguracji, nie jawne. Uwaga na
-   spójność: PIN leży dziś w `config.json` jawnie, więc trzeba zdecydować, czy
-   hasło idzie tam samo, czy do osobnego pliku `0640` (jak PIN w pakiecie
-   headless). Do tego blokada po nieudanych próbach — mostek stoi godzinami,
-   więc zgadywanie hasła ma czas.
-4. **Ochrona przed CSRF.** Dzisiejsze `POST`-y nie mają żadnej; przy nasłuchu
-   w sieci trzeba wymagać tokenu w nagłówku (nie w ciasteczku), inaczej
-   dowolna strona otwarta w tej samej przeglądarce może wysłać żądanie.
-5. **TLS.** Trzy drogi, żadna darmowa:
-   - **certyfikat własny** — działa od razu, ale przeglądarka krzyczy przy
-     każdym wejściu i użytkownik uczy się klikać „mimo to";
-   - **Let's Encrypt** — wymaga publicznej nazwy i przekierowania portu na
-     routerze, czyli wystawienia shacku do internetu;
-   - **odwrotne proxy** (nginx, Caddy) przed mostkiem — TLS i logowanie robi
-     narzędzie, które się tym zajmuje, a mostek zostaje na `127.0.0.1`.
+Zero nowych zależności. Jedyne oparcie o zewnętrzne narzędzie to `openssl` do
+wystawienia certyfikatu — Node umie X.509 tylko czytać. Gdy openssl-a brak
+(bywa na Windowsie), zostaje własny certyfikat w konfiguracji albo localhost
+z tunelem SSH.
 
-**Rekomendacja zmieniona 2026-09-07 po uwadze: „to dobra droga, tylko nie jest
-łatwa dla przeciętnego użytkownika".** Trafna — odwrotne proxy jest właściwe
-jako rzemiosło i niewłaściwe dla odbiorcy tego programu. Krótkofalowiec, który
-chce zajrzeć w statystyki z telefonu, miałby przed sobą: instalację nginxa albo
-Caddy, plik konfiguracyjny, `htpasswd`, usługę systemd, zaporę i certyfikat —
-zanim zobaczy pierwszą liczbę. Przy takim progu albo zrezygnuje, albo otworzy
-port bez niczego, co jest gorsze niż nasz brak funkcji.
+Przepis na odwrotne proxy został w dokumentacji jako droga dla tych, którzy
+mają je już postawione — bez rekomendowania go przeciętnemu użytkownikowi.
 
-**Nowa rekomendacja: wbudować wąską ścieżkę w mostek, a przepis na proxy
-zostawić jako drogę zaawansowaną.** Sprawdzone 2026-09-07, że da się to zrobić
-**bez ani jednej nowej zależności**:
-
-| Potrzeba | Czym |
-|---|---|
-| hasło | `scryptSync` z `node:crypto` |
-| porównanie hasła | `timingSafeEqual` (odporne na pomiar czasu) |
-| serwer TLS | `node:https`, wbudowany |
-| **wystawienie certyfikatu** | **`openssl` — Node umie X.509 tylko czytać** |
-
-Ostatni wiersz jest jedynym twardym ograniczeniem. `openssl` jest standardem na
-Raspberry Pi OS i w każdej używanej dystrybucji, więc na maszynie, o którą tu
-chodzi, jest. Na Windowsie bywa nieobecny — tam zostaje podanie własnego
-certyfikatu w konfiguracji albo pozostanie na `127.0.0.1` z tunelem SSH.
-
-Dla użytkownika ma to wyglądać tak: zaznacza opcję, podaje hasło, program przy
-pierwszym starcie wystawia certyfikat do katalogu danych z prawami `0600`,
-a przeglądarka raz pyta o zaufanie. Bez `htpasswd`, bez usług, bez zapory.
-
-Kolejność prac, gdyby to budować: punkty 1–4 **przed** punktem 5 — sam HTTPS bez
-logowania nie chroni przed niczym, a logowanie bez HTTPS wysyła hasło jawnym
-tekstem. Certyfikat własny (nie od urzędu) jest tu świadomym kompromisem:
-chroni treść na kablu, nie chroni przed podszyciem się pod serwer w tej samej
-sieci — i tak trzeba to w dokumentacji napisać, a nie przemilczeć.
-
-**Dokumentacja jest częścią tej roboty, nie dodatkiem.** Obie drogi wymagają
-opisu: wbudowana — co znaczy ostrzeżenie przeglądarki i dlaczego wolno je tu
-przyjąć; proxy — gotowy plik konfiguracyjny do skopiowania. Bez tego funkcja
-istnieje tylko dla nas dwóch.
-
-**Co działa dziś, bez żadnego ryzyka:** tunel SSH. Ruch szyfrowany,
-uwierzytelniony kluczem, zero nowego kodu:
-
-```bash
-ssh -L 12061:localhost:12061 pi@malinka
-```
-
-Opisany w [docs/malinka.md](docs/malinka.md).
+**Czego świadomie NIE zrobiliśmy:** certyfikatów od Let's Encrypt (wymaga
+publicznej nazwy i przekierowania portu, czyli wystawienia shacku do internetu),
+kont wieloosobowych (jedno hasło wystarcza na stację) i trwałych sesji
+(restart = ponowne logowanie; trwałe trzeba by unieważniać przy zmianie hasła).
 
 ### Statystyki — zrobione, co jeszcze warto dołożyć
 Zakładka i importer historii gotowe w 0.1.10 —

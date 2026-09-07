@@ -153,6 +153,9 @@ export function loadConfig(opts = {}) {
   cfg.queue.seenFile = resolvePath(cfg.queue.seenFile);
   // Dziennik wysłanych — źródło statystyk. Domyślnie obok kolejki.
   cfg.queue.journalDir = resolvePath(cfg.queue.journalDir || './data/sent');
+  // Katalog danych w postaci bezwzględnej. Potrzebny poza kolejką — tam trafia
+  // certyfikat TLS, gdy mostek wystawia go sobie sam.
+  cfg._dataDir = resolvePath('.');
   cfg._source = path;
 
   return cfg;

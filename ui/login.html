@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!--
+  SPDX-FileCopyrightText: 2026 SQ8BWM
+  SPDX-License-Identifier: GPL-3.0-or-later
+
+  Strona logowania do interfejsu w przeglądarce.
+
+  Samodzielna i celowo minimalna: nie ładuje renderer.js ani strings.js, bo
+  przed zalogowaniem nie ma do czego — a im mniej kodu przed bramką, tym mniej
+  powierzchni. Dwujęzyczna napisami obok siebie, żeby nie ciągnąć słownika.
+-->
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RadioDyplom Bridge — logowanie</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f6f7f9; --panel: #fff; --line: #e2e6ec; --text: #1e2430;
+    --muted: #6b7480; --err: #c0392b; --accent: #2c3e50; --on-accent: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg:#161a20; --panel:#1e242c; --line:#2c343e; --text:#e6eaf0;
+      --muted:#98a2af; --err:#f0736a; --accent:#8ab4f8; --on-accent:#10151c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         background:var(--bg); color:var(--text);
+         font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; padding:16px; }
+  .karta { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:24px; width:100%; max-width:380px; }
+  h1 { font-size:16px; margin:0 0 4px; }
+  .pod { color:var(--muted); font-size:12px; margin:0 0 18px; }
+  label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  input { width:100%; padding:9px 10px; font:inherit; color:var(--text);
+          background:var(--bg); border:1px solid var(--line); border-radius:6px; }
+  button { width:100%; margin-top:14px; padding:10px; font:inherit; font-weight:600;
+           cursor:pointer; background:var(--accent); color:var(--on-accent);
+           border:none; border-radius:6px; }
+  button[disabled] { opacity:.6; cursor:default; }
+  .blad { color:var(--err); font-size:13px; margin-top:12px; min-height:19px; }
+  .nota { color:var(--muted); font-size:11px; margin-top:16px; border-top:1px solid var(--line);
+          padding-top:12px; }
+</style>
+</head>
+<body>
+  <form class="karta" id="f" autocomplete="on">
+    <h1>RadioDyplom Bridge</h1>
+    <p class="pod">Logowanie do interfejsu &middot; Sign in</p>
+
+    <label for="p">Hasło &middot; Password</label>
+    <input type="password" id="p" name="password" autocomplete="current-password" required autofocus>
+
+    <button type="submit" id="b">Zaloguj &middot; Sign in</button>
+    <div class="blad" id="e" role="alert"></div>
+
+    <p class="nota" id="n"></p>
+  </form>
+
+<script>
+  const f = document.getElementById('f');
+  const p = document.getElementById('p');
+  const b = document.getElementById('b');
+  const e = document.getElementById('e');
+
+  // Informacja o trybie pracy. /api/session jest dostępne bez logowania
+  // i celowo nie zdradza niczego poza tym, w jakim trybie stoi mostek.
+  fetch('/api/session').then((r) => r.json()).then((s) => {
+    const cz = [];
+    if (s.siec) cz.push('Interfejs widoczny w sieci &middot; exposed on the network');
+    if (s.tylkoOdczyt) cz.push('Tryb tylko do odczytu &middot; read-only');
+    if (s.siec && !s.tls) cz.push('<strong>Bez szyfrowania</strong> &middot; not encrypted');
+    document.getElementById('n').innerHTML = cz.join('<br>');
+  }).catch(() => {});
+
+  f.onsubmit = async (ev) => {
+    ev.preventDefault();
+    e.textContent = '';
+    b.disabled = true;
+    try {
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: p.value }),
+      });
+      if (r.ok) { location.replace('/'); return; }
+      const d = await r.json().catch(() => ({}));
+      // 429 niesie już gotowy komunikat z czasem blokady.
+      e.textContent = d.error || (r.status === 401 ? 'Błędne hasło · Wrong password' : `Błąd ${r.status}`);
+    } catch (err) {
+      e.textContent = 'Brak połączenia z mostkiem · Bridge unreachable';
+    } finally {
+      b.disabled = false;
+      p.select();
+    }
+  };
+</script>
+</body>
+</html>

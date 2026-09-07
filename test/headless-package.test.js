@@ -66,6 +66,42 @@ describe('usługa systemd', () => {
   });
 });
 
+describe('okno w przeglądarce w paczce', () => {
+  // REGRES WYDANY DWA RAZY (0.1.13 i 0.1.14): paczka kopiowała tylko `src/`,
+  // więc `GET /` oddawało „Ta wersja nie zawiera interfejsu" — a docs/malinka.md
+  // obiecywał okno pod localhost:12061. Nie wyszło w testach, bo interfejs
+  // sprawdzałam uruchamiany z repozytorium, gdzie katalog `ui/` jest zawsze.
+  const HTTPAPI = readFileSync(join(ROOT, 'src', 'httpapi.js'), 'utf8');
+
+  /** Nazwy plików, które serwer potrafi oddać (z listy PLIKI_UI). */
+  const potrzebne = [...HTTPAPI.matchAll(/\['\/[^']*',\s*\['([^']+)'/g)]
+    .map((m) => m[1]);
+
+  /** Nazwy plików, które paczka kopiuje. */
+  const kopiowane = (BUILD.match(/const PLIKI_OKNA = \[([^\]]+)\]/) || [, ''])[1]
+    .split(',').map((x) => x.trim().replace(/['"]/g, '')).filter(Boolean);
+
+  test('paczka kopiuje pliki okna', () => {
+    assert.ok(kopiowane.length > 0, 'build-headless-deb.js nie kopiuje żadnego pliku okna');
+    assert.ok(kopiowane.includes('index.html'), 'bez index.html nie ma czego otworzyć');
+  });
+
+  test('każdy plik, który serwer potrafi oddać, jest w paczce', () => {
+    // Bez tego dodanie nowego pliku do PLIKI_UI daje 404 wyłącznie na malince,
+    // czyli tam, gdzie najtrudniej to zauważyć.
+    const brakujace = [...new Set(potrzebne)].filter((f) => !kopiowane.includes(f));
+    assert.deepEqual(brakujace, [], `paczka nie kopiuje: ${brakujace.join(', ')}`);
+  });
+
+  test('paczka nie ciągnie plików Electrona', () => {
+    // `main.js` i `preload.cjs` nie mają w tej paczce czego obsługiwać,
+    // a ikony zasobnika tym bardziej.
+    for (const f of ['main.js', 'preload.cjs']) {
+      assert.ok(!kopiowane.includes(f), `${f} nie należy do paczki bez interfejsu`);
+    }
+  });
+});
+
 describe('metadane pakietu', () => {
   test('Architecture: all — jedna paczka na arm64, armhf i amd64', () => {
     // To nie jest skrót: rdzeń nie ma zależności runtime ani kodu natywnego.

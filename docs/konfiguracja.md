@@ -27,6 +27,17 @@ W `config.json` wstaw PIN API z Managera radiodyplom
 | `ui.recentEvents` | ile ostatnich zdarzeń pokazuje zakładka Stan (5–200, domyślnie 20) |
 | `updates.check` | czy sprawdzać, że jest nowsze wydanie (domyślnie `true`) |
 | `updates.intervalHours` | co ile godzin sprawdzać (domyślnie 24, minimum 1) |
+| `api.host` | adres nasłuchu interfejsu (domyślnie `127.0.0.1`; `0.0.0.0` = sieć lokalna) |
+| `api.readOnly` | `true` blokuje wszystkie zmiany przez interfejs; brak = domyślnie, czyli tylko odczyt w sieci |
+| `api.auth.passwordHash` | hasz hasła do interfejsu (`scrypt$…`); ustawia się z okna albo poleceniem — patrz niżej |
+| `api.tls.enabled` | HTTPS (domyślnie `true`); wyłączenie blokuje nasłuch w sieci |
+| `api.tls.certFile` / `keyFile` | własny certyfikat; brak = program wystawia sobie sam |
+
+**Nasłuch w sieci wymaga hasła ORAZ HTTPS jednocześnie.** Bez jednego z nich
+program zostaje na `127.0.0.1` i wypisuje powód w logu — świadomie, bo otwarty
+port bez hasła oddaje sterowanie wysyłką QSO. Zmiana `api.host`, `api.readOnly`
+i `api.tls.enabled` wymaga **restartu**. Opis, ryzyka i przepis na certyfikat:
+[interfejs-w-sieci.md](interfejs-w-sieci.md).
 
 
 ## Katalogi danych

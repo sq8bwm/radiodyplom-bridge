@@ -74,6 +74,43 @@ const SVG = {
     + '<rect x=".5" y=".5" width="19" height="13" fill="none" stroke="currentColor" stroke-opacity=".35"/></svg>',
 };
 
+// ---------- tryb pracy interfejsu ----------
+// Przyciski, które ZAPISUJĄ. W trybie tylko do odczytu serwer i tak odrzuci
+// każdy POST — ale użytkownik ma to widzieć zanim kliknie, a nie dowiadywać
+// się z komunikatu o błędzie.
+const PRZYCISKI_ZAPISU = ['btnPause', 'btnSave', 'btnRequeue', 'btnDiscardFailed',
+  'btnAckProblems', 'btnAddTarget'];
+
+let ostatniTryb = null;
+
+function zastosujTryb(api) {
+  if (!api) return;
+  const klucz = JSON.stringify(api);
+  if (klucz === ostatniTryb) return;         // nie ruszamy DOM-u co 2 sekundy
+  ostatniTryb = klucz;
+
+  const b = $('netBadge');
+  if (b) {
+    if (api.siec) {
+      b.hidden = false;
+      b.classList.toggle('ro', !!api.tylkoOdczyt);
+      b.textContent = api.tylkoOdczyt
+        ? `${t('net.exposed')} · ${t('net.readOnly')}`
+        : `${t('net.exposed')} · ${t('net.writable')}`;
+      b.title = `${api.host}${api.tls ? ' · HTTPS' : ''}`;
+    } else {
+      b.hidden = true;
+    }
+  }
+
+  for (const id of PRZYCISKI_ZAPISU) {
+    const el = $(id);
+    if (!el) continue;
+    el.disabled = !!api.tylkoOdczyt;
+    if (api.tylkoOdczyt) el.title = t('net.readOnlyHint');
+  }
+}
+
 // ---------- motyw ----------
 // Wybór trzymamy w konfiguracji, nie w localStorage: to samo okno otwiera się
 // w Electronie i w przeglądarce, a ustawienie ma być jedno.
@@ -379,6 +416,7 @@ async function refresh() {
   try {
     ostatniStatus = await window.bridge.status();
     renderStatus(ostatniStatus);
+    zastosujTryb(ostatniStatus.api);
   } catch { /* rdzeń wstaje */ }
 }
 
@@ -509,6 +547,20 @@ async function loadConfig() {
   $('fDryRun').checked = cfg.radiodyplom.dryRun;
   $('fHost').value = cfg.udp.host;
   $('fPort').value = cfg.udp.port;
+
+  // Interfejs w sieci. Hasła nie ma czym wypełnić — API oddaje tylko to, CZY
+  // jest ustawione, dokładnie jak przy PIN-ach.
+  $('fApiHost').value = cfg.api?.host === '0.0.0.0' ? '0.0.0.0' : '127.0.0.1';
+  $('fApiPassword').value = '';
+  $('fApiPassword').placeholder = cfg.api?.auth?.passwordSet ? '••••••••' : '';
+  // Puste `readOnly` w pliku znaczy „domyślnie", a domyślnie w sieci jest
+  // tylko odczyt — pokazujemy to, co faktycznie się stanie.
+  $('fApiReadOnly').checked = cfg.api?.readOnly === null
+    ? cfg.api?.host === '0.0.0.0'
+    : cfg.api?.readOnly !== false;
+  $('apiNetHint').textContent = cfg.api?.auth?.passwordSet
+    ? t('hint.apiPasswordSet') : t('hint.apiPasswordNone');
+  $('apiNetHint').className = cfg.api?.auth?.passwordSet ? 'hint' : 'hint lvl-warn';
   $('fMulticast').value = (cfg.udp.multicastGroups || []).join(', ');
   $('fEvents').value = cfg.ui?.recentEvents ?? 20;
   renderTargets(cfg.forward.targets || []);
@@ -929,8 +981,23 @@ async function saveFromForm() {
     }
   }
 
+  // Hasło do interfejsu: puste pole znaczy „bez zmian", jak przy PIN-ie.
+  // Za krótkie zatrzymujemy TUTAJ, żeby użytkownik zobaczył powód przy polu,
+  // a nie ogólny błąd zapisu z rdzenia.
+  const haslo = $('fApiPassword').value;
+  if (haslo && haslo.length < 8) {
+    $('apiNetHint').textContent = t('hint.apiPasswordShort');
+    $('apiNetHint').className = 'hint lvl-error';
+    return;
+  }
+
   const r = await window.bridge.saveConfig({
     radiodyplom: { pin: $('fPin').value.trim(), dryRun: $('fDryRun').checked },
+    api: {
+      host: $('fApiHost').value,
+      readOnly: $('fApiReadOnly').checked,
+      ...(haslo ? { auth: { password: haslo } } : {}),
+    },
     udp: {
       host: $('fHost').value,
       port: Number($('fPort').value),
@@ -1008,6 +1075,9 @@ $('btnQuit').onclick = async () => {
 
 // ---------- start ----------
 (async () => {
+  // W przeglądarce trzeba najpierw poznać stan sesji i wziąć token CSRF.
+  // W Electronie tej metody nie ma i nie jest potrzebna (IPC, nie HTTP).
+  await window.bridge.przygotujSesje?.();
   const cfg = await window.bridge.getConfig();
   buildThemeButton(cfg?.theme || 'auto');
   setLang(cfg?.language || 'pl');

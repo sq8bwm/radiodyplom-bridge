@@ -11,29 +11,65 @@
 // z nich miało trasę HTTP na długo przed tym plikiem. API stanu powstało jako
 // źródło dla okna i po prostu nadal nim jest.
 //
-// API SŁUCHA WYŁĄCZNIE NA 127.0.0.1 i to się nie zmienia. Zdalny dostęp robi
-// się tunelem SSH (patrz docs/malinka.md) — wystawienie tego na sieć oddałoby
-// obcym sterowanie wysyłką QSO na Twoim PIN-ie.
+// API domyślnie słucha na 127.0.0.1; nasłuch w sieci wymaga hasła i TLS-a
+// (patrz src/apiauth.js i docs/interfejs-w-sieci.md). Zdalny dostęp bez
+// otwierania portu robi się tunelem SSH — patrz docs/malinka.md.
 if (!window.bridge) {
+  // Token CSRF sesji. Trzymany w pamięci strony, NIE w ciasteczku ani
+  // localStorage: to jest właśnie ta druga warstwa, której obca strona nie ma
+  // jak zdobyć, nawet gdyby jej żądanie doniosło nasze ciasteczko sesji.
+  let csrf = null;
+
+  /** Brak sesji = przeładowanie; serwer odda wtedy formularz logowania. */
+  const naLogowanie = () => { location.replace('/login.html'); };
+
   const czytaj = async (sciezka) => {
     const r = await fetch(sciezka, { headers: { Accept: 'application/json' } });
+    if (r.status === 401) { naLogowanie(); throw new Error('Wymagane logowanie'); }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
   };
 
   const wyslij = async (sciezka, dane) => {
+    const naglowki = {};
+    if (dane) naglowki['Content-Type'] = 'application/json';
+    if (csrf) naglowki['X-CSRF-Token'] = csrf;
     const r = await fetch(sciezka, {
       method: 'POST',
-      headers: dane ? { 'Content-Type': 'application/json' } : {},
+      headers: naglowki,
       body: dane ? JSON.stringify(dane) : undefined,
     });
+    if (r.status === 401) { naLogowanie(); throw new Error('Wymagane logowanie'); }
+    if (r.status === 403) {
+      // Dwa różne powody, dwa różne komunikaty — „nie masz prawa" i „nikt tu
+      // nie ma prawa" to dla użytkownika zupełnie inne sytuacje.
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.error || 'Odmowa (403)');
+    }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
+  };
+
+  /** Pobiera stan sesji i token CSRF. Wołane raz, przed pierwszym żądaniem. */
+  const przygotujSesje = async () => {
+    try {
+      const s = await (await fetch('/api/session')).json();
+      if (s.wymagaLogowania && !s.zalogowany) { naLogowanie(); return null; }
+      csrf = s.csrf || null;
+      return s;
+    } catch {
+      return null;
+    }
   };
 
   window.bridge = {
     // Po tym renderer poznaje, że nie ma pulpitu pod ręką.
     tryb: 'http',
+
+    // Renderer woła to na starcie, przed pierwszym żądaniem: bez tokenu CSRF
+    // każdy zapis wróciłby z 403.
+    przygotujSesje,
+    logout: () => wyslij('/api/logout'),
 
     status: () => czytaj('/api/status'),
     // Uchwyt IPC oddaje samą tablicę wpisów, więc tu też — inaczej okno logu

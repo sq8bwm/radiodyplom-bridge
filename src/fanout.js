@@ -34,6 +34,43 @@ export function targetEnabled(t) {
   return t?.enabled !== false;
 }
 
+/**
+ * Podsumowanie: JAKIM ZNAKIEM poleci QSO i czy zgadza się to z loggerem.
+ *
+ * Po co: konfigurację fan-outu widać tylko w zakładce Konfiguracja, w tabeli
+ * z wieloma wierszami i znacznikami. Mostek uruchamia się ręcznie i rzadko
+ * (autostartu świadomie nie robimy), więc łatwo zapomnieć, co było ustawione
+ * ostatnim razem — i zalogować prywatne QSO jako stacja akcji. Znak jest wtedy
+ * POPRAWNY, serwer go przyjmie i nikt nie zaprotestuje.
+ *
+ * `niezgodnyZnak` jest prawdą tylko wtedy, gdy są włączone cele i ŻADEN z nich
+ * nie loguje na znak przychodzący z loggera. Przy rozmnażaniu QSO na kilka
+ * stacji rozjazd sam w sobie jest normalny i zamierzony — ostrzeganie o nim
+ * zawsze zrobiłoby z tego szum, który się ignoruje.
+ *
+ * @param {object[]} targets  cele z konfiguracji
+ * @param {string|null} znakZLoggera  station_callsign z ostatniego QSO
+ */
+export function summarizeTargets(targets, znakZLoggera = null) {
+  const wszystkie = Array.isArray(targets) ? targets : [];
+  const aktywne = wszystkie.filter(targetEnabled).map((t) => ({
+    station: t.station_callsign,
+    operator: t.operator || null,
+  }));
+  const norm = (x) => String(x || '').trim().toUpperCase();
+  const zLoggera = norm(znakZLoggera) || null;
+  const znaki = aktywne.map((t) => norm(t.station));
+
+  return {
+    aktywne,
+    wylaczone: wszystkie.length - aktywne.length,
+    // Brak włączonych celów = jedno QSO ze znakiem z loggera (patrz niżej).
+    zeZnakuLoggera: aktywne.length === 0,
+    znakZLoggera: zLoggera,
+    niezgodnyZnak: aktywne.length > 0 && !!zLoggera && !znaki.includes(zLoggera),
+  };
+}
+
 export function expandTargets(payload, targets, baseKey) {
   // Liczą się tylko reguły włączone. Wyłączona zostaje w konfiguracji
   // z całą treścią — o to chodzi w znaczniku: dać się wyłączyć bez

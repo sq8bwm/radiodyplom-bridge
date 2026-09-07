@@ -386,12 +386,17 @@ Rozważony wariant „start zawsze wstrzymany" odrzucony jako pozorny: skoro i t
 trzeba kliknąć, żeby ruszył, to autostart nie oszczędza kroku, a dokłada proces
 w tle i pytanie „czy on teraz nasłuchuje, czy nie".
 
-**Wzmacnia to inną potrzebę: widoczności, którym znakiem stacji poleci QSO.**
-Skoro mostek uruchamia się ręcznie i rzadko, łatwo zapomnieć, który cel fan-outu
-jest włączony — a wtedy prywatna łączność pojedzie jako stacja akcji. To jest
-osobna sprawa od ostrzeżenia o **złym znaku operatora** (niżej): tam chodzi
-o wartość, której serwis nie przyjmie albo ją utnie, tutaj o poprawny znak
-użyty w niewłaściwym momencie. Zapisane omyłkowo jako jedno 2026-09-07.
+**Wzmacniało to inną potrzebę: widoczności, którym znakiem stacji poleci QSO —
+ZROBIONE w 0.1.19.** Zakładka Stan ma panel „Poleci jako" (włączone cele wraz
+z operatorem, liczba wyłączonych albo wprost „ze znakiem z loggera"), a do tego
+ostrzeżenie, gdy ŻADEN włączony cel nie loguje na znak przychodzący z loggera.
+Warunek jest właśnie taki, a nie „znaki się różnią": przy rozmnażaniu QSO na
+kilka stacji rozjazd jest normalny i zamierzony, więc ostrzeganie o nim zawsze
+zrobiłoby z tego szum, który się ignoruje.
+
+To była osobna sprawa od ostrzeżenia o **złym znaku operatora** (niżej): tam
+chodzi o wartość, której serwis nie przyjmie albo ją utnie, tutaj o poprawny
+znak użyty w niewłaściwym momencie. Zapisane omyłkowo jako jedno 2026-09-07.
 
 ### Aktualizacje aplikacji — powiadomienie zrobione, samoaktualizacji NIE robimy
 Od 0.1.11 program sprawdza, czy jest nowsze wydanie, i mówi o tym w oknie

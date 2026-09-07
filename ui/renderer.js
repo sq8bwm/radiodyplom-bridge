@@ -329,6 +329,36 @@ function renderStatus(s) {
   $('listenInfo').innerHTML = `<code>udp://${esc(s.listener.host)}:${s.listener.port}</code>${esc(mc)}`;
   $('localNote').hidden = !s.listener.localOnly;
 
+  // JAKIM ZNAKIEM poleci QSO. Ta informacja była wyłącznie w Konfiguracji,
+  // w tabeli celów — czyli tam, gdzie zaglądasz, gdy coś zmieniasz, a nie gdy
+  // siadasz do pracy. Mostek uruchamia się ręcznie i rzadko, więc łatwo
+  // zapomnieć, co było ustawione ostatnim razem.
+  const p = s.forward?.podsumowanie;
+  if (p) {
+    if (p.zeZnakuLoggera) {
+      // Brak włączonych celów = jedno QSO ze znakiem z loggera. To też jest
+      // stan, którego dotąd nie było widać.
+      $('willSendInfo').innerHTML = `<em>${esc(t('willSend.fromLogger'))}</em>`;
+    } else {
+      const lista = p.aktywne.map((x) => `<code>${esc(x.station)}</code>`
+        + (x.operator ? ` <span class="muted">(${esc(t('willSend.operator'))} ${esc(x.operator)})</span>` : ''))
+        .join('<br>');
+      const ile = p.wylaczone
+        ? `<div class="hint">${esc(t('willSend.disabled').replace('{n}', p.wylaczone))}</div>` : '';
+      $('willSendInfo').innerHTML = lista + ile;
+    }
+    // Ostrzeżenie TYLKO wtedy, gdy żaden włączony cel nie loguje na znak
+    // przychodzący z loggera. Przy rozmnażaniu na kilka stacji sam rozjazd
+    // jest normalny i zamierzony — ostrzeganie o nim zawsze byłoby szumem.
+    $('willSendWarn').hidden = !p.niezgodnyZnak;
+    if (p.niezgodnyZnak) {
+      $('willSendWarn').textContent = t('willSend.mismatch')
+        .replace('{logger}', p.znakZLoggera)
+        .replace('{cele}', p.aktywne.map((x) => x.station).join(', '));
+      $('willSendWarn').style.borderLeftColor = 'var(--warn)';
+    }
+  }
+
   // Adres interfejsu — z portem. Bez tego pierwsze pytanie po włączeniu
   // nasłuchu w sieci brzmi „a na jakim porcie jest to HTTPS?".
   const a = s.api || {};

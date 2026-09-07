@@ -119,6 +119,26 @@ describe('tryb tylko do odczytu nie może blokować okna na pulpicie', () => {
   });
 });
 
+describe('atrybut hidden musi ukrywać', () => {
+  // ZGŁOSZONE 2026-09-07: „przy 127.0.0.1 ikonka jest pusta, bez dymku".
+  // Reguła przeglądarki `[hidden]{display:none}` przegrywa z każdą regułą
+  // autora, a `.icon-btn` ustawia `display:inline-flex` — więc schowana ikona
+  // zostawiała w nagłówku pustą ramkę. Ten sam problem załatano wcześniej
+  // punktowo dla okienka pytań, co znaczy, że wracał.
+  test('jest globalna reguła, nie łata na jeden element', () => {
+    assert.match(H, /\[hidden\] \{ display: none !important; \}/);
+  });
+
+  test('każdy element z hidden jest nią objęty', () => {
+    // Wypisujemy elementy, które w HTML startują ukryte, i sprawdzamy, że
+    // żadna klasa nie próbuje ich ukrywać na własną rękę — jeden mechanizm.
+    const ukryte = [...H.matchAll(/id="([a-zA-Z]+)"[^>]*hidden/g)].map((m) => m[1]);
+    assert.ok(ukryte.length > 5, `oczekiwałam wielu ukrytych, mam ${ukryte.length}`);
+    assert.doesNotMatch(H, /\.[a-z-]+\[hidden\] \{/,
+      'żadnych łat punktowych — globalna reguła wystarcza');
+  });
+});
+
 describe('adres interfejsu w panelu Stan', () => {
   test('panel pokazuje pełne adresy z portem', () => {
     assert.match(H, /id="ifaceInfo"/);

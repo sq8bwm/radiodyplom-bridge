@@ -55,6 +55,10 @@
   .grow { flex:1; }
   .badge { font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--line);
            color:var(--muted); font-weight:500; white-space:nowrap; }
+  .badge.net { background:color-mix(in srgb, var(--err) 16%, transparent);
+               color:var(--err); border-color:var(--err); font-weight:600; }
+  .badge.net.ro { background:color-mix(in srgb, var(--ok) 16%, transparent);
+                  color:var(--ok); border-color:var(--ok); }
   .badge.upd { background:color-mix(in srgb, var(--warn) 18%, transparent);
                color:var(--warn); border-color:var(--warn); }
   .badge.dry { color:var(--warn); border-color:var(--warn); }
@@ -233,6 +237,9 @@
   <span class="badge dry" id="dryBadge" hidden>DRY-RUN</span>
   <span class="badge st-error" id="probBadge" hidden style="cursor:pointer"></span>
   <span class="badge upd" id="updBadge" hidden style="cursor:pointer"></span>
+  <!-- Widoczność w sieci MUSI być widoczna w oknie. Cichy nasłuch poza
+       localhostem jest dokładnie tym, czego chcieliśmy uniknąć. -->
+  <span class="badge net" id="netBadge" hidden></span>
   <span class="grow"></span>
   <div class="hdr-actions">
     <button class="icon-btn" id="langBtn" title="Język / Language"></button>
@@ -336,6 +343,23 @@
       <label data-i18n="label.multicast"></label>
       <input type="text" id="fMulticast">
       <div class="note" data-i18n="note.anyhost"></div>
+    </div>
+
+    <div class="panel">
+      <h2 data-i18n="panel.network"></h2>
+      <div class="two">
+        <div><label data-i18n="label.apiHost"></label>
+          <select id="fApiHost">
+            <option value="127.0.0.1" data-i18n="opt.apiLocal"></option>
+            <option value="0.0.0.0" data-i18n="opt.apiNetwork"></option>
+          </select></div>
+        <div><label data-i18n="label.apiPassword"></label>
+          <input type="password" id="fApiPassword" autocomplete="new-password"></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="fApiReadOnly">
+        <span data-i18n="label.apiReadOnly"></span></label>
+      <div class="note" data-i18n="note.apiNetwork"></div>
+      <div class="hint" id="apiNetHint"></div>
     </div>
 
     <div class="panel">

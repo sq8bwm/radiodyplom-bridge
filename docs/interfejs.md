@@ -309,6 +309,10 @@ a nie tryb awaryjny.
 
 ## To samo okno w przeglądarce
 
+> Nasłuch poza `127.0.0.1` jest możliwy od 0.1.15, ale wymaga hasła i HTTPS
+> jednocześnie — patrz [interfejs-w-sieci.md](interfejs-w-sieci.md).
+
+
 Pod adresem API (`http://127.0.0.1:12061/`) mostek oddaje **tę samą stronę**,
 którą w Electronie rysuje okno. Te same pliki, inny sposób pokazania — most do
 rdzenia buduje wtedy `ui/bridge-http.js` z żądań do `/api/*` zamiast z IPC.

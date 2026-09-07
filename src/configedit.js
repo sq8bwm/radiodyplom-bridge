@@ -11,6 +11,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { writeAtomic } from './atomic.js';
 import { configPath, isPinMissing } from './config.js';
 import { maskPin } from './httpapi.js';
+import { zahaszujHaslo, hasloUstawione } from './apiauth.js';
 import { log, setLevel } from './log.js';
 import { EVENT_RING } from './worker.js';
 
@@ -26,7 +27,10 @@ const THEMES = ['auto', 'light', 'dark'];
 
 /** Zmiany wymagające restartu (nie da się ich zastosować na żywo). */
 const RESTART_KEYS = ['udp.host', 'udp.port', 'udp.multicastGroups', 'api.port', 'api.enabled',
-  'dataDir', 'queue.dir', 'queue.failedDir', 'queue.seenFile'];
+  'dataDir', 'queue.dir', 'queue.failedDir', 'queue.seenFile',
+  // Adres nasłuchu i TLS ustalane są raz, przy starcie serwera — zmiana
+  // w locie znaczyłaby przenoszenie otwartego gniazda i sesji.
+  'api.host', 'api.readOnly', 'api.tls.enabled'];
 
 /** Konfiguracja w postaci bezpiecznej do pokazania w UI. */
 export function editableConfig(cfg) {
@@ -56,7 +60,20 @@ export function editableConfig(cfg) {
     },
     rateLimit: cfg.rateLimit,
     queue: cfg.queue,
-    api: cfg.api,
+    // Hasła NIE oddajemy nawet w postaci hasza — interfejs potrzebuje tylko
+    // wiedzieć, czy jest ustawione, dokładnie jak przy PIN-ach.
+    api: {
+      enabled: cfg.api?.enabled !== false,
+      port: cfg.api?.port,
+      host: cfg.api?.host || '127.0.0.1',
+      readOnly: cfg.api?.readOnly ?? null,
+      auth: { passwordSet: hasloUstawione(cfg) },
+      tls: {
+        enabled: cfg.api?.tls?.enabled !== false,
+        certFile: cfg.api?.tls?.certFile || null,
+        keyFile: cfg.api?.tls?.keyFile || null,
+      },
+    },
     logLevel: cfg.logLevel,
     language: cfg.language || 'pl',
     // Bez tej linii wybór motywu żył tylko w pamięci: plik zaczyna się od
@@ -177,6 +194,41 @@ export function applyConfig(daemon, patch) {
     mark('api.enabled', cfg.api.enabled, patch.api.enabled);
     if (patch.api.port) cfg.api.port = Number(patch.api.port);
     if (typeof patch.api.enabled === 'boolean') cfg.api.enabled = patch.api.enabled;
+
+    // Adres nasłuchu. Sama wartość nic nie otwiera: przy starcie `trybApi`
+    // sprawdza hasło i certyfikat, a przy braku któregokolwiek zostaje na
+    // localhoście. Dlatego zapis jest dozwolony bez ceregieli — bramka jest
+    // w jednym miejscu, nie rozsypana po walidacji.
+    if (patch.api.host !== undefined) {
+      mark('api.host', cfg.api.host || '127.0.0.1', patch.api.host || '127.0.0.1');
+      cfg.api.host = String(patch.api.host || '127.0.0.1');
+    }
+    if (patch.api.readOnly !== undefined) {
+      const v = patch.api.readOnly === null ? null : !!patch.api.readOnly;
+      mark('api.readOnly', cfg.api.readOnly ?? null, v);
+      if (v === null) delete cfg.api.readOnly; else cfg.api.readOnly = v;
+    }
+    if (patch.api.tls) {
+      cfg.api.tls = cfg.api.tls || {};
+      if (typeof patch.api.tls.enabled === 'boolean') {
+        mark('api.tls.enabled', cfg.api.tls.enabled !== false, patch.api.tls.enabled);
+        cfg.api.tls.enabled = patch.api.tls.enabled;
+      }
+      for (const k of ['certFile', 'keyFile']) {
+        if (patch.api.tls[k] !== undefined) cfg.api.tls[k] = patch.api.tls[k] || undefined;
+      }
+    }
+    // Hasło przychodzi JAWNE i wychodzi jako hasz. Pustej wartości nie
+    // traktujemy jako „usuń" — do tego jest osobne `passwordClear`, żeby
+    // literówka w formularzu nie zdjęła ochrony z nasłuchu w sieci.
+    if (patch.api.auth) {
+      cfg.api.auth = cfg.api.auth || {};
+      if (patch.api.auth.passwordClear === true) {
+        delete cfg.api.auth.passwordHash;
+      } else if (patch.api.auth.password) {
+        cfg.api.auth.passwordHash = zahaszujHaslo(patch.api.auth.password);
+      }
+    }
   }
   if (patch.ui && patch.ui.recentEvents !== undefined) {
     // Te same widełki co przy wczytywaniu — inaczej dałoby się je obejść
@@ -270,7 +322,7 @@ export function writeConfigFile(cfg) {
     },
     queue: original.queue || cfg.queue,
     rateLimit: cfg.rateLimit,
-    api: cfg.api,
+    api: { ...(original.api || {}), ...cfg.api },
     logLevel: cfg.logLevel,
     language: cfg.language || 'pl',
     // Bez tej linii wybór motywu żył tylko w pamięci: plik zaczyna się od

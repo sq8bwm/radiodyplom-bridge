@@ -170,12 +170,16 @@ http://localhost:12061/
 ```
 
 Wszystkie zakładki, w tym Konfiguracja ze sprawdzaniem konta — zamiast edycji
-JSON-a przez SSH. Nasłuch API **nie zmienia się: wyłącznie 127.0.0.1**, więc
-zdalnie przez tunel:
+JSON-a przez SSH. Domyślnie API nasłuchuje **wyłącznie na 127.0.0.1**, więc zdalnie przez tunel:
 
 ```bash
 ssh -L 12061:localhost:12061 pi@malinka
 ```
+
+Można też **udostępnić okno w sieci lokalnej** — wymaga hasła i HTTPS
+jednocześnie, a bez jednego z nich program zostaje na localhoście i mówi
+o tym w logu. Certyfikat wystawia sobie sam. Opis i ryzyka:
+[Interfejs w sieci](docs/interfejs-w-sieci.md).
 
 Krok po kroku: [Raspberry Pi / bez okna](docs/malinka.md).
 
@@ -202,6 +206,7 @@ Node.js ≥ 18, zero zależności runtime.
 | [Interfejs i API](docs/interfejs.md) | okno, zasobnik, przeglądarka, lokalne API stanu |
 | [Statystyki](docs/statystyki.md) | ile QSO, na której akcji, spod której stacji |
 | [Windows i sieć](docs/windows-i-siec.md) | rozgłoszenia, multicast, zapora, autostart |
+| [Interfejs w sieci](docs/interfejs-w-sieci.md) | okno z telefonu: hasło, HTTPS, tryb tylko do odczytu |
 | [Raspberry Pi / bez okna](docs/malinka.md) | mostek jako usługa na małym komputerze |
 | [Rozwój](docs/rozwoj.md) | wymagania, testy, budowanie paczek |
 

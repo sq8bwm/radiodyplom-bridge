@@ -57,6 +57,22 @@ writeFileSync(join(lib, 'package.json'), JSON.stringify({
 }, null, 2) + '\n');
 cpSync(join(ROOT, 'config.example.json'), join(lib, 'config.example.json'));
 
+// --- pliki okna w przeglądarce ---
+//
+// BEZ NICH `GET /` oddaje „Ta wersja nie zawiera interfejsu", a to właśnie na
+// maszynie bez pulpitu przeglądarka jest jedynym interfejsem. Ten błąd wyszedł
+// dopiero 2026-09-07, po dwóch wydaniach (0.1.13 i 0.1.14), w których
+// docs/malinka.md obiecywał okno pod localhost:12061 — bo testowałam interfejs
+// uruchamiany z repozytorium, gdzie katalog `ui/` jest zawsze.
+//
+// Kopiujemy WYMIENIONE pliki, nie cały katalog: `main.js` i `preload.cjs`
+// należą do Electrona, a ikony do zasobnika — w tej paczce nie mają czego
+// obsługiwać. Lista musi zgadzać się z PLIKI_UI w src/httpapi.js; pilnuje
+// tego test.
+const PLIKI_OKNA = ['index.html', 'renderer.js', 'strings.js', 'bridge-http.js', 'login.html'];
+mkdirSync(join(lib, 'ui'), { recursive: true });
+for (const f of PLIKI_OKNA) cpSync(join(ROOT, 'ui', f), join(lib, 'ui', f));
+
 // --- uruchamianie ---
 // Własny skrypt zamiast wołania node wprost: w Debianie binarka bywa `node`
 // albo `nodejs` (nazwa `node` była tam zajęta przez pakiet krótkofalarski),

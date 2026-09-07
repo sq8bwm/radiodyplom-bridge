@@ -4,17 +4,24 @@
 // Lokalna powierzchnia stanu dla UI (Electron albo przeglądarka).
 //
 // Świadome decyzje:
-//  - Bind wyłącznie na 127.0.0.1. To interfejs sterujący wysyłką QSO na Twoim
-//    PIN-ie; wystawienie go na sieć dałoby obcym kontrolę nad Twoim logiem.
+//  - Domyślnie bind na 127.0.0.1. Nasłuch w sieci jest możliwy od 0.1.15, ale
+//    WYMAGA hasła i TLS-a jednocześnie — patrz src/apiauth.js. To interfejs
+//    sterujący wysyłką QSO na Twoim PIN-ie, więc każdy brak ochrony kończy się
+//    pozostaniem na localhoście, nigdy otwartym portem.
 //  - PIN-y NIGDY nie opuszczają procesu — zawsze zamaskowane.
-//  - Zero zależności: node:http wystarcza.
+//  - Zero zależności: node:http i node:https wystarczają.
 import http from 'node:http';
+import https from 'node:https';
 import { log, recentLog } from './log.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readRecords, parseDay } from './journal.js';
 import { aggregate, filterRecords, filterOptions } from './stats.js';
+import {
+  Sesje, Blokada, sprawdzHaslo, hasloUstawione, odczytajCiastko,
+  ciastkoSesji, ciastkoWygaszone, trybApi, odciskCertyfikatu,
+} from './apiauth.js';
 
 /**
  * Maskuje PIN do postaci bezpiecznej także PUBLICZNIE: "AB**-****".
@@ -65,7 +72,11 @@ const PLIKI_UI = new Map([
   ['/renderer.js', ['renderer.js', 'text/javascript; charset=utf-8']],
   ['/strings.js', ['strings.js', 'text/javascript; charset=utf-8']],
   ['/bridge-http.js', ['bridge-http.js', 'text/javascript; charset=utf-8']],
+  ['/login.html', ['login.html', 'text/html; charset=utf-8']],
 ]);
+
+/** Ścieżki dostępne BEZ logowania — sama strona logowania i jej obsługa. */
+const BEZ_LOGOWANIA = new Set(['/login.html', '/api/login', '/api/session']);
 
 export class StatusApi {
   constructor({ cfg, store, listener, worker, pkg, getPing, getProfile, requeue, getConfig, saveConfig,
@@ -87,6 +98,23 @@ export class StatusApi {
     this.getUpdate = getUpdate;
     this.server = null;
     this.startedAt = Date.now();
+    // Sesje żyją w pamięci: restart mostka = ponowne logowanie. Świadomie,
+    // bo trwałe sesje trzeba by unieważniać przy zmianie hasła, a zysk jest
+    // żaden — mostek restartuje się rzadko.
+    this.sesje = new Sesje();
+    this.blokada = new Blokada();
+    // Ustalane przy starcie: gdzie nasłuchujemy i z jakimi ograniczeniami.
+    this.tryb = { host: '127.0.0.1', siec: false, tls: null, readOnly: false, powody: [] };
+  }
+
+  /** Czy żądania muszą być uwierzytelnione. Hasło ustawione = tak, zawsze. */
+  wymagaLogowania() {
+    return hasloUstawione(this.cfg);
+  }
+
+  /** Czy zapis jest zablokowany (tryb tylko do odczytu). */
+  tylkoOdczyt() {
+    return !!this.tryb.readOnly;
   }
 
   status() {
@@ -230,6 +258,16 @@ export class StatusApi {
         })),
       },
 
+      // Tryb pracy interfejsu — okno musi wiedzieć, czy pokazać ostrzeżenie
+      // o widoczności w sieci i czy wyłączyć przyciski zapisu.
+      api: {
+        host: this.tryb.host,
+        siec: !!this.tryb.siec,
+        tls: !!this.tryb.tls,
+        tylkoOdczyt: this.tylkoOdczyt(),
+        wymagaLogowania: this.wymagaLogowania(),
+      },
+
       logFile: this.getLogFile ? this.getLogFile() : null,
       lastSent: this.worker.lastSent,
       lastError: this.worker.lastError,
@@ -268,7 +306,63 @@ export class StatusApi {
       res.end(json);
     };
 
+    // ---------- bramka: logowanie, CSRF, tylko-odczyt ----------
+    //
+    // Kolejność ma znaczenie i jest tu wypisana wprost, bo pomyłka w niej to
+    // dziura, a nie usterka:
+    //   1. rzeczy dostępne bez logowania (strona logowania, /api/login, /api/session),
+    //   2. brak sesji → 401 dla API, strona logowania dla stron,
+    //   3. każdy POST → token CSRF z nagłówka musi zgadzać się z sesją,
+    //   4. każdy POST → odrzucony, jeśli tryb tylko do odczytu.
+    const ciastko = odczytajCiastko(req.headers.cookie);
+    const sesja = this.wymagaLogowania() ? this.sesje.pobierz(ciastko) : null;
+    const adres = req.socket?.remoteAddress || '?';
+
     try {
+      if (req.method === 'POST' && url.pathname === '/api/login') {
+        return this._logowanie(req, send, res, adres);
+      }
+      if (req.method === 'POST' && url.pathname === '/api/logout') {
+        if (ciastko) this.sesje.usun(ciastko);
+        res.setHeader('Set-Cookie', ciastkoWygaszone({ tls: !!this.tryb.tls }));
+        return send(200, { ok: true });
+      }
+      // Stan sesji — potrzebny stronie, żeby wiedzieć, czy pokazać interfejs,
+      // i żeby dostać token CSRF. Nigdy nie zdradza, czy hasło jest poprawne.
+      if (req.method === 'GET' && url.pathname === '/api/session') {
+        return send(200, {
+          wymagaLogowania: this.wymagaLogowania(),
+          zalogowany: !this.wymagaLogowania() || !!sesja,
+          csrf: sesja ? sesja.csrf : null,
+          tylkoOdczyt: this.tylkoOdczyt(),
+          siec: !!this.tryb.siec,
+          tls: !!this.tryb.tls,
+        });
+      }
+
+      if (this.wymagaLogowania() && !sesja && !BEZ_LOGOWANIA.has(url.pathname)) {
+        // Strony oddajemy jako formularz logowania, API jako 401 — inaczej
+        // przeglądarka pokazałaby surowy JSON zamiast pola na hasło.
+        if (req.method === 'GET' && PLIKI_UI.has(url.pathname)) {
+          return this._plikUi('/login.html', res, send);
+        }
+        return send(401, { error: 'Wymagane logowanie' });
+      }
+
+      if (req.method === 'POST') {
+        if (this.wymagaLogowania()) {
+          const token = req.headers['x-csrf-token'];
+          if (!token || !sesja || token !== sesja.csrf) {
+            return send(403, { error: 'Brak albo niezgodny token CSRF' });
+          }
+        }
+        if (this.tylkoOdczyt()) {
+          return send(403, {
+            error: 'Interfejs działa w trybie tylko do odczytu (api.readOnly)',
+          });
+        }
+      }
+
       if (req.method === 'GET' && url.pathname === '/api/status') {
         return send(200, this.status());
       }
@@ -361,19 +455,7 @@ export class StatusApi {
       // Interfejs w przeglądarce — dla maszyn bez pulpitu (malinka) i przez
       // tunel SSH. Serwer nadal słucha WYŁĄCZNIE na 127.0.0.1.
       if (req.method === 'GET' && PLIKI_UI.has(url.pathname)) {
-        const [nazwa, typ] = PLIKI_UI.get(url.pathname);
-        const sciezka = join(UI_DIR, nazwa);
-        if (!existsSync(sciezka)) {
-          // W paczce bez interfejsu katalogu `ui/` nie ma i to nie jest błąd.
-          return send(404, { error: 'Ta wersja nie zawiera interfejsu' });
-        }
-        res.writeHead(200, {
-          'Content-Type': typ,
-          // Strona ma pokazywać bieżący stan, nie wersję sprzed aktualizacji.
-          'Cache-Control': 'no-store',
-        });
-        res.end(readFileSync(sciezka));
-        return undefined;
+        return this._plikUi(url.pathname, res, send);
       }
 
       return send(404, { error: 'Nieznany endpoint' });
@@ -383,16 +465,92 @@ export class StatusApi {
     }
   }
 
+  /** Serwuje plik interfejsu z listy dozwolonych. */
+  _plikUi(sciezka, res, send) {
+    const [nazwa, typ] = PLIKI_UI.get(sciezka);
+    const plik = join(UI_DIR, nazwa);
+    if (!existsSync(plik)) {
+      // W paczce bez interfejsu katalogu `ui/` nie ma i to nie jest błąd.
+      return send(404, { error: 'Ta wersja nie zawiera interfejsu' });
+    }
+    res.writeHead(200, { 'Content-Type': typ, 'Cache-Control': 'no-store' });
+    res.end(readFileSync(plik));
+    return undefined;
+  }
+
+  /**
+   * Logowanie hasłem.
+   *
+   * Blokada po nieudanych próbach jest liczona PER ADRES i sprawdzana PRZED
+   * policzeniem hasza — inaczej zgadywanie kosztowałoby nas 70 ms procesora
+   * na próbę i samo w sobie byłoby atakiem na mostek.
+   */
+  _logowanie(req, send, res, adres) {
+    if (!this.wymagaLogowania()) {
+      return send(400, { error: 'Hasło nie jest ustawione — logowanie niepotrzebne' });
+    }
+    const czekaj = this.blokada.ileCzekac(adres);
+    if (czekaj > 0) {
+      res.setHeader('Retry-After', String(Math.ceil(czekaj / 1000)));
+      return send(429, {
+        error: `Za dużo nieudanych prób. Spróbuj po ${Math.ceil(czekaj / 1000)} s.`,
+      });
+    }
+    let body = '';
+    req.on('data', (c) => { body += c; if (body.length > 4096) req.destroy(); });
+    req.on('end', () => {
+      let haslo = '';
+      try { haslo = JSON.parse(body || '{}').password ?? ''; } catch { haslo = ''; }
+      if (!sprawdzHaslo(haslo, this.cfg.api.auth.passwordHash)) {
+        const kara = this.blokada.nieudana(adres);
+        log.warn(`Nieudane logowanie do interfejsu z ${adres}`
+          + (kara ? ` — blokada na ${Math.ceil(kara / 1000)} s` : ''));
+        return send(401, { error: 'Błędne hasło' });
+      }
+      this.blokada.udana(adres);
+      const s = this.sesje.utworz();
+      res.setHeader('Set-Cookie', ciastkoSesji(s.id, { tls: !!this.tryb.tls }));
+      log.info(`Zalogowano do interfejsu z ${adres}`);
+      return send(200, { ok: true, csrf: s.csrf, tylkoOdczyt: this.tylkoOdczyt() });
+    });
+    return undefined;
+  }
+
   start() {
+    // Tryb ustalamy RAZ, przy starcie. Zmiana adresu czy TLS-a wymaga restartu
+    // (jak udp.host) — inaczej trzeba by przenosić otwarte gniazdo i sesje.
+    this.tryb = trybApi({ cfg: this.cfg, dataDir: this.cfg._dataDir || process.cwd() });
+
     return new Promise((resolve) => {
-      this.server = http.createServer((req, res) => this._handle(req, res));
+      const obsluga = (req, res) => this._handle(req, res);
+      if (this.tryb.tls) {
+        try {
+          this.server = https.createServer({
+            cert: readFileSync(this.tryb.tls.cert),
+            key: readFileSync(this.tryb.tls.key),
+          }, obsluga);
+        } catch (err) {
+          log.error(`TLS: nie mogę wczytać certyfikatu (${err.message}) — zostaję na 127.0.0.1`);
+          this.tryb = { host: '127.0.0.1', siec: false, tls: null, readOnly: false, powody: [err.message] };
+          this.server = http.createServer(obsluga);
+        }
+      } else {
+        this.server = http.createServer(obsluga);
+      }
+
       this.server.on('error', (err) => {
         log.warn(`API stanu niedostępne (${err.message}) – daemon działa dalej`);
         resolve(false);
       });
-      // Zawsze 127.0.0.1, niezależnie od konfiguracji – patrz komentarz na górze.
-      this.server.listen(this.cfg.api.port, '127.0.0.1', () => {
-        log.info(`API stanu na http://127.0.0.1:${this.cfg.api.port}/api/status`);
+      this.server.listen(this.cfg.api.port, this.tryb.host, () => {
+        const schemat = this.tryb.tls ? 'https' : 'http';
+        log.info(`API stanu na ${schemat}://${this.tryb.host}:${this.cfg.api.port}/api/status`);
+        if (this.tryb.siec) {
+          const odcisk = odciskCertyfikatu(this.tryb.tls.cert);
+          log.warn('Interfejs jest widoczny w sieci lokalnej. Wymagane hasło'
+            + `${this.tryb.readOnly ? ', tryb tylko do odczytu' : ', Z PRAWEM ZAPISU'}.`);
+          if (odcisk) log.info(`Odcisk certyfikatu (SHA-256): ${odcisk}`);
+        }
         resolve(true);
       });
     });

@@ -34,7 +34,17 @@
   "logLevel": "info",
   "api": {
     "enabled": true,
-    "port": 12061
+    "port": 12061,
+    "host": "127.0.0.1",
+    "readOnly": null,
+    "auth": {
+      "passwordHash": null
+    },
+    "tls": {
+      "enabled": true,
+      "certFile": null,
+      "keyFile": null
+    }
   },
   "language": "pl",
   "theme": "auto",

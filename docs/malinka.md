@@ -139,6 +139,10 @@ Szczegóły dla poszczególnych loggerów: [loggery.md](loggery.md).
 
 ## 7. To samo okno, ale w przeglądarce
 
+> **Uwaga dla 0.1.13 i 0.1.14:** w tych dwóch wydaniach paczka bez interfejsu
+> **nie zawierała plików okna**, więc `GET /` oddawało „Ta wersja nie zawiera
+> interfejsu". Naprawione w 0.1.15 — jeśli masz starszą, zaktualizuj paczkę.
+
 Mostek oddaje swój interfejs pod tym samym adresem co API:
 
 ```

@@ -104,6 +104,13 @@ function pilnujTrybuSieci() {
 // Przyciski, które ZAPISUJĄ. W trybie tylko do odczytu serwer i tak odrzuci
 // każdy POST — ale użytkownik ma to widzieć zanim kliknie, a nie dowiadywać
 // się z komunikatu o błędzie.
+//
+// UWAGA: dotyczy WYŁĄCZNIE okna otwartego po HTTP. Okno na pulpicie rozmawia
+// z rdzeniem przez IPC, którego `readOnly` nie obejmuje — i słusznie, bo kto
+// siedzi przy maszynie, ma nad mostkiem pełną władzę tak czy inaczej.
+// Bez tego rozróżnienia włączenie trybu tylko do odczytu dla sieci wyłączało
+// przycisk „Zapisz" w oknie na pulpicie (zgłoszone 2026-09-07: „przycisk
+// Zapisz przestał reagować").
 const PRZYCISKI_ZAPISU = ['btnPause', 'btnSave', 'btnRequeue', 'btnDiscardFailed',
   'btnAckProblems', 'btnAddTarget'];
 
@@ -132,11 +139,17 @@ function zastosujTryb(api) {
     }
   }
 
+  // `tryb: 'http'` ustawia tylko most przeglądarkowy (ui/bridge-http.js);
+  // w Electronie ta właściwość nie istnieje.
+  const przezHttp = window.bridge.tryb === 'http';
+  const blokuj = przezHttp && !!api.tylkoOdczyt;
   for (const id of PRZYCISKI_ZAPISU) {
     const el = $(id);
     if (!el) continue;
-    el.disabled = !!api.tylkoOdczyt;
-    if (api.tylkoOdczyt) el.title = t('net.readOnlyHint');
+    el.disabled = blokuj;
+    // Podpowiedź trzeba też ZDJĄĆ: bez tego zostawała po wyjściu z trybu
+    // tylko do odczytu i kłamała nad włączonym przyciskiem.
+    el.title = blokuj ? t('net.readOnlyHint') : '';
   }
 }
 

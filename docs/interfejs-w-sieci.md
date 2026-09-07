@@ -78,16 +78,45 @@ podszył.
 
 ---
 
-## Ustawienie w pliku (malinka bez pulpitu)
+## Ustawienie w pliku — urządzenie bez monitora
 
-Na maszynie bez przeglądarki hasło można policzyć jednym poleceniem:
+Na malince nie ma okna, w którym dałoby się wpisać hasło, więc hasz trzeba
+policzyć samemu. Poniższe polecenia są sprawdzone na zainstalowanej paczce
+`radiodyplom-bridge-headless`.
+
+### 1. Policz hasz hasła
 
 ```bash
-node -e "import('/usr/lib/radiodyplom-bridge/src/apiauth.js')
-  .then(m => console.log(m.zahaszujHaslo(process.argv[1])))" 'twoje-haslo'
+read -rsp 'Hasło do interfejsu: ' H; echo
+H="$H" node -e "import('/usr/lib/radiodyplom-bridge/src/apiauth.js')
+  .then(m => console.log(m.zahaszujHaslo(process.env.H)))"
+unset H
 ```
 
-Wynik wklej do `/etc/radiodyplom-bridge/config.json`:
+Wypisze coś takiego — to jest **cała** wartość do wklejenia:
+
+```
+scrypt$8207852863a4208ef6548f1bc5a24b3e$2ed1f3ee87880acf6b956745fde87aa0e3ac8e2ced0af5444cce7948ea2925de
+```
+
+Dwie uwagi do samego polecenia:
+
+- `read -rsp` **nie wypisuje hasła na ekran** i nie zostawia go w historii
+  powłoki. Wariant z hasłem wpisanym wprost w wiersz polecenia zostawia je
+  i w historii, i w `ps` — widocznym dla innych użytkowników maszyny.
+- Jeśli `node` nie jest znane, użyj `nodejs` (paczka wymaga Node ≥ 18;
+  program uruchamia się przez wrapper, który sprawdza obie nazwy).
+
+Hasło musi mieć **co najmniej 8 znaków** — krótsze polecenie odrzuci
+komunikatem, a nie po cichu.
+
+### 2. Wklej do konfiguracji
+
+```bash
+sudo nano /etc/radiodyplom-bridge/config.json
+```
+
+Sekcja `api` ma wyglądać tak:
 
 ```json
 "api": {
@@ -95,24 +124,92 @@ Wynik wklej do `/etc/radiodyplom-bridge/config.json`:
   "port": 12061,
   "host": "0.0.0.0",
   "readOnly": true,
-  "auth": { "passwordHash": "scrypt$…" },
+  "auth": { "passwordHash": "scrypt$8207…2925de" },
   "tls": { "enabled": true, "certFile": null, "keyFile": null }
 }
 ```
 
-Potem `sudo systemctl restart radiodyplom-bridge` i wejście na
-`https://adres-malinki:12061/`.
+`readOnly: true` zostaw, dopóki nie masz powodu inaczej — z telefonu zobaczysz
+statystyki i stan, a nikt nie zmieni PIN-u.
 
-Zapora, jeśli masz włączoną:
+### 3. Zamknij prawa do pliku konfiguracji
+
+**To jest krok, którego nie wolno pominąć.** Instalator nadaje
+`config.json` prawa `0644`, czyli **do czytania dla każdego użytkownika
+maszyny** — bo dotąd nie było w nim niczego wrażliwego (PIN celowo mieszka
+osobno, w `pin.env` z prawami `0640`).
+
+Hasz hasła to nie hasło, ale wystarcza, żeby łamać je **offline**, bez limitów
+i bez śladu w logach. Skoro więc do pliku trafia, plik trzeba zamknąć:
+
+```bash
+sudo chmod 0640 /etc/radiodyplom-bridge/config.json
+sudo chown root:radiodyplom /etc/radiodyplom-bridge/config.json
+```
+
+Usługa nadal go przeczyta — działa jako użytkownik `radiodyplom`, który należy
+do grupy `radiodyplom`. Aktualizacja paczki tego nie cofnie: instalator tworzy
+`config.json` tylko wtedy, gdy go nie ma.
+
+### 4. Uruchom ponownie i sprawdź
+
+```bash
+sudo systemctl restart radiodyplom-bridge
+journalctl -u radiodyplom-bridge -n 30 --no-pager
+```
+
+Szukasz trzech linii:
+
+```
+[INFO] TLS: wystawiony certyfikat własny na malinka (DNS:localhost,DNS:malinka,IP:127.0.0.1,IP:192.168.8.50)
+[INFO] API stanu na https://0.0.0.0:12061/api/status
+[WARN] Interfejs jest widoczny w sieci lokalnej. Wymagane hasło, tryb tylko do odczytu.
+```
+
+Jeśli zamiast tego widzisz `ODRZUCONY`, mostek został na localhoście i podaje
+powód — będzie to jedno z trzech: brak hasła, wyłączony TLS albo brak
+certyfikatu (i wtedy: brak `openssl`).
+
+### 5. Zapisz odcisk certyfikatu
+
+```bash
+journalctl -u radiodyplom-bridge | grep "Odcisk certyfikatu" | tail -1
+```
+
+Przy pierwszym wejściu przeglądarka spyta o zaufanie — **to jedyny moment**,
+w którym możesz porównać odcisk i upewnić się, że łączysz się z własną malinką.
+Warto go wtedy mieć pod ręką.
+
+### 6. Adres do wpisania na telefonie
+
+```bash
+hostname -I
+```
+
+Pierwszy adres z listy plus port, czyli na przykład `https://192.168.8.50:12061/`.
+**Port jest ten sam co przy HTTP** — HTTPS zmienia tylko schemat.
+
+### Gdzie co leży
+
+| Ścieżka | Co to |
+|---|---|
+| `/etc/radiodyplom-bridge/config.json` | konfiguracja, w tym hasz hasła (zamknij na `0640`) |
+| `/etc/radiodyplom-bridge/pin.env` | PIN API, osobno, `0640` |
+| `/var/lib/radiodyplom-bridge/tls/` | certyfikat i klucz (`key.pem` z prawami `0600`) |
+| `/var/lib/radiodyplom-bridge/data/bridge.log` | log mostka |
+
+Certyfikat możesz w każdej chwili skasować — powstanie nowy przy następnym
+starcie, ale wtedy zmieni się odcisk i przeglądarka spyta o zaufanie ponownie.
+
+### Zapora
 
 ```bash
 sudo ufw allow from 192.168.0.0/16 to any port 12061 proto tcp
 ```
 
-Adres sieci dopasuj do swojej — `ufw allow 12061` bez ograniczenia otwiera port
-także dla gościa z telefonem w tej sieci.
-
----
+Adres sieci dopasuj do swojej. Samo `sudo ufw allow 12061` otwiera port dla
+**wszystkiego**, co trafi na ten interfejs — także dla telefonu gościa w tej
+sieci.
 
 ## Tryb tylko do odczytu
 

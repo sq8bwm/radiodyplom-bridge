@@ -93,6 +93,32 @@ describe('nasłuch w sieci pokazany ikoną, nie plakietką', () => {
   });
 });
 
+describe('tryb tylko do odczytu nie może blokować okna na pulpicie', () => {
+  // ZGŁOSZONE 2026-09-07: „teraz przycisk Zapisz przestał reagować".
+  // Wpisałam btnSave na listę przycisków wyłączanych w trybie tylko do
+  // odczytu — a ten tryb chroni dostęp PO HTTP. Rdzeń blokuje zapis wyłącznie
+  // w obsłudze żądań HTTP; okno na pulpicie idzie przez IPC i wolno mu
+  // wszystko, bo kto siedzi przy maszynie, ma pełną władzę tak czy inaczej.
+  test('blokada przycisków tylko dla okna po HTTP', () => {
+    assert.match(R, /window\.bridge\.tryb === 'http'/);
+    assert.match(R, /const blokuj = przezHttp && !!api\.tylkoOdczyt/);
+    assert.match(R, /el\.disabled = blokuj/);
+  });
+
+  test('podpowiedź jest ZDEJMOWANA po wyjściu z trybu', () => {
+    // Zostawiona kłamałaby nad włączonym przyciskiem.
+    assert.match(R, /el\.title = blokuj \? t\('net\.readOnlyHint'\) : ''/);
+  });
+
+  test('rdzeń blokuje zapis tylko na ścieżce HTTP', () => {
+    // Gdyby blokada trafiła kiedyś do IPC, okno na pulpicie przestałoby
+    // zapisywać konfigurację — a wtedy nie ma czym tego trybu wyłączyć.
+    const main = readFileSync('ui/main.js', 'utf8');
+    assert.doesNotMatch(main, /readOnly|tylkoOdczyt/,
+      'IPC nie może znać trybu tylko do odczytu');
+  });
+});
+
 describe('adres interfejsu w panelu Stan', () => {
   test('panel pokazuje pełne adresy z portem', () => {
     assert.match(H, /id="ifaceInfo"/);

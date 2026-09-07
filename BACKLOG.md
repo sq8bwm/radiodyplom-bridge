@@ -14,8 +14,7 @@ przycisk „Zakończ", menu pod ikoną w zasobniku.
   N1MM często nadaje na adres rozgłoszeniowy, nie na localhost, więc trzeba
   `udp.host: 0.0.0.0`),
 - pytanie **zapory Windows** przy pierwszym bindzie UDP,
-- praca w tle po zamknięciu okna przez dłuższy czas,
-- autostart (nadal niezaimplementowany, patrz niżej).
+- praca w tle po zamknięciu okna przez dłuższy czas.
 
 ## Świadomie odłożone
 
@@ -299,18 +298,39 @@ nieoczekiwanie zniknęła. Przy kilkunastu takich zgonach panel zaczyna protesto
 
 Pewna ścieżka: „Zakończ" w menu ikony (`shutdown()` → `tray.destroy()` → `app.quit()`).
 
-**Do domknięcia razem z autostartem** — usługa startująca z systemem będzie zamykana
-właśnie sygnałem, więc to nie jest kwestia teoretyczna. Do sprawdzenia:
+**Nie jest to kwestia teoretyczna, choć autostartu nie robimy** (decyzja wyżej).
+Powód jest inny i już realny: **pakiet headless z 0.1.13 działa jako usługa
+systemd**, a `systemctl stop` to dokładnie `SIGTERM`. Tam zasobnika nie ma, więc
+nie o ikonę chodzi — ale kolejka i dziennik zasługują na czyste domknięcie
+zamiast ubicia procesu. Do sprawdzenia:
 `app.on('will-quit')`, `powerMonitor`, ewentualnie proces nadzorujący, który woła
 `app.quit()` przez IPC zamiast wysyłać sygnał.
 
 Na czas testów jest `RD_NO_TRAY=1` (start bez ikony). Uwaga: zmienna musi dotrzeć
 do samego procesu Electrona — przy `xvfb-run` potrafi się zgubić.
 
-### Autostart
-Opisany w `docs/windows-i-siec.md` (Harmonogram zadań / systemd), ale **nie zaimplementowany** —
-brak opcji w instalatorze i brak `app.setLoginItemSettings()`. Dla usługi w tle
-to naturalne oczekiwanie użytkownika.
+### Autostart — NIE robimy
+**Decyzja (2026-09-07).** Program nie będzie się uruchamiał z systemem.
+Zostaje `docs/windows-i-siec.md` jako opis dla kogoś, kto sam tego chce
+(Harmonogram zadań / systemd), ale opcji w instalatorze ani
+`app.setLoginItemSettings()` nie dodajemy.
+
+Powód, żeby nie wracać: **włączenie mostka musi być świadomym krokiem**, bo
+przekazywanie QSO jest nieodwracalne — wysłane QSO trafia do cudzego dziennika
+akcji i nie da się go „odwysłać".
+
+Rozstrzyga proporcja: akcje dyplomowe są **od czasu do czasu**, a logowanie
+lokalne odbywa się **znacznie częściej**. Mostek startujący z systemem stałby
+więc bezczynnie przez większość dni — a w te dni czekałby z włączonym celem na
+QSO, które nie należą do żadnej akcji.
+
+Rozważony wariant „start zawsze wstrzymany" odrzucony jako pozorny: skoro i tak
+trzeba kliknąć, żeby ruszył, to autostart nie oszczędza kroku, a dokłada proces
+w tle i pytanie „czy on teraz nasłuchuje, czy nie".
+
+**Wzmacnia to potrzebę ostrzeżenia o niezgodnym znaku operatora** (patrz niżej):
+skoro mostek uruchamiasz ręcznie i rzadko, łatwo zapomnieć, który cel jest
+włączony — a wtedy prywatne QSO pojechałoby jako stacja akcji.
 
 ### Aktualizacje aplikacji — powiadomienie zrobione, samoaktualizacji NIE robimy
 Od 0.1.11 program sprawdza, czy jest nowsze wydanie, i mówi o tym w oknie

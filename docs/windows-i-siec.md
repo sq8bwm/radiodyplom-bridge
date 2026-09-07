@@ -99,6 +99,19 @@ nie dojdą.
 zapisywalny, a kolejka musi mieć gdzie trwać.
 
 ### Autostart
+
+> **Mostek świadomie NIE uruchamia się sam z systemem** i nie ma takiej opcji
+> w instalatorze. Włączenie przekazywania to krok, który warto wykonać ręcznie:
+> wysłane QSO trafia do dziennika akcji i **nie da się go odwysłać**.
+>
+> Akcje dyplomowe trwają od czasu do czasu, a lokalnie loguje się znacznie
+> częściej — mostek startujący z systemem czekałby więc przez większość dni
+> z włączonym celem na QSO, które do żadnej akcji nie należą.
+>
+> Jeśli mimo to chcesz autostart (na przykład dla stacji pracującej w akcji przez
+> cały weekend), poniżej jest opis. **Sprawdź wtedy przed każdą sesją, który cel
+> jest włączony** — inaczej prywatne QSO pojedzie jako stacja akcji.
+
 - **Windows:** Harmonogram zadań — wyzwalacz „przy logowaniu", akcja: `node src\index.js`
   (albo plik wykonywalny po spakowaniu), „Uruchom niezależnie od tego, czy użytkownik
   jest zalogowany" tylko jeśli daemon ma działać bez sesji.

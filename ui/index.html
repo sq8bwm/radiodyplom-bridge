@@ -55,10 +55,15 @@
   .grow { flex:1; }
   .badge { font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--line);
            color:var(--muted); font-weight:500; white-space:nowrap; }
-  .badge.net { background:color-mix(in srgb, var(--err) 16%, transparent);
-               color:var(--err); border-color:var(--err); font-weight:600; }
-  .badge.net.ro { background:color-mix(in srgb, var(--ok) 16%, transparent);
-                  color:var(--ok); border-color:var(--ok); }
+  /* Ikona nasłuchu w sieci: kolor niesie stan, kształt niesie szczegół.
+     Otwarta kłódka i czerwień = można zapisywać z sieci; zamknięta i zieleń =
+     tylko odczyt. Kursor pomocy, bo klik nic nie robi — informacja jest
+     w dymku. */
+  button.icon-btn.net { cursor:help; color:var(--ok);
+                        border-color:color-mix(in srgb, var(--ok) 55%, var(--line)); }
+  button.icon-btn.net.zapis { color:var(--err);
+                        border-color:color-mix(in srgb, var(--err) 60%, var(--line));
+                        background:color-mix(in srgb, var(--err) 10%, transparent); }
   .badge.upd { background:color-mix(in srgb, var(--warn) 18%, transparent);
                color:var(--warn); border-color:var(--warn); }
   .badge.dry { color:var(--warn); border-color:var(--warn); }
@@ -134,7 +139,9 @@
   button.act.danger { color:var(--err); border-color:color-mix(in srgb, var(--err) 45%, var(--line)); }
   .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   label { display:block; font-size:12px; color:var(--muted); margin:10px 0 3px; }
-  input[type=text], input[type=number], select {
+  /* `password` dopisany razem z polem hasła do interfejsu — bez niego pole
+     zostawało w domyślnej szerokości przeglądarki i odstawało od reszty. */
+  input[type=text], input[type=number], input[type=password], select {
     width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
     background:var(--bg); color:var(--text); font-size:13px; font-family:inherit; }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -237,9 +244,10 @@
   <span class="badge dry" id="dryBadge" hidden>DRY-RUN</span>
   <span class="badge st-error" id="probBadge" hidden style="cursor:pointer"></span>
   <span class="badge upd" id="updBadge" hidden style="cursor:pointer"></span>
-  <!-- Widoczność w sieci MUSI być widoczna w oknie. Cichy nasłuch poza
-       localhostem jest dokładnie tym, czego chcieliśmy uniknąć. -->
-  <span class="badge net" id="netBadge" hidden></span>
+  <!-- Widoczność w sieci MUSI być widoczna w oknie, ale nie musi krzyczeć:
+       duża czerwona plakietka zabierała pół nagłówka. Ikona z dymkiem mówi
+       tyle samo, a opis pełny jest w podpowiedzi i na zakładce Stan. -->
+  <button class="icon-btn net" id="netIcon" hidden></button>
   <span class="grow"></span>
   <div class="hdr-actions">
     <button class="icon-btn" id="langBtn" title="Język / Language"></button>
@@ -279,6 +287,11 @@
       <h2 data-i18n="panel.listen"></h2>
       <div id="listenInfo"></div>
       <div class="note" id="localNote" data-i18n="note.localhost" hidden></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="panel.iface"></h2>
+      <div id="ifaceInfo"></div>
+      <div class="note" id="ifaceNote" hidden></div>
     </div>
     <div class="panel">
       <h2 data-i18n="panel.sources"></h2>
@@ -353,9 +366,11 @@
             <option value="127.0.0.1" data-i18n="opt.apiLocal"></option>
             <option value="0.0.0.0" data-i18n="opt.apiNetwork"></option>
           </select></div>
-        <div><label data-i18n="label.apiPassword"></label>
-          <input type="password" id="fApiPassword" autocomplete="new-password"></div>
+        <div><label data-i18n="label.apiPort"></label>
+          <input type="number" id="fApiPort" min="1024" max="65535"></div>
       </div>
+      <label data-i18n="label.apiPassword"></label>
+      <input type="password" id="fApiPassword" autocomplete="new-password">
       <label class="chk"><input type="checkbox" id="fApiReadOnly">
         <span data-i18n="label.apiReadOnly"></span></label>
       <div class="note" data-i18n="note.apiNetwork"></div>
@@ -439,6 +454,10 @@
     <div class="ask-text" id="askText"></div>
     <div class="ask-btns">
       <button class="act sec" id="askNo"></button>
+      <!-- Trzecia odpowiedź, ukryta domyślnie: „porzuć zmiany" przy wyjściu
+           z niezapisanej konfiguracji. Dwa przyciski nie wystarczą, bo
+           „nie zapisuj" i „zostań tutaj" to dwie różne decyzje. -->
+      <button class="act sec danger" id="askThird" hidden></button>
       <button class="act" id="askYes"></button>
     </div>
   </div>

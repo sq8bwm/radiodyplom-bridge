@@ -50,9 +50,17 @@ To jest celowe: otwarty port bez hasła jest gorszy niż brak funkcji, bo przez
 Zakładka **Konfiguracja**, panel **Interfejs w sieci**:
 
 1. **Kto może otworzyć interfejs** → `0.0.0.0 — cała sieć lokalna`
-2. **Hasło do interfejsu** → co najmniej 8 znaków
-3. **Tylko do odczytu** → zostaw zaznaczone, dopóki nie masz powodu inaczej
-4. **Zapisz**, potem **zrestartuj program** (adres i HTTPS ustalane są przy starcie)
+2. **Port interfejsu** → domyślnie `12061`; zmiana wymaga restartu i nowego
+   adresu w przeglądarce
+3. **Hasło do interfejsu** → co najmniej 8 znaków
+4. **Tylko do odczytu** → zaznacza się samo po wybraniu adresu sieciowego;
+   odznaczenie wymaga potwierdzenia, bo oddaje prawo zmiany PIN-u
+5. **Zapisz**, potem **zrestartuj program** (adres, port i HTTPS ustalane są
+   przy starcie)
+
+Gotowy adres do wpisania na telefonie znajdziesz na zakładce **Stan**, w panelu
+**Interfejs** — razem z portem. **Port jest ten sam co lokalnie**; HTTPS zmienia
+tylko schemat adresu, nie numer portu.
 
 Hasło zapisuje się jako **hasz scrypt**, nigdy jawnie — tak jak PIN nie wraca
 z API w jawnej postaci. Certyfikat program wystawia sobie sam przy pierwszym
@@ -121,8 +129,10 @@ statystyki, stan, kolejka i log — tak; jakakolwiek zmiana — nie.
 Zapis w sieci wymaga **jawnego** odznaczenia „Tylko do odczytu". Wtedy każdy,
 kto zna hasło, może z telefonu zmienić Twój PIN — świadoma decyzja, nie domyślna.
 
-W oknie widać to plakietką w nagłówku: **W SIECI · tylko odczyt** (zielona) albo
-**W SIECI · Z PRAWEM ZAPISU** (czerwona).
+W oknie widać to **ikoną kłódki** w nagłówku: zamknięta i zielona = tylko
+odczyt, otwarta i czerwona = prawo zapisu. Najedź kursorem — dymek podaje pełny
+opis razem z adresami. Ikony nie ma w ogóle, dopóki interfejs siedzi na
+localhoście.
 
 ---
 

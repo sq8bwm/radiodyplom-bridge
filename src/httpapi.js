@@ -20,7 +20,7 @@ import { readRecords, parseDay } from './journal.js';
 import { aggregate, filterRecords, filterOptions } from './stats.js';
 import {
   Sesje, Blokada, sprawdzHaslo, hasloUstawione, odczytajCiastko,
-  ciastkoSesji, ciastkoWygaszone, trybApi, odciskCertyfikatu,
+  ciastkoSesji, ciastkoWygaszone, trybApi, odciskCertyfikatu, adresyLokalne,
 } from './apiauth.js';
 
 /**
@@ -262,10 +262,24 @@ export class StatusApi {
       // o widoczności w sieci i czy wyłączyć przyciski zapisu.
       api: {
         host: this.tryb.host,
+        // Port jest TEN SAM przy http i https — TLS zmienia tylko schemat.
+        // Brakowało tego w oknie, a pytanie „na jakim porcie jest HTTPS"
+        // jest pierwszym, które się zadaje (zgłoszone 2026-09-07).
+        port: this.cfg.api?.port ?? null,
         siec: !!this.tryb.siec,
         tls: !!this.tryb.tls,
         tylkoOdczyt: this.tylkoOdczyt(),
         wymagaLogowania: this.wymagaLogowania(),
+        // Gotowe adresy do wpisania w przeglądarce. Przy nasłuchu na 0.0.0.0
+        // sam adres „0.0.0.0" jest bezużyteczny — trzeba znać adresy maszyny.
+        adresy: (() => {
+          const schemat = this.tryb.tls ? 'https' : 'http';
+          const port = this.cfg.api?.port;
+          if (!this.tryb.siec) return [`${schemat}://127.0.0.1:${port}/`];
+          const hosty = this.tryb.host === '0.0.0.0'
+            ? adresyLokalne() : [this.tryb.host];
+          return hosty.map((h) => `${schemat}://${h}:${port}/`);
+        })(),
       },
 
       logFile: this.getLogFile ? this.getLogFile() : null,

@@ -193,8 +193,8 @@ export function czyOpenssl() {
   }
 }
 
-/** Adresy IPv4 tej maszyny — trafiają do SAN, żeby nazwa się zgadzała. */
-function adresyLokalne() {
+/** Adresy IPv4 tej maszyny — do SAN certyfikatu i do pokazania w oknie. */
+export function adresyLokalne() {
   const out = [];
   for (const lista of Object.values(networkInterfaces() || {})) {
     for (const a of lista || []) {

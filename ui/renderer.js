@@ -62,6 +62,13 @@ const SVG = {
     + '</svg>',
   dark: '<svg viewBox="0 0 16 16" fill="currentColor">'
     + '<path d="M10.6 1.6a6.4 6.4 0 1 0 3.8 11.6A5.6 5.6 0 0 1 10.6 1.6z"/></svg>',
+  // kłódki: zamknięta = tylko odczyt, otwarta = można zapisywać z sieci
+  zamek: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">'
+    + '<rect x="3" y="7" width="10" height="7" rx="1.2"/>'
+    + '<path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7"/></svg>',
+  zamekOtwarty: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">'
+    + '<rect x="3" y="7" width="10" height="7" rx="1.2"/>'
+    + '<path d="M5.5 7V5.2a2.5 2.5 0 0 1 4.9-.6"/></svg>',
   // flagi — biały pas dostaje obramowanie, inaczej ginie na jasnym tle
   pl: '<svg viewBox="0 0 20 14"><rect x=".5" y=".5" width="19" height="6.5" fill="#fff"/>'
     + '<rect x=".5" y="7" width="19" height="6.5" fill="#dc143c"/>'
@@ -73,6 +80,25 @@ const SVG = {
     + '<path d="M10 0v14M0 7h20" stroke="#c8102e" stroke-width="2.8"/>'
     + '<rect x=".5" y=".5" width="19" height="13" fill="none" stroke="currentColor" stroke-opacity=".35"/></svg>',
 };
+
+// ---------- interfejs w sieci ----------
+/**
+ * Przełączenie adresu na 0.0.0.0 SAMO zaznacza „tylko do odczytu".
+ *
+ * Bez tego okno wysyłało stan pola zawsze jako jawne `false` — czyli wybranie
+ * adresu sieciowego i zapis oddawały prawo zapisu w sieci, choć użytkownik
+ * nigdy tego nie wybrał. Rdzeń ma domyślnie tryb tylko do odczytu właśnie po
+ * to, żeby zapis wymagał świadomej decyzji, a interfejs tę decyzję obchodził
+ * (znalezione 2026-09-07 po uwadze o odznaczonym polu).
+ */
+function pilnujTrybuSieci() {
+  const sieciowy = $('fApiHost').value === '0.0.0.0';
+  if (sieciowy && !$('fApiReadOnly').checked) {
+    $('fApiReadOnly').checked = true;
+    $('apiNetHint').textContent = t('hint.apiReadOnlyForced');
+    $('apiNetHint').className = 'hint lvl-warn';
+  }
+}
 
 // ---------- tryb pracy interfejsu ----------
 // Przyciski, które ZAPISUJĄ. W trybie tylko do odczytu serwer i tak odrzuci
@@ -89,17 +115,20 @@ function zastosujTryb(api) {
   if (klucz === ostatniTryb) return;         // nie ruszamy DOM-u co 2 sekundy
   ostatniTryb = klucz;
 
-  const b = $('netBadge');
+  const b = $('netIcon');
   if (b) {
+    b.hidden = !api.siec;
     if (api.siec) {
-      b.hidden = false;
-      b.classList.toggle('ro', !!api.tylkoOdczyt);
-      b.textContent = api.tylkoOdczyt
-        ? `${t('net.exposed')} · ${t('net.readOnly')}`
-        : `${t('net.exposed')} · ${t('net.writable')}`;
-      b.title = `${api.host}${api.tls ? ' · HTTPS' : ''}`;
-    } else {
-      b.hidden = true;
+      b.classList.toggle('zapis', !api.tylkoOdczyt);
+      b.innerHTML = api.tylkoOdczyt ? SVG.zamek : SVG.zamekOtwarty;
+      // Dymek niesie CAŁY opis: tryb, adresy z portem i ostrzeżenie przy
+      // prawie zapisu. W nagłówku zostaje sama ikona.
+      const opis = [
+        api.tylkoOdczyt ? t('net.tipReadOnly') : t('net.tipWritable'),
+        (api.adresy || []).join('\n'),
+      ].filter(Boolean).join('\n\n');
+      b.title = opis;
+      b.setAttribute('aria-label', api.tylkoOdczyt ? t('net.readOnly') : t('net.writable'));
     }
   }
 
@@ -160,9 +189,56 @@ function buildThemeButton(active) {
   };
 }
 
+// ---------- niezapisane zmiany w konfiguracji ----------
+//
+// Wyjście z zakładki Konfiguracja przeładowywało formularz ze stanu na dysku,
+// więc wpisane i niezapisane wartości ginęły bez słowa (zgłoszone 2026-09-07).
+// Teraz pytamy, i to z TRZEMA odpowiedziami: zapisz, porzuć, zostań.
+let brudne = false;
+
+/** Czy w formularzu konfiguracji są niezapisane zmiany. */
+function konfigBrudna() { return brudne; }
+
+/** Wywoływane po wczytaniu i po udanym zapisie — formularz zgadza się z dyskiem. */
+function konfigCzysta() {
+  brudne = false;
+  $('saveInfo').classList.toggle('lvl-warn', false);
+}
+
+// Każda zmiana w obrębie zakładki brudzi formularz. Jedno nasłuchiwanie na
+// sekcji zamiast na każdym polu — pola celów fan-outu powstają dynamicznie,
+// więc podłączanie ich pojedynczo trzeba by pamiętać przy każdym nowym.
+$('konfig').addEventListener('input', () => { brudne = true; });
+$('konfig').addEventListener('change', () => { brudne = true; });
+
+/**
+ * Pyta o niezapisane zmiany przed opuszczeniem zakładki.
+ * @returns {Promise<boolean>} czy wolno wyjść
+ */
+async function wolnoWyjscZKonfiguracji() {
+  if (!konfigBrudna()) return true;
+  const odp = await ask(t('confirm.unsaved'), {
+    tak: t('btn.saveAndLeave'),
+    trzecia: t('btn.discardChanges'),
+    nie: t('btn.stayHere'),
+  });
+  if (odp === 'nie') return false;
+  if (odp === 'trzecia') { konfigCzysta(); return true; }
+  // Zapis może się nie udać (walidacja) — wtedy ZOSTAJEMY, a użytkownik widzi
+  // podświetlone pole. Wyjście po nieudanym zapisie gubiłoby zmiany tak samo
+  // jak przed tą poprawką.
+  const zapisano = await saveFromForm();
+  return zapisano === true;
+}
+
 // ---------- zakładki ----------
 document.querySelectorAll('nav button').forEach((b) => {
-  b.onclick = () => {
+  b.onclick = async () => {
+    // Wyjście z konfiguracji z niezapisanymi zmianami wymaga decyzji.
+    const zKonfiguracji = $('konfig').classList.contains('active');
+    if (zKonfiguracji && b.dataset.tab !== 'konfig') {
+      if (!await wolnoWyjscZKonfiguracji()) return;
+    }
     document.querySelectorAll('nav button').forEach((x) => x.classList.remove('active'));
     document.querySelectorAll('section').forEach((x) => x.classList.remove('active'));
     b.classList.add('active');
@@ -231,6 +307,16 @@ function renderStatus(s) {
     ? ` · multicast: ${s.listener.multicastGroups.join(', ')}` : '';
   $('listenInfo').innerHTML = `<code>udp://${esc(s.listener.host)}:${s.listener.port}</code>${esc(mc)}`;
   $('localNote').hidden = !s.listener.localOnly;
+
+  // Adres interfejsu — z portem. Bez tego pierwsze pytanie po włączeniu
+  // nasłuchu w sieci brzmi „a na jakim porcie jest to HTTPS?".
+  const a = s.api || {};
+  const adresy = (a.adresy || []).map((u) => `<code>${esc(u)}</code>`).join(' · ');
+  $('ifaceInfo').innerHTML = adresy || '<span class="empty">—</span>';
+  const nota = a.siec ? t('iface.network')
+    : (a.wymagaLogowania ? t('iface.localOnly') : t('iface.noPassword'));
+  $('ifaceNote').textContent = nota;
+  $('ifaceNote').hidden = false;
 
   const by = s.listener.stats.bySource || {};
   const keys = Object.keys(by);
@@ -551,6 +637,7 @@ async function loadConfig() {
   // Interfejs w sieci. Hasła nie ma czym wypełnić — API oddaje tylko to, CZY
   // jest ustawione, dokładnie jak przy PIN-ach.
   $('fApiHost').value = cfg.api?.host === '0.0.0.0' ? '0.0.0.0' : '127.0.0.1';
+  $('fApiPort').value = cfg.api?.port ?? 12061;
   $('fApiPassword').value = '';
   $('fApiPassword').placeholder = cfg.api?.auth?.passwordSet ? '••••••••' : '';
   // Puste `readOnly` w pliku znaczy „domyślnie", a domyślnie w sieci jest
@@ -561,6 +648,9 @@ async function loadConfig() {
   $('apiNetHint').textContent = cfg.api?.auth?.passwordSet
     ? t('hint.apiPasswordSet') : t('hint.apiPasswordNone');
   $('apiNetHint').className = cfg.api?.auth?.passwordSet ? 'hint' : 'hint lvl-warn';
+  $('fApiHost').onchange = pilnujTrybuSieci;
+  // Wczytanie z dysku = formularz zgadza się ze stanem zapisanym.
+  konfigCzysta();
   $('fMulticast').value = (cfg.udp.multicastGroups || []).join(', ');
   $('fEvents').value = cfg.ui?.recentEvents ?? 20;
   renderTargets(cfg.forward.targets || []);
@@ -597,29 +687,42 @@ function forceUpper(input) {
  *
  * @returns {Promise<boolean>}
  */
-function ask(text) {
+/**
+ * Okienko pytania. Domyślnie dwie odpowiedzi (true/false).
+ *
+ * `opcje.trzecia` dodaje trzecią drogę i wtedy odpowiedzią jest napis:
+ * 'tak' | 'trzecia' | 'nie'. Potrzebne przy wyjściu z niezapisanej
+ * konfiguracji, gdzie „nie zapisuj" i „zostań tutaj" to DWIE różne decyzje,
+ * a nie dwie nazwy tej samej.
+ */
+function ask(text, opcje = {}) {
   return new Promise((resolve) => {
     const box = $('ask');
+    const trzy = !!opcje.trzecia;
     $('askText').textContent = text;
-    $('askYes').textContent = t('btn.confirmYes');
-    $('askNo').textContent = t('btn.confirmNo');
+    $('askYes').textContent = opcje.tak || t('btn.confirmYes');
+    $('askNo').textContent = opcje.nie || t('btn.confirmNo');
+    $('askThird').hidden = !trzy;
+    if (trzy) $('askThird').textContent = opcje.trzecia;
     const wczesniej = document.activeElement;
 
     const koniec = (odp) => {
       box.hidden = true;
+      $('askThird').hidden = true;
       document.removeEventListener('keydown', naKlawisz, true);
       try { wczesniej?.focus?.(); } catch { /* element mógł zniknąć */ }
-      resolve(odp);
+      resolve(trzy ? odp : odp === 'tak');
     };
     // Tylko Escape przechwytujemy. Enter zostawiamy przyciskowi z ogniskiem —
     // inaczej „Anuluj" pod ogniskiem potwierdzałoby po naciśnięciu Enter.
     const naKlawisz = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); koniec(false); }
+      if (e.key === 'Escape') { e.preventDefault(); koniec('nie'); }
     };
 
-    $('askYes').onclick = () => koniec(true);
-    $('askNo').onclick = () => koniec(false);
-    box.onclick = (e) => { if (e.target === box) koniec(false); };
+    $('askYes').onclick = () => koniec('tak');
+    $('askNo').onclick = () => koniec('nie');
+    $('askThird').onclick = () => koniec('trzecia');
+    box.onclick = (e) => { if (e.target === box) koniec('nie'); };
     document.addEventListener('keydown', naKlawisz, true);
     box.hidden = false;
     // Ognisko na bezpieczniejszej odpowiedzi: Enter i Escape anulują.
@@ -941,13 +1044,42 @@ $('btnSave').onclick = async () => {
   }
 };
 
+/**
+ * Wstrzymuje zapis i PROWADZI do pola, które go wstrzymało.
+ *
+ * Sam komunikat nie wystarcza: panele konfiguracji nie mieszczą się na
+ * ekranie, więc przy krótkim haśle wpisanym w panelu „Interfejs w sieci"
+ * użytkownik widział tylko, że nic się nie stało — powód był poza widokiem
+ * (zgłoszone 2026-09-07). Dlatego przewijamy, ustawiamy kursor i zaznaczamy
+ * treść, żeby dało się od razu poprawić.
+ *
+ * @param {HTMLElement|null} pole      pole do pokazania
+ * @param {string} komunikat           tekst błędu
+ * @param {HTMLElement} [gdzie]        gdzie wypisać komunikat (domyślnie przy zapisie)
+ */
+function wstrzymajZapis(pole, komunikat, gdzie = $('saveInfo')) {
+  gdzie.textContent = komunikat;
+  gdzie.className = 'hint lvl-error';
+  if (!pole) return;
+  // `block:'center'` zamiast domyślnego 'start': przy 'start' pole ląduje pod
+  // przyklejonym nagłówkiem z zakładkami i znowu go nie widać.
+  pole.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  pole.focus({ preventScroll: true });
+  if (typeof pole.select === 'function') pole.select();
+}
+
+/**
+ * Zapisuje formularz konfiguracji.
+ * @returns {Promise<boolean>} czy zapis faktycznie się wykonał
+ */
 async function saveFromForm() {
   const collected = collectTargets();
   if (collected === null) {
     // Zapis wstrzymany, a nie wykonany po cichu z pominięciem wiersza.
-    $('saveInfo').textContent = t('hint.targetIncomplete');
-    $('saveInfo').className = 'hint lvl-error';
-    return;
+    // `collectTargets` oznacza winne pola klasą `invalid` — bierzemy pierwsze.
+    wstrzymajZapis($('targets').querySelector('.t-station.invalid'),
+      t('hint.targetIncomplete'));
+    return false;
   }
 
   // Puste pole PIN-u przy celu, który PIN miał, znaczy „usuń go". To decyzja
@@ -955,7 +1087,7 @@ async function saveFromForm() {
   const zPinem = collected.filter((x) => x._pinWasSet && !x.pin).map((x) => x.station_callsign);
   if (zPinem.length) {
     const ok = await ask(t('confirm.dropTargetPin').replace('{stacje}', zPinem.join(', ')));
-    if (!ok) return;
+    if (!ok) return false;
   }
   const targets = collected.map(({ _pinWasSet, ...x }) => x);
 
@@ -977,24 +1109,44 @@ async function saveFromForm() {
 
     if (zle.length) {
       const opis = zle.map((c) => `${c.station}${c.operator ? ` (${c.operator})` : ''}`).join(', ');
-      if (!await ask(t('confirm.targetsRejected').replace('{stacje}', opis))) return;
+      if (!await ask(t('confirm.targetsRejected').replace('{stacje}', opis))) return false;
     }
   }
 
   // Hasło do interfejsu: puste pole znaczy „bez zmian", jak przy PIN-ie.
   // Za krótkie zatrzymujemy TUTAJ, żeby użytkownik zobaczył powód przy polu,
   // a nie ogólny błąd zapisu z rdzenia.
+  // Port interfejsu. Zakres jak w polu HTML, ale sprawdzany też tutaj:
+  // wpisanie ręcznie „80" w przeglądarce obchodzi atrybut min.
+  const port = Number($('fApiPort').value);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+    $('fApiPort').classList.add('invalid');
+    wstrzymajZapis($('fApiPort'), t('hint.apiPortRange'), $('apiNetHint'));
+    return false;
+  }
+  $('fApiPort').classList.remove('invalid');
+
   const haslo = $('fApiPassword').value;
   if (haslo && haslo.length < 8) {
-    $('apiNetHint').textContent = t('hint.apiPasswordShort');
-    $('apiNetHint').className = 'hint lvl-error';
-    return;
+    $('fApiPassword').classList.add('invalid');
+    wstrzymajZapis($('fApiPassword'), t('hint.apiPasswordShort'), $('apiNetHint'));
+    return false;
+  }
+  $('fApiPassword').classList.remove('invalid');
+
+  // Zapis w sieci to decyzja, nie ustawienie: każdy, kto zna hasło, może wtedy
+  // z telefonu zmienić PIN i przekierować QSO. Pytamy tak samo, jak przy
+  // usuwaniu PIN-u celu — czyli wtedy, gdy skutku nie da się cofnąć samym
+  // kliknięciem wstecz.
+  if ($('fApiHost').value === '0.0.0.0' && !$('fApiReadOnly').checked) {
+    if (!await ask(t('confirm.networkWritable'))) return false;
   }
 
   const r = await window.bridge.saveConfig({
     radiodyplom: { pin: $('fPin').value.trim(), dryRun: $('fDryRun').checked },
     api: {
       host: $('fApiHost').value,
+      port,
       readOnly: $('fApiReadOnly').checked,
       ...(haslo ? { auth: { password: haslo } } : {}),
     },
@@ -1012,6 +1164,7 @@ async function saveFromForm() {
   $('saveInfo').className = r.restartRequired.length ? 'hint lvl-warn' : 'hint';
   await loadConfig();
   refresh();
+  return true;
 }
 
 // ---------- akcje ----------

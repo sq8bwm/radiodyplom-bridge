@@ -230,12 +230,44 @@ Co musi powstać razem, bo osobno każde daje złudzenie bezpieczeństwa:
    - **odwrotne proxy** (nginx, Caddy) przed mostkiem — TLS i logowanie robi
      narzędzie, które się tym zajmuje, a mostek zostaje na `127.0.0.1`.
 
-**Rekomendacja: droga piąta, jako przepis w dokumentacji, a nie kod w mostku.**
-Certyfikaty, ich odnawianie, nagłówki i blokady to osobne rzemiosło; wbudowanie
-tego znaczy utrzymywanie własnego serwera HTTPS w programie, który ma
-przekazywać QSO. Jeśli jednak wbudowywać, to punkty 1–4 **przed** punktem 5 —
-sam HTTPS bez logowania nie chroni przed niczym, a logowanie bez HTTPS wysyła
-hasło jawnym tekstem.
+**Rekomendacja zmieniona 2026-09-07 po uwadze: „to dobra droga, tylko nie jest
+łatwa dla przeciętnego użytkownika".** Trafna — odwrotne proxy jest właściwe
+jako rzemiosło i niewłaściwe dla odbiorcy tego programu. Krótkofalowiec, który
+chce zajrzeć w statystyki z telefonu, miałby przed sobą: instalację nginxa albo
+Caddy, plik konfiguracyjny, `htpasswd`, usługę systemd, zaporę i certyfikat —
+zanim zobaczy pierwszą liczbę. Przy takim progu albo zrezygnuje, albo otworzy
+port bez niczego, co jest gorsze niż nasz brak funkcji.
+
+**Nowa rekomendacja: wbudować wąską ścieżkę w mostek, a przepis na proxy
+zostawić jako drogę zaawansowaną.** Sprawdzone 2026-09-07, że da się to zrobić
+**bez ani jednej nowej zależności**:
+
+| Potrzeba | Czym |
+|---|---|
+| hasło | `scryptSync` z `node:crypto` |
+| porównanie hasła | `timingSafeEqual` (odporne na pomiar czasu) |
+| serwer TLS | `node:https`, wbudowany |
+| **wystawienie certyfikatu** | **`openssl` — Node umie X.509 tylko czytać** |
+
+Ostatni wiersz jest jedynym twardym ograniczeniem. `openssl` jest standardem na
+Raspberry Pi OS i w każdej używanej dystrybucji, więc na maszynie, o którą tu
+chodzi, jest. Na Windowsie bywa nieobecny — tam zostaje podanie własnego
+certyfikatu w konfiguracji albo pozostanie na `127.0.0.1` z tunelem SSH.
+
+Dla użytkownika ma to wyglądać tak: zaznacza opcję, podaje hasło, program przy
+pierwszym starcie wystawia certyfikat do katalogu danych z prawami `0600`,
+a przeglądarka raz pyta o zaufanie. Bez `htpasswd`, bez usług, bez zapory.
+
+Kolejność prac, gdyby to budować: punkty 1–4 **przed** punktem 5 — sam HTTPS bez
+logowania nie chroni przed niczym, a logowanie bez HTTPS wysyła hasło jawnym
+tekstem. Certyfikat własny (nie od urzędu) jest tu świadomym kompromisem:
+chroni treść na kablu, nie chroni przed podszyciem się pod serwer w tej samej
+sieci — i tak trzeba to w dokumentacji napisać, a nie przemilczeć.
+
+**Dokumentacja jest częścią tej roboty, nie dodatkiem.** Obie drogi wymagają
+opisu: wbudowana — co znaczy ostrzeżenie przeglądarki i dlaczego wolno je tu
+przyjąć; proxy — gotowy plik konfiguracyjny do skopiowania. Bez tego funkcja
+istnieje tylko dla nas dwóch.
 
 **Co działa dziś, bez żadnego ryzyka:** tunel SSH. Ruch szyfrowany,
 uwierzytelniony kluczem, zero nowego kodu:

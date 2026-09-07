@@ -136,7 +136,9 @@ Mostek **nie uruchamia się sam z systemem** i nie ma takiej opcji — włączen
 przekazywania to świadomy krok, bo wysłanego QSO nie da się odwysłać. Kto
 potrzebuje autostartu, znajdzie opis w [Windows i sieć](docs/windows-i-siec.md#autostart).
 
-Interfejs jest po **polsku i angielsku**, przełącznik w nagłówku.
+Interfejs jest po **polsku i angielsku**, a motyw ma trzy stany —
+**jak w systemie, jasny albo ciemny**. Oba przełącza się ikoną w nagłówku:
+flagą i słońcem/księżycem.
 
 ---
 

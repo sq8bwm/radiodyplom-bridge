@@ -6,7 +6,7 @@
 // Rdzeń jest tu OSADZONY (startDaemon), a nie uruchamiany osobno — dzięki temu
 // UI rozmawia z nim bezpośrednio, bez HTTP. Serwer HTTP zostaje włączony tylko
 // po to, by dało się też podejrzeć stan z przeglądarki albo skryptu.
-import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell } from 'electron';
+import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { loadConfig, configPath } from '../src/config.js';
@@ -144,6 +144,7 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
 
   const cfg = loadConfig({ seed: true });
   setLang(cfg.language || 'pl');
+  nativeTheme.themeSource = ['light', 'dark'].includes(cfg.theme) ? cfg.theme : 'system';
   if (cfg._pinMissing) {
     log.warn('Brak PIN-u API — wpisz go w zakładce Konfiguracja. Mostek działa, ale nic nie wyśle.');
   }
@@ -180,6 +181,13 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
   ipcMain.handle('ackProblems', () => { const n = daemon?.ackProblems?.() ?? 0; refreshTray(); return n; });
   ipcMain.handle('requeue', () => { const n = daemon.requeue(); refreshTray(); return n; });
   ipcMain.handle('config:get', () => daemon?.getConfig() ?? null);
+  // Motyw: CSS okna ustawia sobie renderer, ale ramka okna, menu kontekstowe
+  // i paski przewijania idą za `nativeTheme` — bez tego ciemne okno miałoby
+  // jasne obramowanie i jasne menu pod prawym przyciskiem.
+  ipcMain.handle('theme:set', (_e, wybor) => {
+    nativeTheme.themeSource = ['light', 'dark'].includes(wybor) ? wybor : 'system';
+    return nativeTheme.themeSource;
+  });
   ipcMain.handle('stats', (_e, from, to, filters) => {
     try { return daemon?.stats?.(from, to, filters) ?? null; } catch { return null; }
   });

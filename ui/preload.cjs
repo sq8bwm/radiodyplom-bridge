@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('bridge', {
   openUrl: (url) => ipcRenderer.invoke('openUrl', url),
   getConfig: () => ipcRenderer.invoke('config:get'),
   saveConfig: (patch) => ipcRenderer.invoke('config:save', patch),
+  setTheme: (wybor) => ipcRenderer.invoke('theme:set', wybor),
   checkConfig: (patch) => ipcRenderer.invoke('config:check', patch),
   stats: (from, to, filters) => ipcRenderer.invoke('stats', from, to, filters),
 });

@@ -155,8 +155,50 @@ stacje. **Zapisu nie blokuje**: dane bywają nieaktualne o minutę, serwis może
 odpowiedzieć, a „wpiszę regułę teraz, stację dopiszę wieczorem" to normalna
 kolejność pracy. Szczegóły w [konfiguracja.md](konfiguracja.md).
 
+### Motyw: jasny, ciemny albo jak w systemie
+
+**Przycisk z ikoną** w nagłówku, obok flagi języka. Klik przechodzi do
+następnego z trzech stanów: **monitor** (jak w systemie) → **słońce** (jasny) →
+**księżyc** (ciemny). Ikona pokazuje stan BIEŻĄCY, a podpowiedź mówi, co zrobi
+klik — przy trzech stanach inaczej nie da się zgadnąć, czy ikona to stan
+teraźniejszy, czy docelowy.
+
+Domyślnie „jak w systemie", więc okno samo idzie za motywem pulpitu — i reaguje
+na jego zmianę **w trakcie pracy**, bo przy tym wyborze nie ustawiamy nic na
+dokumencie i decyduje `@media (prefers-color-scheme)`. Wybór jawny nadpisuje
+system i zapamiętuje się w konfiguracji (`theme`), więc obowiązuje po restarcie
+i w przeglądarce.
+
+![Okno w trybie ciemnym](obrazy/okno-ciemny.png)
+
+Trzy rzeczy warte odnotowania:
+
+- **Paleta ciemna jest w CSS wypisana dwa razy** — raz dla wyboru jawnego
+  (`[data-theme="dark"]`), raz dla pierwszego malowania strony, zanim renderer
+  wczyta konfigurację. Bez tej drugiej kopii okno mrugałoby na biało przy
+  każdym starcie na ciemnym systemie.
+- **`nativeTheme` w Electronie** ustawiamy osobno. CSS nie sięga ramki okna,
+  menu pod prawym przyciskiem ani pasków przewijania — bez tego ciemne okno
+  miałoby jasne obramowanie. W przeglądarce nie ma czego ustawiać, więc
+  odpowiednik metody nic nie robi.
+- **Kolor tekstu na akcencie to zmienna** (`--on-accent`). W jasnym motywie
+  akcent jest ciemnogranatowy i tekst na nim biały, w ciemnym akcent jest
+  jasnoniebieski — biały tekst byłby na nim nieczytelny, więc jest prawie czarny.
+
+- **Ikony są wbudowanymi SVG, nie emoji.** Flagi państw **nie renderują się
+  jako flagi na Windowsie** — Segoe UI Emoji pokazuje wtedy litery „PL"/„GB",
+  a Windows to główna platforma loggerów, więc przycisk wyglądałby inaczej
+  u większości odbiorców. SVG wygląda identycznie wszędzie i nie dokłada
+  żadnej zależności. Biały pas flagi polskiej dostaje obramowanie, inaczej
+  ginąłby na jasnym tle nagłówka.
+
+Lista dozwolonych wartości jest w rdzeniu **wypisana osobno** od tej
+w `ui/strings.js`: pakiet bez interfejsu zawiera tylko `src/`, więc import
+z `ui/` położyłby usługę na malince. Zgodność obu kopii pilnuje test.
+
 ### Język
-Przełącznik **Polski / English** w nagłówku okna. Wybór zapamiętywany w konfiguracji
+**Przycisk z flagą** w nagłówku okna — pokazuje język bieżący, klik przełącza na
+drugi (są dwa, więc lista rozwijana byłaby na to za dużo). Wybór zapamiętywany w konfiguracji
 (`language`), więc obowiązuje też dla menu i podpowiedzi w zasobniku oraz po restarcie.
 Tłumaczenia siedzą w jednym słowniku `ui/strings.js` — bez żadnej biblioteki.
 

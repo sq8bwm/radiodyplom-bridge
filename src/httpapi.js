@@ -16,13 +16,27 @@ import { fileURLToPath } from 'node:url';
 import { readRecords, parseDay } from './journal.js';
 import { aggregate, filterRecords, filterOptions } from './stats.js';
 
-/** Maskuje PIN do postaci bezpiecznej w UI: "ABCD-****". */
+/**
+ * Maskuje PIN do postaci bezpiecznej także PUBLICZNIE: "AB**-****".
+ *
+ * Jawne zostają DWA pierwsze znaki — tyle wystarcza, żeby rozpoznać, którym
+ * PIN-em się pracuje, gdy ma się ich kilka.
+ *
+ * Wcześniej jawny był cały pierwszy segment ("ABCD-****"). Na własnym ekranie
+ * to bez znaczenia, ale zrzuty ekranu trafiają do zgłoszeń błędów i do
+ * dokumentacji — a tam cztery znaki sekretu zostają na zawsze. Złapane
+ * 2026-09-07 przy robieniu zrzutów do README: maska prawdziwego PIN-u
+ * ujawniała jego pierwszy segment, który nie był znakiem wywoławczym.
+ *
+ * Liczba gwiazdek jest STAŁA — długość PIN-u to też informacja.
+ */
 export function maskPin(pin) {
   if (!pin) return null;
-  const s = String(pin);
-  const parts = s.split('-');
-  if (parts.length >= 2) return `${parts[0]}-${'*'.repeat(Math.max(4, parts[1].length))}`;
-  return s.length <= 4 ? '****' : `${s.slice(0, 2)}****`;
+  const s = String(pin).trim();
+  if (!s) return null;
+  // Przy PIN-ie krótkim niż 5 znaków dwa jawne to już połowa sekretu.
+  if (s.length <= 4) return '****';
+  return s.includes('-') ? `${s.slice(0, 2)}**-****` : `${s.slice(0, 2)}****`;
 }
 
 /**

@@ -160,6 +160,14 @@ tunelem SSH:
 ssh -L 12061:localhost:12061 pi@malinka
 ```
 
+### Zamiast tunelu: interfejs w sieci lokalnej
+
+Jeśli chcesz wejść z telefonu, bez tunelu, mostek potrafi nasłuchiwać w sieci —
+ale **wymaga wtedy hasła i HTTPS jednocześnie** i bez jednego z nich zostaje na
+localhoście. Na maszynie bez monitora hasz hasła liczy się jednym poleceniem;
+opis krok po kroku razem z prawami do plików i zaporą:
+[interfejs-w-sieci.md](interfejs-w-sieci.md#ustawienie-w-pliku--urządzenie-bez-monitora).
+
 …i otwierasz `http://localhost:12061/` u siebie. Tunel jest tu **całym
 zabezpieczeniem**: nic nie wystawiamy na sieć, a szyfrowaniem zajmuje się SSH.
 

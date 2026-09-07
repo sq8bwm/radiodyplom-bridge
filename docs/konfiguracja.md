@@ -42,6 +42,37 @@ i `api.tls.enabled` wymaga **restartu**. Opis, ryzyka i przepis na certyfikat:
 [interfejs-w-sieci.md](interfejs-w-sieci.md).
 
 
+## Zgłaszanie błędów — czego NIE wysyłać
+
+`config.json` w wersji z pulpitem zawiera **jawny PIN API** (a od 0.1.15 także
+hasz hasła do interfejsu). Nie wysyłaj tego pliku i nie wklejaj go na forum ani
+do zgłoszenia.
+
+Zamiast tego program potrafi zapisać **zgłoszenie bez sekretów**:
+
+- **w oknie:** zakładka *O programie* → **Zapisz zgłoszenie do wysłania**,
+  albo menu ikony w zasobniku → *Zapisz zgłoszenie…*
+- **na maszynie bez pulpitu:**
+
+  ```bash
+  cd /usr/lib/radiodyplom-bridge && node src/tools/zgloszenie.js ~
+  ```
+
+  (z katalogu z kodem: `npm run report`)
+
+Powstaje plik `radiodyplom-zgloszenie-<data>.json` z prawami `0600`, a w nim:
+wersja i system, konfiguracja z **zamaskowanymi** PIN-ami (`AB**-****`) i bez
+hasła, stan kolejki i nasłuchu oraz **200 ostatnich wpisów logu**.
+
+Sekrety są usuwane dwiema niezależnymi drogami: plik powstaje z tej samej
+zamaskowanej postaci, którą widzi okno, a na koniec gotowy wynik jest jeszcze
+przeszukiwany pod kątem prawdziwych wartości. Druga warstwa istnieje dlatego,
+że pierwsza opiera się na poprawności wszystkich ścieżek — a ta działa nawet
+wtedy, gdy któraś przestanie być poprawna.
+
+Plik zawiera znaki korespondentów z logu i nazwę maszyny. Nie są to sekrety,
+ale warto o tym wiedzieć, wysyłając go na publiczne forum.
+
 ## Katalogi danych
 ```
 data/queue/    QSO oczekujące na wysyłkę (jeden plik JSON = jedno QSO)

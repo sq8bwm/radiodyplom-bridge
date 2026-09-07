@@ -196,6 +196,19 @@ Lista dozwolonych wartości jest w rdzeniu **wypisana osobno** od tej
 w `ui/strings.js`: pakiet bez interfejsu zawiera tylko `src/`, więc import
 z `ui/` położyłby usługę na malince. Zgodność obu kopii pilnuje test.
 
+### Zgłoszenie do wysłania
+
+Zakładka *O programie* ma przycisk **Zapisz zgłoszenie do wysłania**, a menu
+ikony w zasobniku pozycję *Zapisz zgłoszenie…*. Obie zapisują plik JSON obok
+logu i pokazują go w menedżerze plików.
+
+W menu zasobnika ta pozycja stoi **przed** „Pokaż plik konfiguracji" świadomie:
+`config.json` zawiera jawny PIN, a jest pierwszą rzeczą, którą człowiek wysyła,
+gdy coś nie działa. Łatwiejsza droga ma być bezpieczna — ostrzeżenie
+w dokumentacji tego nie załatwia.
+
+Szczegóły, co jest w środku: [konfiguracja.md](konfiguracja.md#zgłaszanie-błędów--czego-nie-wysyłać).
+
 ### Język
 **Przycisk z flagą** w nagłówku okna — pokazuje język bieżący, klik przełącza na
 drugi (są dwa, więc lista rozwijana byłaby na to za dużo). Wybór zapamiętywany w konfiguracji

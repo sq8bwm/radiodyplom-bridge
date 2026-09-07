@@ -10,6 +10,7 @@ import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, shel
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { loadConfig, configPath } from '../src/config.js';
+import { buildReport, saveReport } from '../src/report.js';
 import { startDaemon } from '../src/daemon.js';
 import { log } from '../src/log.js';
 import { closeFileLog } from '../src/logfile.js';
@@ -104,6 +105,10 @@ function buildMenu() {
       click: () => { const n = daemon.requeue(); log.info(`Przywrócono z UI: ${n}`); refreshTray(); },
     },
     { type: 'separator' },
+    // Zgłoszenie PRZED plikiem konfiguracji: łatwiejsza droga ma być
+    // bezpieczna. config.json zawiera jawny PIN, a to on jest pierwszą
+    // rzeczą, którą człowiek wysyła, gdy coś nie działa.
+    { label: t('tray.saveReport'), click: () => zapiszZgloszenie() },
     { label: t('tray.openConfig'), click: () => shell.showItemInFolder(configPath()) },
     {
       label: t('tray.openLog'),
@@ -219,6 +224,33 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
     shell.openExternal(url);
     return true;
   });
+
+  /**
+   * Zapisuje zgłoszenie obok logu i pokazuje je w menedżerze plików.
+   * @returns {string|null} ścieżka albo null przy błędzie
+   */
+  function zapiszZgloszenie() {
+    try {
+      const logPath = daemon?.logFilePath?.();
+      const katalog = logPath ? dirname(logPath) : (cfg._dataDir || app.getPath('userData'));
+      const st = daemon?.status?.() ?? null;
+      // Wersję bierzemy ze statusu (rdzeń czyta package.json), a gdy demon nie
+      // wstał — z Electrona. `readPkg` z daemon.js jest prywatne i nie ma go tu.
+      const plik = saveReport(katalog, buildReport({
+        cfg,
+        status: st,
+        pkg: { name: 'radiodyplom-bridge', version: st?.version || app.getVersion() },
+      }));
+      log.info(`Zapisano zgłoszenie: ${plik}`);
+      shell.showItemInFolder(plik);
+      return plik;
+    } catch (err) {
+      log.error(`Nie udało się zapisać zgłoszenia: ${err.message}`);
+      return null;
+    }
+  }
+
+  ipcMain.handle('report:save', () => zapiszZgloszenie());
 
   ipcMain.handle('openLog', () => {
     const p = daemon?.logFilePath?.();

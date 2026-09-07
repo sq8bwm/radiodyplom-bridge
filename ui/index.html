@@ -223,6 +223,8 @@
           i log wymaga przewijania w bok. Łamiemy gdziekolwiek. */
        overflow-wrap:anywhere; }
   .lvl-warn{color:var(--warn)} .lvl-error{color:var(--err)}
+  /* samodzielna, bo dotąd istniała tylko jako .t-chk.muted */
+  .muted { color:var(--muted); }
   .restart-bar { margin:10px 16px 0; border-left-color:var(--warn);
                  display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .restart-bar #restartText { flex:1; min-width:12ch; }
@@ -306,6 +308,11 @@
       <h2 data-i18n="panel.listen"></h2>
       <div id="listenInfo"></div>
       <div class="note" id="localNote" data-i18n="note.localhost" hidden></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="panel.willSend"></h2>
+      <div id="willSendInfo"></div>
+      <div class="note" id="willSendWarn" hidden></div>
     </div>
     <div class="panel">
       <h2 data-i18n="panel.iface"></h2>

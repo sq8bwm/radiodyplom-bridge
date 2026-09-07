@@ -18,6 +18,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readRecords, parseDay } from './journal.js';
 import { aggregate, filterRecords, filterOptions } from './stats.js';
+import { summarizeTargets } from './fanout.js';
 import {
   Sesje, Blokada, sprawdzHaslo, hasloUstawione, odczytajCiastko,
   ciastkoSesji, ciastkoWygaszone, trybApi, odciskCertyfikatu, adresyLokalne,
@@ -218,6 +219,12 @@ export class StatusApi {
 
       forward: {
         operations: this.cfg.forward.operations,
+        // Odpowiedź na pytanie „jakim znakiem poleci moje QSO" — w jednym
+        // miejscu, żeby okno nie musiało jej składać z tabeli konfiguracji.
+        podsumowanie: summarizeTargets(
+          this.cfg.forward.targets || [],
+          this.listener.stats?.lastStation || null,
+        ),
         targets: (this.cfg.forward.targets || []).map((t) => {
           const c = checks.get(String(t.station_callsign || '').toUpperCase());
           return {

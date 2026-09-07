@@ -21,7 +21,12 @@ export class LoggerListener {
     this.onQSO = onQSO;
     this.socket = null;
     this.stats = { received: 0, accepted: 0, skipped: 0, invalid: 0, unknown: 0,
-      bySource: {}, skipReasons: {} };
+      bySource: {}, skipReasons: {},
+      // Znak stacji z OSTATNIEGO odebranego QSO — czyli to, czym logujesz
+      // w loggerze. Potrzebny, żeby okno mogło powiedzieć, czy któryś włączony
+      // cel loguje na ten znak. Bez tego „poleci jako" byłoby listą ustawień,
+      // a nie odpowiedzią na pytanie „a czym logujesz teraz".
+      lastStation: null };
   }
 
   start() {
@@ -129,6 +134,7 @@ export class LoggerListener {
 
     this.stats.accepted++;
     this.stats.bySource[decoder.name] = (this.stats.bySource[decoder.name] || 0) + 1;
+    this.stats.lastStation = mapped.payload.station_callsign || null;
 
     // Jedno QSO z loggera może dać kilka wpisów – po jednym na znak stacji.
     const copies = expandTargets(mapped.payload, this.targets, result.key);

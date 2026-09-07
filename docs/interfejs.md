@@ -196,6 +196,30 @@ Lista dozwolonych wartości jest w rdzeniu **wypisana osobno** od tej
 w `ui/strings.js`: pakiet bez interfejsu zawiera tylko `src/`, więc import
 z `ui/` położyłby usługę na malince. Zgodność obu kopii pilnuje test.
 
+### Panel „Poleci jako"
+
+Odpowiada na jedno pytanie: **jakim znakiem stacji zostanie zapisane moje QSO.**
+Dotąd ta informacja była wyłącznie w zakładce Konfiguracja, w tabeli celów —
+czyli tam, gdzie zaglądasz, gdy coś zmieniasz, a nie gdy siadasz do pracy.
+
+Pokazuje włączone cele wraz z operatorem i liczbę wyłączonych, a gdy nie ma
+żadnego włączonego — wprost, że QSO poleci **ze znakiem z loggera**.
+
+**Ostrzeżenie** pojawia się, gdy żaden włączony cel nie loguje na znak
+przychodzący z loggera:
+
+> UWAGA: logujesz jako SQ8BWM, a QSO poleci wyłącznie jako SN8N. Żaden włączony
+> cel nie zapisuje na Twój znak z loggera.
+
+To jest sytuacja, w której znak jest **poprawny**, serwer go przyjmie i nikt nie
+zaprotestuje — a prywatna łączność trafia do dziennika akcji. Warunek jest
+świadomie taki, a nie „znaki się różnią": przy rozmnażaniu QSO na kilka stacji
+rozjazd jest normalny i zamierzony, więc ostrzeganie o nim **zawsze** zrobiłoby
+z tego szum, który się ignoruje.
+
+Ostrzeżenia nie ma, dopóki nie przyszło żadne QSO — bez datagramu nie ma z czym
+porównywać, a ostrzeganie „na zapas" uczyłoby ignorowania tego panelu.
+
 ### Przycisk „Zrestartuj teraz"
 
 Pojawia się **tylko wtedy**, gdy zapisane zmiany czekają na restart, w banerze,

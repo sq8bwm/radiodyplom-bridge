@@ -16,6 +16,26 @@ przycisk „Zakończ", menu pod ikoną w zasobniku.
 - pytanie **zapory Windows** przy pierwszym bindzie UDP,
 - praca w tle po zamknięciu okna przez dłuższy czas.
 
+**Do sprawdzenia od 0.1.18 — przycisk „Zrestartuj teraz".** Na Linuksie
+sprawdzony klikaniem (nowy PID, zmiana wymagająca restartu zastosowana, czyste
+zamknięcie). Na Windowsie **nietestowany**, a są tam dwa ryzyka, które
+utwardziliśmy w ciemno i które trzeba potwierdzić na maszynie:
+
+1. **Wersja portable.** Rozpakowuje się do katalogu tymczasowego, więc
+   `process.execPath` wskazuje kopię, nie plik klikniętiy przez użytkownika.
+   Restart wskazuje więc `PORTABLE_EXECUTABLE_FILE` (zmienną ustawia instalator
+   portable electron-buildera — sprawdzone w `app-builder-lib/templates/nsis/portable.nsi`).
+   Do potwierdzenia: czy po restarcie działa nadal jedna instancja i czy stary
+   katalog tymczasowy jest sprzątany.
+2. **Blokada jednej instancji.** Nowy proces startuje, gdy stary może jeszcze
+   trzymać blokadę; wtedy nowa instancja zamknęłaby się i użytkownik zostałby
+   bez programu. Zwalniamy ją jawnie przed wyjściem, ale wyścig zależy od
+   kolejności zamykania w systemie. Do potwierdzenia: restart pod obciążeniem
+   (logger nadający QSO) i kilka restartów po sobie.
+
+Do sprawdzenia także w instalatorze NSIS: czy po restarcie ikona w zasobniku
+jest jedna, a nie dwie.
+
 ## Świadomie odłożone
 
 ### Przepisanie historii commitów — NIE robimy

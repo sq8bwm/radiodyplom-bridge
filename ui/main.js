@@ -251,6 +251,7 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
   }
 
   ipcMain.handle('report:save', () => zapiszZgloszenie());
+  ipcMain.handle('restart', () => { restartProgramu('przycisk w oknie'); return true; });
 
   ipcMain.handle('openLog', () => {
     const p = daemon?.logFilePath?.();
@@ -286,6 +287,38 @@ function shutdown(reason) {
   try { if (daemon) daemon.stop(); } catch { /* już zatrzymany */ }
   closeFileLog();
   app.quit();
+}
+
+/**
+ * Restart programu na życzenie z okna.
+ *
+ * Kolejność ma znaczenie: `app.relaunch()` tylko PLANUJE nowy proces —
+ * uruchamia go dopiero przy wyjściu bieżącego. Musi więc być wywołane PRZED
+ * zamknięciem, inaczej program po prostu się zamknie.
+ *
+ * Idziemy tą samą ścieżką co „Zakończ" (`shutdown`), żeby restart nie ominął
+ * zamknięcia kolejki, zniszczenia ikony w zasobniku i zamknięcia pliku logu.
+ */
+function restartProgramu(reason) {
+  if (quitting) return;
+  log.info(`Restart na życzenie (${reason})`);
+
+  // WERSJA PORTABLE (Windows) rozpakowuje się do katalogu tymczasowego, więc
+  // `process.execPath` wskazuje tę kopię, a nie plik .exe, który kliknął
+  // użytkownik. Restart bez tego wskazania odpalałby rozpakowaną kopię —
+  // a jej katalog bywa sprzątany przy wyjściu. Zmienną ustawia instalator
+  // portable electron-buildera (`PORTABLE_EXECUTABLE_FILE = $EXEPATH`,
+  // sprawdzone w app-builder-lib/templates/nsis/portable.nsi).
+  const portable = process.env.PORTABLE_EXECUTABLE_FILE;
+  app.relaunch(portable ? { execPath: portable } : undefined);
+
+  // BLOKADA JEDNEJ INSTANCJI: nowy proces startuje w chwili, gdy ten jeszcze
+  // może trzymać blokadę. Nowa instancja zobaczyłaby ją zajętą i natychmiast
+  // się zamknęła — użytkownik zostałby BEZ programu, co jest gorsze niż brak
+  // przycisku. Zwalniamy ją jawnie, zamiast liczyć na kolejność zamykania.
+  try { app.releaseSingleInstanceLock(); } catch { /* nie mieliśmy blokady */ }
+
+  shutdown(`restart: ${reason}`);
 }
 
 for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP']) {

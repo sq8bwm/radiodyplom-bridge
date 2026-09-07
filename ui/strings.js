@@ -261,6 +261,10 @@ const DICT = {
     'msg.sentCount': 'wysłane: ',
 
     'restart.banner': 'Zapisane zmiany zaczną obowiązywać po ponownym uruchomieniu programu: ',
+    'btn.restart': 'Zrestartuj teraz',
+    'restart.manual': 'zrestartuj usługę: sudo systemctl restart radiodyplom-bridge',
+    'restart.inProgress': 'Restartuję…',
+    'confirm.restart': 'Zrestartować mostek? Na chwilę przestanie nasłuchiwać — QSO wysłane przez logger w tym momencie NIE zostanie odebrane, bo UDP nie ponawia. Najlepiej robić to między łącznościami.',
     'restart.tray': 'wymaga restartu',
 
     'tray.show': 'Pokaż okno',
@@ -579,6 +583,10 @@ const DICT = {
     'msg.sentCount': 'uploaded: ',
 
     'restart.banner': 'Saved changes take effect after restarting the program: ',
+    'btn.restart': 'Restart now',
+    'restart.manual': 'restart the service: sudo systemctl restart radiodyplom-bridge',
+    'restart.inProgress': 'Restarting…',
+    'confirm.restart': 'Restart the bridge? It will stop listening for a moment — a QSO sent by the logger right then will NOT be received, because UDP is not retried. Best done between contacts.',
     'restart.tray': 'restart required',
 
     'tray.show': 'Show window',

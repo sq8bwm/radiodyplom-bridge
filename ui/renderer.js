@@ -305,7 +305,15 @@ function renderStatus(s) {
   // ginie przy przełączeniu zakładki ani po ponownym otwarciu okna.
   const pend = s.pendingRestart || [];
   $('restartNote').hidden = pend.length === 0;
-  if (pend.length) $('restartNote').textContent = t('restart.banner') + pend.join(', ');
+  if (pend.length) {
+    // Restart w oknie na pulpicie robi Electron. W przeglądarce nie ma czego
+    // zrestartować — usługa ma `Restart=on-failure`, więc czyste wyjście by ją
+    // ZATRZYMAŁO, nie podniosło. Tam pokazujemy polecenie do wpisania.
+    const moznaZOkna = !!window.bridge.restart;
+    $('restartText').textContent = t('restart.banner') + pend.join(', ')
+      + (moznaZOkna ? '' : ` · ${t('restart.manual')}`);
+    $('btnRestart').hidden = !moznaZOkna;
+  }
 
   $('dryBadge').hidden = !s.radiodyplom.dryRun;
   // Podpowiedź, bo to nieoczywiste i kosztowne: QSO przepuszczone próbnie
@@ -1253,6 +1261,17 @@ if (!window.bridge.quit) $('btnQuit').hidden = true;
 
 // Zapis zgłoszenia istnieje tylko w oknie na pulpicie — w przeglądarce nie ma
 // gdzie zapisać pliku. Tam zostaje `npm run report` na maszynie mostka.
+// Restart z okna: pytamy, bo skutek jest nieodwracalny w jedną stronę —
+// QSO wysłane przez logger w oknie restartu nie ma jak wrócić (UDP nie ponawia).
+if (window.bridge.restart) {
+  $('btnRestart').onclick = async () => {
+    if (!await ask(t('confirm.restart'))) return;
+    $('btnRestart').disabled = true;
+    $('restartText').textContent = t('restart.inProgress');
+    await window.bridge.restart();
+  };
+}
+
 if (!window.bridge.saveReport) $('btnReport').hidden = true;
 else $('btnReport').onclick = async () => {
   const plik = await window.bridge.saveReport();

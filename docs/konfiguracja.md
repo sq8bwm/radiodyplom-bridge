@@ -31,6 +31,7 @@ W `config.json` wstaw PIN API z Managera radiodyplom
 | `api.port` | port interfejsu (domyślnie 12061; ten sam przy HTTP i HTTPS) |
 | `api.readOnly` | `true` blokuje wszystkie zmiany przez interfejs; brak = domyślnie, czyli tylko odczyt w sieci |
 | `api.auth.passwordHash` | hasz hasła do interfejsu (`scrypt$…`); ustawia się z okna albo poleceniem — patrz niżej |
+| `RD_API_PASSWORD_HASH` | ten sam hasz ze **zmiennej środowiskowej**; ma pierwszeństwo nad plikiem i nie jest do niego przepisywany. Na maszynie bez pulpitu to właściwe miejsce: `pin.env` ma prawa `0640`, a `config.json` — `0644` |
 | `api.tls.enabled` | HTTPS (domyślnie `true`); wyłączenie blokuje nasłuch w sieci |
 | `api.tls.certFile` / `keyFile` | własny certyfikat; brak = program wystawia sobie sam |
 

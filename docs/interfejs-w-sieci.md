@@ -110,7 +110,40 @@ Dwie uwagi do samego polecenia:
 Hasło musi mieć **co najmniej 8 znaków** — krótsze polecenie odrzuci
 komunikatem, a nie po cichu.
 
-### 2. Wklej do konfiguracji
+### 2. Wklej do `pin.env` — nie do `config.json`
+
+```bash
+sudo nano /etc/radiodyplom-bridge/pin.env
+```
+
+```
+RD_PIN=TWOJ-PIN-API
+RD_API_PASSWORD_HASH=scrypt$8207…2925de
+```
+
+**Dlaczego tutaj, a nie w `config.json`:** ten plik ma prawa `0640` (czyta go
+tylko root i usługa), a `config.json` ma `0644` — do czytania dla każdego
+użytkownika maszyny — i to on trafia do zgłoszeń błędów oraz na zrzuty ekranu.
+PIN mieszka tu z tego samego powodu od 0.1.13.
+
+Hasz hasła to nie hasło, ale wystarcza, żeby łamać je **offline**: bez limitu
+prób, bez blokady po pięciu próbach i bez śladu w logach, czyli obok całej
+ochrony, jaką ma logowanie.
+
+Wartość z `pin.env` **ma pierwszeństwo** nad tą z `config.json` i **nie jest do
+niego przepisywana**, gdy zapiszesz konfigurację z okna. Okno pokazuje wtedy
+zamknięte pole i podpowiedź, że hasło zmienia się w `pin.env` — zmiana
+w interfejsie działałaby tylko do restartu, więc jej nie przyjmujemy.
+
+Wariant zapasowy: jeśli wolisz trzymać hasz w `config.json`, zamknij ten plik
+tak samo jak `pin.env`:
+
+```bash
+sudo chmod 0640 /etc/radiodyplom-bridge/config.json
+sudo chown root:radiodyplom /etc/radiodyplom-bridge/config.json
+```
+
+### 3. Ustaw adres i port
 
 ```bash
 sudo nano /etc/radiodyplom-bridge/config.json
@@ -132,24 +165,20 @@ Sekcja `api` ma wyglądać tak:
 `readOnly: true` zostaw, dopóki nie masz powodu inaczej — z telefonu zobaczysz
 statystyki i stan, a nikt nie zmieni PIN-u.
 
-### 3. Zamknij prawa do pliku konfiguracji
+Sekcja `api` ma wyglądać tak — **bez hasła**, bo to siedzi w `pin.env`:
 
-**To jest krok, którego nie wolno pominąć.** Instalator nadaje
-`config.json` prawa `0644`, czyli **do czytania dla każdego użytkownika
-maszyny** — bo dotąd nie było w nim niczego wrażliwego (PIN celowo mieszka
-osobno, w `pin.env` z prawami `0640`).
-
-Hasz hasła to nie hasło, ale wystarcza, żeby łamać je **offline**, bez limitów
-i bez śladu w logach. Skoro więc do pliku trafia, plik trzeba zamknąć:
-
-```bash
-sudo chmod 0640 /etc/radiodyplom-bridge/config.json
-sudo chown root:radiodyplom /etc/radiodyplom-bridge/config.json
+```json
+"api": {
+  "enabled": true,
+  "port": 12061,
+  "host": "0.0.0.0",
+  "readOnly": true,
+  "tls": { "enabled": true, "certFile": null, "keyFile": null }
+}
 ```
 
-Usługa nadal go przeczyta — działa jako użytkownik `radiodyplom`, który należy
-do grupy `radiodyplom`. Aktualizacja paczki tego nie cofnie: instalator tworzy
-`config.json` tylko wtedy, gdy go nie ma.
+`readOnly: true` zostaw, dopóki nie masz powodu inaczej — z telefonu zobaczysz
+statystyki i stan, a nikt nie zmieni PIN-u.
 
 ### 4. Uruchom ponownie i sprawdź
 
@@ -193,8 +222,8 @@ Pierwszy adres z listy plus port, czyli na przykład `https://192.168.8.50:12061
 
 | Ścieżka | Co to |
 |---|---|
-| `/etc/radiodyplom-bridge/config.json` | konfiguracja, w tym hasz hasła (zamknij na `0640`) |
-| `/etc/radiodyplom-bridge/pin.env` | PIN API, osobno, `0640` |
+| `/etc/radiodyplom-bridge/pin.env` | **PIN i hasz hasła**, prawa `0640` |
+| `/etc/radiodyplom-bridge/config.json` | reszta ustawień, prawa `0644` — bez sekretów |
 | `/var/lib/radiodyplom-bridge/tls/` | certyfikat i klucz (`key.pem` z prawami `0600`) |
 | `/var/lib/radiodyplom-bridge/data/bridge.log` | log mostka |
 

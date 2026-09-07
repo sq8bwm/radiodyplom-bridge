@@ -154,6 +154,9 @@ const DICT = {
     'label.language': 'Język interfejsu',
 
     'hint.pin': 'Zostaw zamaskowany, żeby nie zmieniać. Wpisz nowy, aby podmienić.',
+    'hint.fromEnvShort': 'z pliku pin.env',
+    'hint.pinFromEnv': 'PIN pochodzi ze zmiennej RD_PIN (plik pin.env). Zmień go tam i zrestartuj usługę — zmiana w tym polu nie miałaby skutku.',
+    'hint.apiPasswordFromEnv': 'Hasło pochodzi ze zmiennej RD_API_PASSWORD_HASH (plik pin.env). Zmień je tam i zrestartuj usługę.',
     'hint.multicast': 'puste = brak',
     'hint.logFollowing': 'nadąża za logiem',
     'hint.logPaused': 'przewinięte w górę — nowe wpisy dochodzą na dole',
@@ -464,6 +467,9 @@ const DICT = {
     'label.language': 'Interface language',
 
     'hint.pin': 'Leave it masked to keep the current PIN. Type a new one to replace it.',
+    'hint.fromEnvShort': 'from pin.env',
+    'hint.pinFromEnv': 'The PIN comes from the RD_PIN variable (pin.env file). Change it there and restart the service — editing this field would have no effect.',
+    'hint.apiPasswordFromEnv': 'The password comes from the RD_API_PASSWORD_HASH variable (pin.env file). Change it there and restart the service.',
     'hint.multicast': 'empty = none',
     'hint.logFollowing': 'following the log',
     'hint.logPaused': 'scrolled up — new entries keep arriving at the bottom',

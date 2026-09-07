@@ -1250,6 +1250,17 @@ $('btnLogEnd').onclick = () => {
 $('logbox').addEventListener('scroll', updateLogFollow);
 
 if (!window.bridge.quit) $('btnQuit').hidden = true;
+
+// Zapis zgłoszenia istnieje tylko w oknie na pulpicie — w przeglądarce nie ma
+// gdzie zapisać pliku. Tam zostaje `npm run report` na maszynie mostka.
+if (!window.bridge.saveReport) $('btnReport').hidden = true;
+else $('btnReport').onclick = async () => {
+  const plik = await window.bridge.saveReport();
+  $('reportInfo').textContent = plik
+    ? `${t('hint.reportSaved')}${plik}\n${t('hint.reportSafe')}`
+    : t('hint.reportFailed');
+  $('reportInfo').className = plik ? 'hint' : 'hint lvl-error';
+};
 $('btnQuit').onclick = async () => {
   // Potwierdzenie, bo zamknięcie przerywa przekazywanie QSO.
   if (await ask(t('confirm.quit'))) await window.bridge.quit();

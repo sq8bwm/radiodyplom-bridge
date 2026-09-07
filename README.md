@@ -210,6 +210,11 @@ Node.js ≥ 18, zero zależności runtime.
 | [Raspberry Pi / bez okna](docs/malinka.md) | mostek jako usługa na małym komputerze |
 | [Rozwój](docs/rozwoj.md) | wymagania, testy, budowanie paczek |
 
+**Zgłaszasz błąd?** Nie wysyłaj `config.json` — jest tam jawny PIN. W oknie,
+zakładka *O programie*, jest przycisk **Zapisz zgłoszenie do wysłania**: ten
+plik ma PIN-y zamaskowane i nie zawiera hasła. Na maszynie bez pulpitu to samo
+robi `npm run report`.
+
 Znane usterki i plany: [BACKLOG.md](BACKLOG.md).
 
 ---

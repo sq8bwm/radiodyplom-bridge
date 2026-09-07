@@ -93,6 +93,29 @@ GitHub zamienia spacje na kropki przy wgrywaniu załączników do wydania, przez
 plik sum kontrolnych przestawał pasować do tego, co odbiorca pobiera. Windows buduje się **z
 Linuksa** — electron-builder sam dociąga NSIS, wine nie jest potrzebne.
 
+### RD_CONFIG_DIR nie izoluje danych
+
+`RD_CONFIG_DIR` przestawia katalog `config.json` — i **tylko jego**. Przy
+`dataDir: "auto"` (domyślne w `config.example.json`) kolejka, dziennik wysyłek
+i `seen.json` lądują w katalogu systemowym użytkownika
+(`~/.local/share/radiodyplom-bridge`), bez względu na tę zmienną.
+
+Skutek przy testach obok działającej instancji: druga kopia programu czyta
+i **zapisuje ten sam dziennik QSO**, więc testowe łączności zanieczyszczą
+statystyki, a liczniki „wysłane" pokażą cudzą pracę. Złapane 2026-09-07 przy
+robieniu zrzutów do README — instancja z osobnym `RD_CONFIG_DIR` pokazała
+1981 wysłanych z prawdziwego dziennika.
+
+Do pełnej izolacji trzeba ustawić **oba**:
+
+```bash
+RD_CONFIG_DIR=/tmp/proba npx electron ui/main.js
+# w /tmp/proba/config.json:  "dataDir": "/tmp/proba/dane"
+```
+
+Warto też zmienić `api.port` i `udp.port`, żeby nie walczyć o gniazda
+z instancją, która pracuje.
+
 ### Architektura w nazwie pliku
 
 Paczki z interfejsem są **tylko x64**, ale nazwy tego nie mówiły — ktoś z arm64

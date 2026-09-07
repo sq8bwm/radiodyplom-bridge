@@ -191,6 +191,61 @@ Co robić, w kolejności wartości:
 przez `action=VALIDATE`. To jedyne źródło prawdy o tym, co przyjmie. Czeka na
 `is_validation_only` na ścieżce odrzucenia — patrz pozycja o walidacji wyżej.
 
+### Interfejs w sieci: zewnętrzny adres, HTTPS i logowanie — zamówione
+
+Zamówione 2026-09-07. Dziś **nie da się** i jest to zabite na sztywno:
+
+```js
+// src/httpapi.js — „Zawsze 127.0.0.1, niezależnie od konfiguracji"
+this.server.listen(this.cfg.api.port, '127.0.0.1', …)
+```
+
+**Dlaczego to nie jest samo dopisanie `api.host`.** To API nie jest tylko do
+czytania i **nie ma żadnego uwierzytelniania**. Kto się do niego dostanie, może
+przez `POST /api/config` podmienić PIN i przekierować QSO na inne konto,
+wstrzymać przekazywanie (`/api/pause`) albo bezpowrotnie wyrzucić odrzucone
+QSO (`/api/failed/discard`). Dla porównania: `udp.host: 0.0.0.0` pozwala obcemu
+tylko **dopisać** QSO — tutaj oddaje się pilota do konfiguracji mostka.
+
+Co musi powstać razem, bo osobno każde daje złudzenie bezpieczeństwa:
+
+1. **`api.host` z jawną zgodą** — domyślnie `127.0.0.1`, zmiana wymaga restartu
+   (jak `udp.host`) i ostrzeżenia w oknie, nie cichego zapisu.
+2. **Tryb tylko do odczytu jako domyślny przy nasłuchu w sieci.** Stan,
+   statystyki i log — tak; `POST` cokolwiek — nie. To załatwia większość
+   przypadków (podglądam mostek z telefonu) przy zerowym ryzyku.
+3. **Logowanie.** Hasło **haszowane** w konfiguracji, nie jawne. Uwaga na
+   spójność: PIN leży dziś w `config.json` jawnie, więc trzeba zdecydować, czy
+   hasło idzie tam samo, czy do osobnego pliku `0640` (jak PIN w pakiecie
+   headless). Do tego blokada po nieudanych próbach — mostek stoi godzinami,
+   więc zgadywanie hasła ma czas.
+4. **Ochrona przed CSRF.** Dzisiejsze `POST`-y nie mają żadnej; przy nasłuchu
+   w sieci trzeba wymagać tokenu w nagłówku (nie w ciasteczku), inaczej
+   dowolna strona otwarta w tej samej przeglądarce może wysłać żądanie.
+5. **TLS.** Trzy drogi, żadna darmowa:
+   - **certyfikat własny** — działa od razu, ale przeglądarka krzyczy przy
+     każdym wejściu i użytkownik uczy się klikać „mimo to";
+   - **Let's Encrypt** — wymaga publicznej nazwy i przekierowania portu na
+     routerze, czyli wystawienia shacku do internetu;
+   - **odwrotne proxy** (nginx, Caddy) przed mostkiem — TLS i logowanie robi
+     narzędzie, które się tym zajmuje, a mostek zostaje na `127.0.0.1`.
+
+**Rekomendacja: droga piąta, jako przepis w dokumentacji, a nie kod w mostku.**
+Certyfikaty, ich odnawianie, nagłówki i blokady to osobne rzemiosło; wbudowanie
+tego znaczy utrzymywanie własnego serwera HTTPS w programie, który ma
+przekazywać QSO. Jeśli jednak wbudowywać, to punkty 1–4 **przed** punktem 5 —
+sam HTTPS bez logowania nie chroni przed niczym, a logowanie bez HTTPS wysyła
+hasło jawnym tekstem.
+
+**Co działa dziś, bez żadnego ryzyka:** tunel SSH. Ruch szyfrowany,
+uwierzytelniony kluczem, zero nowego kodu:
+
+```bash
+ssh -L 12061:localhost:12061 pi@malinka
+```
+
+Opisany w [docs/malinka.md](docs/malinka.md).
+
 ### Statystyki — zrobione, co jeszcze warto dołożyć
 Zakładka i importer historii gotowe w 0.1.10 —
 [docs/statystyki.md](docs/statystyki.md). Historia z logów wczytana: 1114 kopii,
@@ -328,9 +383,12 @@ Rozważony wariant „start zawsze wstrzymany" odrzucony jako pozorny: skoro i t
 trzeba kliknąć, żeby ruszył, to autostart nie oszczędza kroku, a dokłada proces
 w tle i pytanie „czy on teraz nasłuchuje, czy nie".
 
-**Wzmacnia to potrzebę ostrzeżenia o niezgodnym znaku operatora** (patrz niżej):
-skoro mostek uruchamiasz ręcznie i rzadko, łatwo zapomnieć, który cel jest
-włączony — a wtedy prywatne QSO pojechałoby jako stacja akcji.
+**Wzmacnia to inną potrzebę: widoczności, którym znakiem stacji poleci QSO.**
+Skoro mostek uruchamia się ręcznie i rzadko, łatwo zapomnieć, który cel fan-outu
+jest włączony — a wtedy prywatna łączność pojedzie jako stacja akcji. To jest
+osobna sprawa od ostrzeżenia o **złym znaku operatora** (niżej): tam chodzi
+o wartość, której serwis nie przyjmie albo ją utnie, tutaj o poprawny znak
+użyty w niewłaściwym momencie. Zapisane omyłkowo jako jedno 2026-09-07.
 
 ### Aktualizacje aplikacji — powiadomienie zrobione, samoaktualizacji NIE robimy
 Od 0.1.11 program sprawdza, czy jest nowsze wydanie, i mówi o tym w oknie

@@ -8,7 +8,7 @@
 // idą po WSZYSTKICH bramkach, także po tych, które „przecież nie mogą zawieść".
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -362,5 +362,61 @@ describe('bramka na żywym serwerze', () => {
     } finally {
       api.tryb.readOnly = false;
     }
+  });
+});
+
+// ------------------------------------------------------ ochrona w interfejsie
+
+describe('okno nie może po cichu oddać prawa zapisu', () => {
+  // ZNALEZIONE 2026-09-07 po uwadze „domyślnie jest wyłączony Read Only".
+  // Okno wysyłało stan pola zawsze jako jawne `false`, więc wybranie adresu
+  // sieciowego i zapis oddawały prawo zapisu w sieci — mimo że rdzeń ma tryb
+  // tylko do odczytu domyślnie właśnie po to, by zapis wymagał decyzji.
+  const RENDERER = readFileSync('ui/renderer.js', 'utf8');
+
+  test('przełączenie adresu na sieciowy zaznacza tryb tylko do odczytu', () => {
+    assert.match(RENDERER, /function pilnujTrybuSieci\(\)/);
+    assert.match(RENDERER, /\$\('fApiHost'\)\.onchange = pilnujTrybuSieci/,
+      'funkcja musi być podłączona do zmiany adresu, nie tylko istnieć');
+    const ciało = RENDERER.slice(RENDERER.indexOf('function pilnujTrybuSieci'));
+    assert.match(ciało.slice(0, 600), /checked = true/);
+  });
+
+  test('zapis z prawem zapisu w sieci wymaga potwierdzenia', () => {
+    assert.match(RENDERER, /confirm\.networkWritable/);
+    // Potwierdzenie musi być PRZED wywołaniem saveConfig, inaczej niczego
+    // nie chroni — zapis byłby już zrobiony.
+    const iPyt = RENDERER.indexOf("confirm.networkWritable");
+    const iZapis = RENDERER.indexOf('window.bridge.saveConfig({\n    radiodyplom:');
+    assert.ok(iPyt > 0 && iZapis > 0 && iPyt < iZapis,
+      'pytanie musi poprzedzać zapis');
+  });
+
+  test('komunikat ostrzega o skutku, nie tylko o zmianie', () => {
+    // Treść ma mówić, co ktoś obcy będzie mógł zrobić — „na pewno?" bez
+    // powodu ludzie klikają odruchowo.
+    const s = readFileSync('ui/strings.js', 'utf8');
+    const m = s.match(/'confirm\.networkWritable': '([^']+)'/);
+    assert.ok(m, 'brak komunikatu po polsku');
+    assert.match(m[1], /PIN/);
+  });
+});
+
+describe('adres interfejsu jest widoczny', () => {
+  // ZGŁOSZONE 2026-09-07: „na jakim porcie jest wystawiony https?".
+  // Odpowiedź (ten sam port co lokalnie) była tylko w kodzie i w logu.
+  const HTTPAPI = readFileSync('src/httpapi.js', 'utf8');
+
+  test('status niesie port i gotowe adresy', () => {
+    const blok = HTTPAPI.slice(HTTPAPI.indexOf('      api: {'));
+    assert.match(blok.slice(0, 1400), /port:/);
+    assert.match(blok.slice(0, 1400), /adresy:/);
+  });
+
+  test('okno pokazuje je w panelu', () => {
+    const R = readFileSync('ui/renderer.js', 'utf8');
+    assert.match(R, /\$\('ifaceInfo'\)/);
+    const H = readFileSync('ui/index.html', 'utf8');
+    assert.match(H, /id="ifaceInfo"/);
   });
 });

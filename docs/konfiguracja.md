@@ -28,6 +28,7 @@ W `config.json` wstaw PIN API z Managera radiodyplom
 | `updates.check` | czy sprawdzać, że jest nowsze wydanie (domyślnie `true`) |
 | `updates.intervalHours` | co ile godzin sprawdzać (domyślnie 24, minimum 1) |
 | `api.host` | adres nasłuchu interfejsu (domyślnie `127.0.0.1`; `0.0.0.0` = sieć lokalna) |
+| `api.port` | port interfejsu (domyślnie 12061; ten sam przy HTTP i HTTPS) |
 | `api.readOnly` | `true` blokuje wszystkie zmiany przez interfejs; brak = domyślnie, czyli tylko odczyt w sieci |
 | `api.auth.passwordHash` | hasz hasła do interfejsu (`scrypt$…`); ustawia się z okna albo poleceniem — patrz niżej |
 | `api.tls.enabled` | HTTPS (domyślnie `true`); wyłączenie blokuje nasłuch w sieci |

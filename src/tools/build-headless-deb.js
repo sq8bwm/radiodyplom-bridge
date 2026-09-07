@@ -155,9 +155,23 @@ if [ "$1" = "configure" ]; then
   # błędów, a sekret nie ma prawa się tak rozejść.
   if [ ! -f "$KATALOG_KONF/pin.env" ]; then
     cat > "$KATALOG_KONF/pin.env" <<'EOF'
-# PIN API z radiodyplom.pl. Bez cudzysłowów, bez spacji wokół znaku równości.
-# Po zmianie: sudo systemctl restart radiodyplom-bridge
+# Sekrety mostka. Ten plik ma prawa 0640, w odróżnieniu od config.json (0644),
+# który bywa wklejany do zgłoszeń błędów i na fora. Bez cudzysłowów, bez spacji
+# wokół znaku równości. Po zmianie: sudo systemctl restart radiodyplom-bridge
+
+# PIN API z radiodyplom.pl (Manager → Dostęp API).
 RD_PIN=
+
+# Hasz hasła do interfejsu w przeglądarce. Potrzebny TYLKO wtedy, gdy
+# udostępniasz interfejs w sieci (api.host inny niż 127.0.0.1). Policz go tak:
+#
+#   read -rsp 'Haslo: ' H; echo
+#   H="$H" node -e "import('/usr/lib/radiodyplom-bridge/src/apiauth.js').then(m => console.log(m.zahaszujHaslo(process.env.H)))"
+#   unset H
+#
+# Wynik (cały, razem z "scrypt$") wklej poniżej. Wartość stąd ma pierwszeństwo
+# nad tą z config.json i NIE jest do niego przepisywana przy zapisie z okna.
+RD_API_PASSWORD_HASH=
 EOF
     chown root:radiodyplom "$KATALOG_KONF/pin.env"
     chmod 0640 "$KATALOG_KONF/pin.env"

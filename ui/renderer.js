@@ -643,6 +643,10 @@ async function loadConfig() {
   const cfg = await window.bridge.getConfig();
   if (!cfg) return;
   $('fPin').value = cfg.radiodyplom.pin || '';
+  const pinZEnv = !!cfg.radiodyplom.pinFromEnv;
+  $('fPin').disabled = pinZEnv;
+  if (pinZEnv) $('fPin').value = '';
+  $('pinHint').textContent = pinZEnv ? t('hint.pinFromEnv') : t('hint.pin');
   $('fDryRun').checked = cfg.radiodyplom.dryRun;
   $('fHost').value = cfg.udp.host;
   $('fPort').value = cfg.udp.port;
@@ -653,14 +657,26 @@ async function loadConfig() {
   $('fApiPort').value = cfg.api?.port ?? 12061;
   $('fApiPassword').value = '';
   $('fApiPassword').placeholder = cfg.api?.auth?.passwordSet ? '••••••••' : '';
+  // Sekret ze środowiska (pin.env): zmiana tutaj nie miałaby skutku, bo przy
+  // następnym starcie wartość ze środowiska i tak wygra. Lepiej zamknąć pole
+  // i powiedzieć, gdzie zmieniać, niż pozwolić ustawić hasło na jeden seans.
+  const hasloZEnv = !!cfg.api?.auth?.passwordFromEnv;
+  $('fApiPassword').disabled = hasloZEnv;
+  $('fApiPassword').placeholder = hasloZEnv ? t('hint.fromEnvShort')
+    : ($('fApiPassword').placeholder || '');
   // Puste `readOnly` w pliku znaczy „domyślnie", a domyślnie w sieci jest
   // tylko odczyt — pokazujemy to, co faktycznie się stanie.
   $('fApiReadOnly').checked = cfg.api?.readOnly === null
     ? cfg.api?.host === '0.0.0.0'
     : cfg.api?.readOnly !== false;
-  $('apiNetHint').textContent = cfg.api?.auth?.passwordSet
-    ? t('hint.apiPasswordSet') : t('hint.apiPasswordNone');
-  $('apiNetHint').className = cfg.api?.auth?.passwordSet ? 'hint' : 'hint lvl-warn';
+  if (hasloZEnv) {
+    $('apiNetHint').textContent = t('hint.apiPasswordFromEnv');
+    $('apiNetHint').className = 'hint';
+  } else {
+    $('apiNetHint').textContent = cfg.api?.auth?.passwordSet
+      ? t('hint.apiPasswordSet') : t('hint.apiPasswordNone');
+    $('apiNetHint').className = cfg.api?.auth?.passwordSet ? 'hint' : 'hint lvl-warn';
+  }
   $('fApiHost').onchange = pilnujTrybuSieci;
   // Wczytanie z dysku = formularz zgadza się ze stanem zapisanym.
   konfigCzysta();

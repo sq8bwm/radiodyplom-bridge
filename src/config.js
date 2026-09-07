@@ -102,7 +102,22 @@ export function loadConfig(opts = {}) {
     throw new Error(`Nie mogę wczytać konfiguracji (${path}): ${err.message}`);
   }
 
-  if (process.env.RD_PIN) cfg.radiodyplom.pin = process.env.RD_PIN.trim();
+  // Sekrety ze ŚRODOWISKA. Na maszynie bez pulpitu trzymamy je w pliku
+  // `pin.env` z prawami 0640, bo `config.json` ma 0644 i bywa wklejany do
+  // zgłoszeń błędów. `_zEnv` zapamiętuje, co przyszło tą drogą — inaczej
+  // pierwszy zapis konfiguracji z okna przepisałby sekret do config.json
+  // i cała ta ostrożność byłaby na nic (sprawdzone: PIN faktycznie wyciekał).
+  cfg._zEnv = {};
+  if (process.env.RD_PIN) {
+    cfg.radiodyplom.pin = process.env.RD_PIN.trim();
+    cfg._zEnv.pin = true;
+  }
+  if (process.env.RD_API_PASSWORD_HASH) {
+    cfg.api = cfg.api || {};
+    cfg.api.auth = cfg.api.auth || {};
+    cfg.api.auth.passwordHash = process.env.RD_API_PASSWORD_HASH.trim();
+    cfg._zEnv.apiPasswordHash = true;
+  }
 
   // Brak PIN-u tylko odnotowujemy. Rzucenie wyjątkiem uniemożliwiłoby
   // pierwsze uruchomienie zainstalowanej aplikacji, gdzie PIN wpisuje się w UI.

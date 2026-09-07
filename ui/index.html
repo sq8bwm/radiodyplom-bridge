@@ -343,7 +343,8 @@
       <h2 data-i18n="panel.connection"></h2>
       <label data-i18n="label.pin"></label>
       <input type="text" id="fPin" placeholder="ABCD-1234">
-      <div class="hint" data-i18n="hint.pin"></div>
+      <!-- Identyfikator, bo treść podmieniamy, gdy PIN pochodzi z pin.env. -->
+      <div class="hint" id="pinHint" data-i18n="hint.pin"></div>
       <div class="row" style="margin-top:10px">
         <input type="checkbox" id="fDryRun" style="width:auto">
         <label for="fDryRun" style="margin:0" data-i18n="label.dryRun"></label>

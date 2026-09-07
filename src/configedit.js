@@ -45,6 +45,9 @@ export function editableConfig(cfg) {
       apiUrl: cfg.radiodyplom.apiUrl,
       pin: maskPin(cfg.radiodyplom.pin),
       pinSet: !!cfg.radiodyplom.pin,
+      // Interfejs musi wiedzieć, że zmiana tutaj nic nie da: przy następnym
+      // starcie wartość ze środowiska i tak wygra.
+      pinFromEnv: !!cfg._zEnv?.pin,
       timeoutMs: cfg.radiodyplom.timeoutMs,
       dryRun: !!cfg.radiodyplom.dryRun,
     },
@@ -67,7 +70,10 @@ export function editableConfig(cfg) {
       port: cfg.api?.port,
       host: cfg.api?.host || '127.0.0.1',
       readOnly: cfg.api?.readOnly ?? null,
-      auth: { passwordSet: hasloUstawione(cfg) },
+      auth: {
+        passwordSet: hasloUstawione(cfg),
+        passwordFromEnv: !!cfg._zEnv?.apiPasswordHash,
+      },
       tls: {
         enabled: cfg.api?.tls?.enabled !== false,
         certFile: cfg.api?.tls?.certFile || null,
@@ -163,8 +169,13 @@ export function applyConfig(daemon, patch) {
     if (typeof r.timeoutMs === 'number') cfg.radiodyplom.timeoutMs = r.timeoutMs;
     if (typeof r.dryRun === 'boolean') cfg.radiodyplom.dryRun = r.dryRun;
     if (!keepExisting(r.pin)) {
-      cfg.radiodyplom.pin = String(r.pin).trim();
-      pinChanged = true;
+      if (cfg._zEnv?.pin) {
+        log.warn('PIN pochodzi z RD_PIN (pin.env) — zmiana z interfejsu '
+          + 'pominięta. Zmień go tam.');
+      } else {
+        cfg.radiodyplom.pin = String(r.pin).trim();
+        pinChanged = true;
+      }
     }
   }
 
@@ -223,7 +234,15 @@ export function applyConfig(daemon, patch) {
     // literówka w formularzu nie zdjęła ochrony z nasłuchu w sieci.
     if (patch.api.auth) {
       cfg.api.auth = cfg.api.auth || {};
-      if (patch.api.auth.passwordClear === true) {
+      if (cfg._zEnv?.apiPasswordHash) {
+        // Zmiana z okna zadziałałaby do najbliższego restartu i zniknęła —
+        // wartość ze środowiska wygrywa przy każdym starcie. Lepiej powiedzieć
+        // wprost, niż pozwolić ustawić hasło, które przestanie działać.
+        if (patch.api.auth.password || patch.api.auth.passwordClear) {
+          log.warn('Hasło do interfejsu pochodzi z RD_API_PASSWORD_HASH '
+            + '(pin.env) — zmiana z interfejsu pominięta. Zmień je tam.');
+        }
+      } else if (patch.api.auth.passwordClear === true) {
         delete cfg.api.auth.passwordHash;
       } else if (patch.api.auth.password) {
         cfg.api.auth.passwordHash = zahaszujHaslo(patch.api.auth.password);
@@ -311,7 +330,11 @@ export function writeConfigFile(cfg) {
     radiodyplom: {
       ...(original.radiodyplom || {}),
       apiUrl: cfg.radiodyplom.apiUrl,
-      pin: cfg.radiodyplom.pin,
+      // PIN ze zmiennej środowiskowej (pin.env) NIE trafia do pliku — plik ma
+      // prawa 0644 i bywa wklejany do zgłoszeń, a `pin.env` istnieje właśnie
+      // po to, żeby sekret tam nie leżał. Sprawdzone 2026-09-07: bez tego
+      // pierwszy zapis z okna przepisywał PIN do config.json.
+      ...(cfg._zEnv?.pin ? {} : { pin: cfg.radiodyplom.pin }),
       timeoutMs: cfg.radiodyplom.timeoutMs,
       dryRun: !!cfg.radiodyplom.dryRun,
     },
@@ -322,7 +345,18 @@ export function writeConfigFile(cfg) {
     },
     queue: original.queue || cfg.queue,
     rateLimit: cfg.rateLimit,
-    api: { ...(original.api || {}), ...cfg.api },
+    // To samo dla hasza hasła do interfejsu: jeśli przyszedł z RD_API_PASSWORD_HASH,
+    // zostawiamy w pliku to, co tam było (najczęściej nic).
+    api: (() => {
+      const out = { ...(original.api || {}), ...cfg.api };
+      if (cfg._zEnv?.apiPasswordHash) {
+        const zPliku = original.api?.auth?.passwordHash;
+        out.auth = { ...(out.auth || {}) };
+        if (zPliku === undefined) delete out.auth.passwordHash;
+        else out.auth.passwordHash = zPliku;
+      }
+      return out;
+    })(),
     logLevel: cfg.logLevel,
     language: cfg.language || 'pl',
     // Bez tej linii wybór motywu żył tylko w pamięci: plik zaczyna się od

@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('bridge', {
   ackProblems: () => ipcRenderer.invoke('ackProblems'),
   discardFailed: () => ipcRenderer.invoke('discardFailed'),
   quit: () => ipcRenderer.invoke('quit'),
+  restart: () => ipcRenderer.invoke('restart'),
   openLog: () => ipcRenderer.invoke('openLog'),
   saveReport: () => ipcRenderer.invoke('report:save'),
   openUrl: (url) => ipcRenderer.invoke('openUrl', url),

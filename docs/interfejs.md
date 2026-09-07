@@ -196,6 +196,31 @@ Lista dozwolonych wartości jest w rdzeniu **wypisana osobno** od tej
 w `ui/strings.js`: pakiet bez interfejsu zawiera tylko `src/`, więc import
 z `ui/` położyłby usługę na malince. Zgodność obu kopii pilnuje test.
 
+### Przycisk „Zrestartuj teraz"
+
+Pojawia się **tylko wtedy**, gdy zapisane zmiany czekają na restart, w banerze,
+który to zgłasza — a baner siedzi w przyklejonej części okna, więc widać go
+także na dole długiej Konfiguracji, przy „Zapisz", i po przejściu na inną
+zakładkę (rdzeń pamięta, co czeka).
+
+**Dlaczego nie w nagłówku obok „Zakończ":** restart przerywa nasłuch UDP, a QSO
+wysłane przez logger w tym okienku **nie ma jak wrócić** — to ten sam argument,
+którym odrzuciliśmy samoaktualizację. Stały przycisk zapraszałby do kliknięcia
+w trakcie akcji, i stałby ramię w ramię z „Zakończ". Dlatego jest też pytanie
+z tym ostrzeżeniem.
+
+Restart idzie **tą samą ścieżką co „Zakończ"**, żeby nie ominąć zamknięcia
+kolejki, ikony w zasobniku i pliku logu. `app.relaunch()` wołane jest **przed**
+zamknięciem, bo ono tylko planuje nowy proces.
+
+**W przeglądarce przycisku nie ma** i to nie przeoczenie: usługa ma
+`Restart=on-failure`, więc czyste wyjście by ją **zatrzymało**, nie podniosło.
+Baner pokazuje tam polecenie `sudo systemctl restart radiodyplom-bridge`.
+
+Na Windowsie mechanizm jest utwardzony pod dwa ryzyka (wersja portable
+rozpakowana do katalogu tymczasowego, wyścig o blokadę jednej instancji), ale
+**nietestowany na prawdziwej maszynie** — patrz BACKLOG.
+
 ### Zgłoszenie do wysłania
 
 Zakładka *O programie* ma przycisk **Zapisz zgłoszenie do wysłania**, a menu

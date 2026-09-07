@@ -77,6 +77,15 @@
   /* Przyciski zawijają się CAŁĄ GRUPĄ, nie pojedynczo. Przy wąskim oknie
      „Zakończ" trafiał inaczej dokładnie pod plakietki na górze — a to jedyny
      przycisk w nagłówku, który przerywa przekazywanie QSO. */
+  /* Stała szerokość obu przycisków w nagłówku.
+     Bez niej przesuwały się przy KAŻDEJ zmianie napisu: „Wstrzymaj" ↔ „Wznów"
+     w tym samym języku i „Wstrzymaj" ↔ „Pause" przy przełączeniu na angielski.
+     Wtedy skakały też ikony obok, a klikając dwa razy w to samo miejsce można
+     było trafić w „Zakończ" zamiast we „Wznów”.
+     Wartości dobrane pod najdłuższe napisy („Wstrzymaj", „Zakończ") i sprawdzone
+     w obu językach — nie w em, bo tekst przycisków ma własny font-size. */
+  header #btnPause { min-width:104px; }
+  header #btnQuit  { min-width:92px; }
   .hdr-actions { display:flex; align-items:center; gap:8px; flex:none;
                  /* Do prawej krawędzi także po zawinięciu — dzięki temu
                     „Zakończ" nigdy nie stoi pod plakietkami z lewej. */

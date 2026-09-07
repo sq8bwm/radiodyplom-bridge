@@ -37,6 +37,7 @@
     "port": 12061
   },
   "language": "pl",
+  "theme": "auto",
   "ui": {
     "recentEvents": 20
   },

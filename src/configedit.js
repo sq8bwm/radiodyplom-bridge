@@ -14,6 +14,16 @@ import { maskPin } from './httpapi.js';
 import { log, setLevel } from './log.js';
 import { EVENT_RING } from './worker.js';
 
+/**
+ * Dozwolone motywy — ta sama lista co `THEMES` w `ui/strings.js`.
+ *
+ * Wypisana tu OSOBNO, nie zaimportowana: pakiet headless kopiuje wyłącznie
+ * `src/`, więc import z `ui/` położyłby usługę na malince komunikatem
+ * „Cannot find module". Sprawdzone doświadczalnie 2026-09-07. Zgodność obu
+ * list pilnuje test `test/konfiguracja-motyw.test.js`.
+ */
+const THEMES = ['auto', 'light', 'dark'];
+
 /** Zmiany wymagające restartu (nie da się ich zastosować na żywo). */
 const RESTART_KEYS = ['udp.host', 'udp.port', 'udp.multicastGroups', 'api.port', 'api.enabled',
   'dataDir', 'queue.dir', 'queue.failedDir', 'queue.seenFile'];
@@ -49,6 +59,10 @@ export function editableConfig(cfg) {
     api: cfg.api,
     logLevel: cfg.logLevel,
     language: cfg.language || 'pl',
+    // Bez tej linii wybór motywu żył tylko w pamięci: plik zaczyna się od
+    // rozsypania swojej dotychczasowej treści, więc stara wartość wygrywała
+    // i po restarcie okno wracało do poprzedniego motywu.
+    theme: THEMES.includes(cfg.theme) ? cfg.theme : 'auto',
     ui: { recentEvents: cfg.ui?.recentEvents ?? 20 },
   };
 }
@@ -174,6 +188,11 @@ export function applyConfig(daemon, patch) {
   if (patch.rateLimit) Object.assign(cfg.rateLimit, patch.rateLimit);
   if (patch.logLevel) cfg.logLevel = patch.logLevel;
   if (patch.language) cfg.language = String(patch.language);
+  // Motyw walidujemy wobec listy, a nie zapisujemy co przyszło: wartość z tego
+  // pola wraca do CSS-a jako atrybut, a nieznana zostawiłaby okno bez palety.
+  if (patch.theme !== undefined) {
+    cfg.theme = THEMES.includes(patch.theme) ? patch.theme : 'auto';
+  }
 
   // --- zastosuj na żywo, co się da ---
   // Flagę „brak PIN-u" trzeba przeliczyć, inaczej interfejs pokazywałby
@@ -254,6 +273,10 @@ export function writeConfigFile(cfg) {
     api: cfg.api,
     logLevel: cfg.logLevel,
     language: cfg.language || 'pl',
+    // Bez tej linii wybór motywu żył tylko w pamięci: plik zaczyna się od
+    // rozsypania swojej dotychczasowej treści, więc stara wartość wygrywała
+    // i po restarcie okno wracało do poprzedniego motywu.
+    theme: cfg.theme || 'auto',
     ui: { ...(original.ui || {}), recentEvents: cfg.ui?.recentEvents ?? 20 },
   };
   if (cfg.dataDir) out.dataDir = cfg.dataDir;

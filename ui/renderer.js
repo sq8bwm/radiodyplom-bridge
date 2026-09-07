@@ -3,7 +3,7 @@
 
 // Interfejs. Nie ma tu żadnej logiki mostka — tylko prezentacja stanu
 // i wysyłanie poleceń przez window.bridge (preload).
-import { t, setLang, getLang, errText, LANGS, LANG_NAMES } from './strings.js';
+import { t, setLang, getLang, errText, LANGS, LANG_NAMES, THEMES } from './strings.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
@@ -18,19 +18,108 @@ function applyLang() {
   $('fPin').placeholder = getLang() === 'pl' ? 'np. ABCD-1234' : 'e.g. ABCD-1234';
   $('fMulticast').placeholder = t('hint.multicast');
   if (!$('btnQuit').hidden) $('btnQuit').title = t('hint.closeToTray');
+  drawThemeButton();         // podpowiedzi są tłumaczone
+  drawLangButton();
   refresh();
   if ($('konfig').classList.contains('active')) loadConfig();
 }
 
-function buildLangPicker(active) {
-  const sel = $('langPick');
-  sel.innerHTML = LANGS.map((l) => `<option value="${l}">${LANG_NAMES[l]}</option>`).join('');
-  sel.value = active;
-  sel.onchange = async () => {
-    setLang(sel.value);
+/** Przycisk języka: flaga języka BIEŻĄCEGO, klik przełącza na następny. */
+function drawLangButton() {
+  const b = $('langBtn');
+  if (!b) return;
+  const teraz = getLang();
+  const nast = LANGS[(LANGS.indexOf(teraz) + 1) % LANGS.length];
+  b.innerHTML = SVG[teraz] || SVG.pl;
+  b.title = `${LANG_NAMES[teraz]} → ${LANG_NAMES[nast]}`;
+  b.setAttribute('aria-label', LANG_NAMES[teraz]);
+}
+
+function buildLangButton(active) {
+  setLang(active);
+  drawLangButton();
+  $('langBtn').onclick = async () => {
+    const nast = LANGS[(LANGS.indexOf(getLang()) + 1) % LANGS.length];
+    setLang(nast);
     applyLang();
     // Zapis do konfiguracji, żeby zasobnik i kolejny start znały wybór.
-    await window.bridge.saveConfig({ language: sel.value });
+    await window.bridge.saveConfig({ language: nast });
+  };
+}
+
+// ---------- ikony nagłówka ----------
+// Wbudowane SVG, nie emoji. Flagi państw NIE renderują się jako flagi na
+// Windowsie (Segoe UI Emoji pokazuje wtedy litery „PL"/„GB"), a Windows to
+// główna platforma loggerów — przycisk wyglądałby inaczej u większości
+// odbiorców. SVG wygląda identycznie wszędzie i nie dokłada zależności.
+const SVG = {
+  // motyw
+  auto: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">'
+    + '<rect x="1.5" y="2.5" width="13" height="9" rx="1"/><path d="M6 14h4M8 11.5V14"/></svg>',
+  light: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">'
+    + '<circle cx="8" cy="8" r="3.2"/>'
+    + '<path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9L13 13M13 3l-1.1 1.1M4.1 11.9L3 13"/>'
+    + '</svg>',
+  dark: '<svg viewBox="0 0 16 16" fill="currentColor">'
+    + '<path d="M10.6 1.6a6.4 6.4 0 1 0 3.8 11.6A5.6 5.6 0 0 1 10.6 1.6z"/></svg>',
+  // flagi — biały pas dostaje obramowanie, inaczej ginie na jasnym tle
+  pl: '<svg viewBox="0 0 20 14"><rect x=".5" y=".5" width="19" height="6.5" fill="#fff"/>'
+    + '<rect x=".5" y="7" width="19" height="6.5" fill="#dc143c"/>'
+    + '<rect x=".5" y=".5" width="19" height="13" fill="none" stroke="currentColor" stroke-opacity=".35"/></svg>',
+  en: '<svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#012169"/>'
+    + '<path d="M0 0l20 14M20 0L0 14" stroke="#fff" stroke-width="2.8"/>'
+    + '<path d="M0 0l20 14M20 0L0 14" stroke="#c8102e" stroke-width="1.6"/>'
+    + '<path d="M10 0v14M0 7h20" stroke="#fff" stroke-width="4.6"/>'
+    + '<path d="M10 0v14M0 7h20" stroke="#c8102e" stroke-width="2.8"/>'
+    + '<rect x=".5" y=".5" width="19" height="13" fill="none" stroke="currentColor" stroke-opacity=".35"/></svg>',
+};
+
+// ---------- motyw ----------
+// Wybór trzymamy w konfiguracji, nie w localStorage: to samo okno otwiera się
+// w Electronie i w przeglądarce, a ustawienie ma być jedno.
+let motyw = 'auto';
+
+/**
+ * Ustawia motyw na dokumencie.
+ *
+ * „auto" ZDEJMUJE atrybut, zamiast wpisywać rozpoznaną wartość — wtedy działa
+ * `@media (prefers-color-scheme)`, więc okno reaguje na zmianę motywu systemu
+ * w trakcie pracy, bez restartu i bez nasłuchiwania zmian z JS-a.
+ */
+function applyTheme(wybor) {
+  motyw = THEMES.includes(wybor) ? wybor : 'auto';
+  if (motyw === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = motyw;
+}
+
+/**
+ * Przycisk motywu: jedna ikona, klik przechodzi do następnego stanu.
+ *
+ * Trzy stany (system → jasny → ciemny), więc lista rozwijana byłaby dokładna,
+ * ale zajmowałaby w nagłówku tyle co nazwa najdłuższej pozycji. Ikona pokazuje
+ * stan BIEŻĄCY, a podpowiedź mówi, co zrobi klik — inaczej przy trzech stanach
+ * nie da się zgadnąć, czy ikona to stan teraźniejszy, czy docelowy.
+ */
+function drawThemeButton() {
+  const b = $('themeBtn');
+  if (!b) return;
+  const nast = THEMES[(THEMES.indexOf(motyw) + 1) % THEMES.length];
+  b.innerHTML = SVG[motyw];
+  b.title = `${t(`theme.${motyw}`)} → ${t(`theme.${nast}`)}`;
+  b.setAttribute('aria-label', t(`theme.${motyw}`));
+}
+
+function buildThemeButton(active) {
+  applyTheme(active);
+  drawThemeButton();
+  $('themeBtn').onclick = async () => {
+    const nast = THEMES[(THEMES.indexOf(motyw) + 1) % THEMES.length];
+    applyTheme(nast);
+    drawThemeButton();
+    // Electron dostaje to osobno: `nativeTheme` odpowiada za ramkę okna, menu
+    // kontekstowe i paski przewijania, których CSS-em nie dosięgniemy.
+    try { await window.bridge.setTheme?.(nast); } catch { /* przeglądarka nie ma czego ustawiać */ }
+    await window.bridge.saveConfig({ theme: nast });
   };
 }
 
@@ -920,8 +1009,9 @@ $('btnQuit').onclick = async () => {
 // ---------- start ----------
 (async () => {
   const cfg = await window.bridge.getConfig();
+  buildThemeButton(cfg?.theme || 'auto');
   setLang(cfg?.language || 'pl');
-  buildLangPicker(getLang());
+  buildLangButton(getLang());
   applyLang();
   setInterval(refresh, 2000);
   setInterval(() => { if ($('log').classList.contains('active')) refreshLog(); }, 2000);

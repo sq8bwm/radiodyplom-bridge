@@ -303,8 +303,22 @@ describe('maskPin', () => {
     }
   });
 
-  test('zachowuje pierwszy segment, żeby dało się rozpoznać PIN', () => {
-    assert.equal(maskPin('AAAA-1111'), 'AAAA-****');
+  test('zostawia DWA jawne znaki, żeby dało się rozpoznać PIN', () => {
+    assert.equal(maskPin('AAAA-1111'), 'AA**-****');
+    assert.equal(maskPin('ABCDEFGH'), 'AB****');
+  });
+
+  test('nie ujawnia pierwszego segmentu ani długości PIN-u', () => {
+    // Regres z 2026-09-07: maska pokazywała cały segment przed myślnikiem,
+    // więc zrzut ekranu w publicznym repozytorium wynosił cztery znaki sekretu.
+    assert.ok(!maskPin('TZV7-ABCD').includes('TZV7'));
+    // Dwa PIN-y o różnej długości dają maskę tej samej długości.
+    // (oba powyżej progu krótkiego PIN-u, który maskuje w całości)
+    assert.equal(maskPin('AB-12345'), maskPin('AB-123456789'));
+  });
+
+  test('PIN krótszy niż pięć znaków maskowany w całości', () => {
+    for (const p of ['ab', 'abcd', 'A']) assert.equal(maskPin(p), '****');
   });
 
   test('brak PIN-u daje null', () => {

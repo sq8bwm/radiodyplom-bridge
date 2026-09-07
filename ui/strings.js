@@ -10,9 +10,17 @@
 export const LANGS = ['pl', 'en'];
 export const LANG_NAMES = { pl: 'Polski', en: 'English' };
 
+// Motyw: „auto" znaczy „jak w systemie" i jest domyślny. Nazwy pozycji są
+// tłumaczone (klucze theme.*), bo trafiają do listy w nagłówku.
+export const THEMES = ['auto', 'light', 'dark'];
+
 const DICT = {
   pl: {
     'app.name': 'RadioDyplom Bridge',
+
+    'theme.auto': 'Motyw: system',
+    'theme.light': 'Motyw: jasny',
+    'theme.dark': 'Motyw: ciemny',
 
     'tab.state': 'Stan',
     'tab.queue': 'Kolejka',
@@ -32,8 +40,7 @@ const DICT = {
     'btn.filterClear': 'Wyczyść zawężenie',
     'stats.emptyFiltered': 'Brak QSO spełniających zawężenie. Zmień operatora, '
       + 'znak stacji albo zakres dat.',
-    'stats.empty': 'Dziennik jest pusty. Zapełnia się przy każdym wysłanym QSO; '
-      + 'historię sprzed wersji 0.1.10 można wczytać z logów narzędziem import-log.',
+    'stats.empty': 'Dziennik jest pusty. Zapełnia się przy każdym wysłanym QSO.',
     'stats.qso': 'QSO',
     'stats.copies': 'Kopie',
     'stats.qsoShort': 'QSO',
@@ -292,6 +299,10 @@ const DICT = {
   en: {
     'app.name': 'RadioDyplom Bridge',
 
+    'theme.auto': 'Theme: system',
+    'theme.light': 'Theme: light',
+    'theme.dark': 'Theme: dark',
+
     'tab.state': 'Status',
     'tab.queue': 'Queue',
     'tab.config': 'Settings',
@@ -310,8 +321,7 @@ const DICT = {
     'btn.filterClear': 'Clear filter',
     'stats.emptyFiltered': 'No QSOs match the filter. Change the operator, the '
       + 'station callsign or the date range.',
-    'stats.empty': 'The journal is empty. It fills up with every QSO sent; history '
-      + 'from before 0.1.10 can be imported from the logs with the import-log tool.',
+    'stats.empty': 'The journal is empty. It fills up with every QSO sent.',
     'stats.qso': 'QSOs',
     'stats.copies': 'Copies',
     'stats.qsoShort': 'QSO',

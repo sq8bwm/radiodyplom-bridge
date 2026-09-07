@@ -9,6 +9,7 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setLevel } from '../src/log.js';
+import { maskPin } from '../src/httpapi.js';
 
 setLevel('error');
 
@@ -62,10 +63,16 @@ const saved = () => JSON.parse(readFileSync(join(dir, 'config.json'), 'utf8'));
 describe('editableConfig — co widzi interfejs', () => {
   test('PIN-y są zamaskowane, nigdy jawne', () => {
     const view = mod.editableConfig(cfgMod.loadConfig());
-    assert.equal(view.radiodyplom.pin, 'AAAA-****');
-    assert.equal(view.forward.targets[0].pin, 'BBBB-****');
+    // Porównanie z maskPin, a NIE z literałem: postać maski już raz się
+    // zmieniła (2026-09-07, skrócenie do dwóch jawnych znaków) i wtedy trzeba
+    // było ruszać ten test, choć sprawdza on coś innego — że PIN nie wycieka.
+    assert.equal(view.radiodyplom.pin, maskPin('AAAA-1111'));
+    assert.equal(view.forward.targets[0].pin, maskPin('BBBB-2222'));
     assert.equal(JSON.stringify(view).includes('1111'), false);
     assert.equal(JSON.stringify(view).includes('2222'), false);
+    // I dosłownie: żadnego jawnego segmentu PIN-u w całym widoku.
+    assert.equal(JSON.stringify(view).includes('AAAA'), false);
+    assert.equal(JSON.stringify(view).includes('BBBB'), false);
   });
 
   test('pinSet mówi, czy PIN jest ustawiony, bez ujawniania go', () => {

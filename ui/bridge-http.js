@@ -49,6 +49,9 @@ if (!window.bridge) {
 
     getConfig: () => czytaj('/api/config'),
     saveConfig: (patch) => wyslij('/api/config', patch),
+    // W przeglądarce nie ma czego ustawiać natywnie — motyw robi sam CSS.
+    // Metoda istnieje, żeby renderer nie musiał sprawdzać, gdzie działa.
+    setTheme: async () => null,
     checkConfig: (patch) => wyslij('/api/config/check', patch),
 
     stats: (from, to, filtry) => {

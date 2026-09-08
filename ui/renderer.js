@@ -364,9 +364,19 @@ function renderStatus(s) {
   const a = s.api || {};
   const adresy = (a.adresy || []).map((u) => `<code>${esc(u)}</code>`).join(' · ');
   $('ifaceInfo').innerHTML = adresy || '<span class="empty">—</span>';
-  const nota = a.siec ? t('iface.network')
-    : (a.wymagaLogowania ? t('iface.localOnly') : t('iface.noPassword'));
-  $('ifaceNote').textContent = nota;
+  // ODMOWA nasłuchu w sieci musi być widoczna TUTAJ, nie tylko w logu.
+  // Inaczej Konfiguracja pokazuje „0.0.0.0", Stan pokazuje localhost, a powód
+  // zna wyłącznie ten, kto zajrzy do pliku logu (zgłoszone 2026-09-08).
+  if (a.odrzucony) {
+    $('ifaceNote').innerHTML = `<strong>${esc(t('iface.refused'))}</strong> `
+      + esc((a.powody || []).map((k) => t(`refuse.${k}`)).join(' · '))
+      + `<br>${esc(t('refuse.whatToDo'))}`;
+    $('ifaceNote').style.borderLeftColor = 'var(--err)';
+  } else {
+    $('ifaceNote').textContent = a.siec ? t('iface.network')
+      : (a.wymagaLogowania ? t('iface.localOnly') : t('iface.noPassword'));
+    $('ifaceNote').style.borderLeftColor = '';
+  }
   $('ifaceNote').hidden = false;
 
   const by = s.listener.stats.bySource || {};
@@ -707,7 +717,15 @@ async function loadConfig() {
   $('fApiReadOnly').checked = cfg.api?.readOnly === null
     ? cfg.api?.host === '0.0.0.0'
     : cfg.api?.readOnly !== false;
-  if (hasloZEnv) {
+  // Ten sam powód pokazujemy w Konfiguracji, bo tu użytkownik wybrał 0.0.0.0
+  // i tutaj wróci sprawdzić, dlaczego „nie działa".
+  const st = ostatniStatus?.api;
+  if (st?.odrzucony) {
+    $('apiNetHint').innerHTML = `<strong>${esc(t('iface.refused'))}</strong> `
+      + esc((st.powody || []).map((k) => t(`refuse.${k}`)).join(' · '))
+      + `<br>${esc(t('refuse.whatToDo'))}`;
+    $('apiNetHint').className = 'hint lvl-error';
+  } else if (hasloZEnv) {
     $('apiNetHint').textContent = t('hint.apiPasswordFromEnv');
     $('apiNetHint').className = 'hint';
   } else {

@@ -16,6 +16,20 @@ przycisk „Zakończ", menu pod ikoną w zasobniku.
 - pytanie **zapory Windows** przy pierwszym bindzie UDP,
 - praca w tle po zamknięciu okna przez dłuższy czas.
 
+**Potwierdzone 2026-09-08 na prawdziwym Windowsie:** program uruchamia się,
+okno działa, PIN sprawdzony. Nasłuch w sieci ODRZUCONY, bo Windows nie ma
+`openssl` — czyli fail-closed zadziałał zgodnie z projektem. Powód nie docierał
+jednak do okna (znał go tylko log) i to zostało naprawione w 0.1.20.
+
+**Otwarte pytanie z tego wynikające:** czy wystawiać certyfikat BEZ `openssl`.
+Node nie umie tworzyć X.509, ale certyfikat samopodpisany da się zapisać ręcznie
+w DER (klucze i podpis są w `node:crypto`) — to około stu linii kodowania ASN.1.
+Zysk: nasłuch w sieci działałby na Windowsie od razu, bez instalowania
+czegokolwiek. Koszt: własna implementacja formatu, którego nie mamy czym
+niezależnie sprawdzić poza „przeglądarka przyjęła". Do decyzji, gdy pojawi się
+realna potrzeba — dziś na Windowsie zostaje tunel SSH albo własny plik
+certyfikatu.
+
 **Do sprawdzenia od 0.1.18 — przycisk „Zrestartuj teraz".** Na Linuksie
 sprawdzony klikaniem (nowy PID, zmiana wymagająca restartu zastosowana, czyste
 zamknięcie). Na Windowsie **nietestowany**, a są tam dwa ryzyka, które

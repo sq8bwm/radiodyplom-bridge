@@ -196,8 +196,34 @@ Szukasz trzech linii:
 ```
 
 Jeśli zamiast tego widzisz `ODRZUCONY`, mostek został na localhoście i podaje
-powód — będzie to jedno z trzech: brak hasła, wyłączony TLS albo brak
-certyfikatu (i wtedy: brak `openssl`).
+powód. **To samo od 0.1.20 widać w oknie** — na zakładce Stan w panelu
+*Interfejs* i w Konfiguracji pod panelem *Interfejs w sieci*, razem z radą, co
+zrobić. Wcześniej powód znał tylko log.
+
+Powody bywają cztery:
+
+| Powód | Co zrobić |
+|---|---|
+| nie ustawiono hasła | ustaw hasło (min. 8 znaków) |
+| HTTPS wyłączony w konfiguracji | `api.tls.enabled: true` |
+| **brak `openssl`** | patrz niżej — typowe na **Windowsie** |
+| brak certyfikatu TLS | sprawdź `certFile`/`keyFile` i prawa do plików |
+
+### Windows: nie ma czym wystawić certyfikatu
+
+Mostek wystawia certyfikat, wołając `openssl` — bo Node umie X.509 **tylko
+czytać**, nie tworzyć. Na Linuksie i Raspberry Pi OS `openssl` jest zawsze;
+**na Windowsie zwykle nie**. Wtedy nasłuch w sieci zostaje odrzucony, a program
+działa dalej normalnie na `127.0.0.1`.
+
+Trzy wyjścia, od najprostszego:
+
+1. **Tunel SSH** — nic nie instalujesz i nic nie otwierasz:
+   `ssh -L 12061:localhost:12061 użytkownik@komputer`
+2. **Własny certyfikat** — podaj gotowe pliki:
+   `"tls": { "enabled": true, "certFile": "C:/…/cert.pem", "keyFile": "C:/…/key.pem" }`
+3. **Zainstaluj `openssl`** — najprościej razem z **Git for Windows**, który go
+   zawiera; program znajdzie go w `PATH` przy następnym starcie.
 
 ### 5. Zapisz odcisk certyfikatu
 

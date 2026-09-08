@@ -4,20 +4,23 @@
 // Uwierzytelnianie i TLS dla API stanu — wszystko, co jest potrzebne, żeby
 // interfejs mógł nasłuchiwać poza `127.0.0.1`.
 //
-// Zasada nadrzędna: FAIL-CLOSED. Każdy brak (hasła, certyfikatu, openssl-a)
+// Zasada nadrzędna: FAIL-CLOSED. Każdy brak (hasła, HTTPS-a, certyfikatu)
 // kończy się pozostaniem na localhoście i wpisem w logu — nigdy otwartym
 // portem bez ochrony. Otwarty port bez hasła jest gorszy niż brak funkcji:
 // przez `POST /api/config` można podmienić PIN i przekierować cudze QSO.
 //
-// Zero zależności: `node:crypto` ma scrypt i porównanie stałoczasowe, a jedyne,
-// czego Node nie umie, to WYSTAWIĆ certyfikat X.509 (umie tylko czytać) —
-// do tego wołamy `openssl`, obecny na Raspberry Pi OS i w dystrybucjach Linuksa.
+// Zero zależności: `node:crypto` ma scrypt i porównanie stałoczasowe, a jedynego,
+// czego nie umie — WYSTAWIĆ certyfikat X.509 (umie tylko czytać) — dokłada nasz
+// `cert.js`. Gdy w systemie jest `openssl`, wołamy jego; gdy nie ma (typowy
+// Windows), kodujemy certyfikat sami. Patrz `przygotujCertyfikat`.
 import { randomBytes, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { hostname, networkInterfaces } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import { log } from './log.js';
+import { wystawCertyfikat } from './cert.js';
 
 /** Adresy, na których nasłuch NIE jest wystawieniem do sieci. */
 const LOKALNE = new Set(['127.0.0.1', '::1', 'localhost']);
@@ -50,8 +53,7 @@ const BLOKADA_MAX_MS = 15 * 60 * 1000;
 export const POWODY = {
   'brak-hasla': 'nie ustawiono hasła (api.auth.password)',
   'tls-wylaczony': 'TLS wyłączony w konfiguracji',
-  'brak-openssl': 'brak certyfikatu, a openssl niedostępny',
-  'brak-certyfikatu': 'brak certyfikatu TLS',
+  'brak-certyfikatu': 'nie udało się przygotować certyfikatu TLS',
 };
 
 export function czyLokalny(host) {
@@ -228,7 +230,7 @@ export function adresyLokalne() {
  *
  * @returns {{cert:string, key:string, wystawiony:boolean}|null}
  */
-export function przygotujCertyfikat({ cfg, dataDir }) {
+export function przygotujCertyfikat({ cfg, dataDir, wymusWlasny = false }) {
   const tls = cfg?.api?.tls || {};
   if (tls.certFile && tls.keyFile) {
     if (!existsSync(tls.certFile) || !existsSync(tls.keyFile)) {
@@ -243,26 +245,60 @@ export function przygotujCertyfikat({ cfg, dataDir }) {
   const key = join(katalog, 'key.pem');
   if (existsSync(cert) && existsSync(key)) return { cert, key, wystawiony: false };
 
-  if (!czyOpenssl()) {
-    log.error('TLS: brak certyfikatu, a openssl nie jest dostępny. '
-      + 'Podaj api.tls.certFile i api.tls.keyFile albo zainstaluj openssl.');
-    return null;
-  }
+  const nazwa = hostname() || 'radiodyplom-bridge';
+  const nazwy = ['localhost', nazwa];
+  const adresy = ['127.0.0.1', ...adresyLokalne()];
+
+  // Dwie drogi, świadomie w tej kolejności:
+  //  - `openssl`, gdy jest — sprawdzony w boju i to on wystawiał certyfikaty
+  //    do 0.1.20, więc na Linuksie i malince nic się nie zmienia;
+  //  - własny koder DER, gdy openssl-a NIE MA (typowy Windows) — dzięki temu
+  //    nasłuch w sieci nie jest już tam odrzucany.
+  // `wymusWlasny` pozwala wymusić drugą drogę: testy robią to ZAWSZE, żeby kod
+  // używany głównie na Windowsie był sprawdzany codziennie na Linuksie.
+  const wlasnymNaStarcie = wymusWlasny || !czyOpenssl();
+
+  const przezOpenssl = () => {
+    const san = [...nazwy.map((n) => `DNS:${n}`), ...adresy.map((a) => `IP:${a}`)].join(',');
+    execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-sha256',
+      '-days', '730', '-nodes', '-keyout', key, '-out', cert,
+      '-subj', `/CN=${nazwa}`, '-addext', `subjectAltName=${san}`], { stdio: 'pipe' });
+  };
+
+  const przezWlasnyKoder = () => {
+    const { cert: pemCert, key: pemKey } = wystawCertyfikat({ cn: nazwa, nazwy, adresy });
+    writeFileSync(key, pemKey, { mode: 0o600 });
+    writeFileSync(cert, pemCert, { mode: 0o644 });
+  };
 
   try {
     mkdirSync(katalog, { recursive: true, mode: 0o700 });
-    const nazwa = hostname() || 'radiodyplom-bridge';
-    const san = ['DNS:localhost', `DNS:${nazwa}`, 'IP:127.0.0.1',
-      ...adresyLokalne().map((a) => `IP:${a}`)].join(',');
-    execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-sha256',
-      '-days', '3650', '-nodes', '-keyout', key, '-out', cert,
-      '-subj', `/CN=${nazwa}`, '-addext', `subjectAltName=${san}`], { stdio: 'pipe' });
+
+    let wlasnym = wlasnymNaStarcie;
+    if (wlasnym) {
+      przezWlasnyKoder();
+    } else {
+      try {
+        przezOpenssl();
+      } catch (err) {
+        // `openssl` JEST, ale zawiódł: wersja starsza niż 1.1.1 nie zna
+        // `-addext`, bywa też brak `openssl.cnf`. Skoro mamy własny koder,
+        // odmowa nasłuchu byłaby tu bezsensownym karaniem użytkownika.
+        log.warn(`TLS: openssl zawiódł (${err.message.trim().split('\n')[0]}) `
+          + '— wystawiam certyfikat wbudowanym koderem');
+        przezWlasnyKoder();
+        wlasnym = true;
+      }
+    }
+
     chmodSync(key, 0o600);
     chmodSync(cert, 0o644);
-    log.info(`TLS: wystawiony certyfikat własny na ${nazwa} (${san})`);
-    return { cert, key, wystawiony: true };
+    log.info(`TLS: wystawiony certyfikat własny na ${nazwa} `
+      + `(${[...nazwy, ...adresy].join(', ')})`
+      + `${wlasnym ? ' — bez openssl-a, wbudowanym koderem' : ''}`);
+    return { cert, key, wystawiony: true, wlasnym };
   } catch (err) {
-    log.error(`TLS: nie udało się wystawić certyfikatu: ${err.message}`);
+    log.error(`TLS: nie udało się przygotować certyfikatu: ${err.message}`);
     return null;
   }
 }
@@ -290,7 +326,7 @@ export function odciskCertyfikatu(sciezkaCert) {
  *
  * @returns {{host:string, siec:boolean, tls:object|null, readOnly:boolean, powody:string[]}}
  */
-export function trybApi({ cfg, dataDir }) {
+export function trybApi({ cfg, dataDir, wymusWlasny = false }) {
   const zadany = String(cfg?.api?.host || '127.0.0.1');
   const chceSieci = !czyLokalny(zadany);
   const powody = [];
@@ -305,14 +341,19 @@ export function trybApi({ cfg, dataDir }) {
 
   if (!hasloUstawione(cfg)) powody.push('brak-hasla');
 
-  const tls = cfg?.api?.tls?.enabled === false ? null : przygotujCertyfikat({ cfg, dataDir });
+  const tls = cfg?.api?.tls?.enabled === false
+    ? null
+    : przygotujCertyfikat({ cfg, dataDir, wymusWlasny });
   if (cfg?.api?.tls?.enabled === false) {
     powody.push('tls-wylaczony');
   } else if (!tls) {
     // Rozdzielone, bo rada jest inna: bez openssl-a trzeba podać własny
     // certyfikat albo doinstalować narzędzie (typowy Windows), a przy jego
     // obecności problem jest w plikach albo prawach.
-    powody.push(czyOpenssl() ? 'brak-certyfikatu' : 'brak-openssl');
+    // Od 0.1.21 brak openssl-a NIE jest już powodem odmowy — mostek wystawia
+    // certyfikat sam. Zostaje jeden powód: przygotowanie się nie udało
+    // (nieczytelne pliki `certFile`/`keyFile`, brak praw do katalogu danych).
+    powody.push('brak-certyfikatu');
   }
 
   if (powody.length) {

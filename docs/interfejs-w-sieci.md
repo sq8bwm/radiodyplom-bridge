@@ -200,30 +200,48 @@ powód. **To samo od 0.1.20 widać w oknie** — na zakładce Stan w panelu
 *Interfejs* i w Konfiguracji pod panelem *Interfejs w sieci*, razem z radą, co
 zrobić. Wcześniej powód znał tylko log.
 
-Powody bywają cztery:
+Powody bywają trzy:
 
 | Powód | Co zrobić |
 |---|---|
 | nie ustawiono hasła | ustaw hasło (min. 8 znaków) |
 | HTTPS wyłączony w konfiguracji | `api.tls.enabled: true` |
-| **brak `openssl`** | patrz niżej — typowe na **Windowsie** |
-| brak certyfikatu TLS | sprawdź `certFile`/`keyFile` i prawa do plików |
+| nie udało się przygotować certyfikatu | patrz niżej |
 
-### Windows: nie ma czym wystawić certyfikatu
+### Gdy certyfikatu nie da się przygotować
 
-Mostek wystawia certyfikat, wołając `openssl` — bo Node umie X.509 **tylko
-czytać**, nie tworzyć. Na Linuksie i Raspberry Pi OS `openssl` jest zawsze;
-**na Windowsie zwykle nie**. Wtedy nasłuch w sieci zostaje odrzucony, a program
-działa dalej normalnie na `127.0.0.1`.
+Zwykle znaczy to jedno z dwóch: pliki podane w `api.tls.certFile`
+i `api.tls.keyFile` są nieczytelne albo nie ma prawa zapisu w katalogu danych,
+w którym mostek trzyma własny certyfikat. Dokładny błąd jest w logu.
 
-Trzy wyjścia, od najprostszego:
+Zawsze zostaje **tunel SSH** — nic nie instalujesz i żadnego portu nie otwierasz:
 
-1. **Tunel SSH** — nic nie instalujesz i nic nie otwierasz:
-   `ssh -L 12061:localhost:12061 użytkownik@komputer`
-2. **Własny certyfikat** — podaj gotowe pliki:
-   `"tls": { "enabled": true, "certFile": "C:/…/cert.pem", "keyFile": "C:/…/key.pem" }`
-3. **Zainstaluj `openssl`** — najprościej razem z **Git for Windows**, który go
-   zawiera; program znajdzie go w `PATH` przy następnym starcie.
+```bash
+ssh -L 12061:localhost:12061 użytkownik@komputer
+```
+
+### Windows: od 0.1.21 działa bez dodatków
+
+Do wersji 0.1.20 mostek wystawiał certyfikat, wołając `openssl` — bo Node umie
+X.509 **tylko czytać**, nie tworzyć. Na Linuksie i Raspberry Pi OS `openssl`
+jest zawsze, **na Windowsie zwykle nie**, więc nasłuch w sieci był tam po prostu
+odrzucany.
+
+Od 0.1.21 program **wystawia certyfikat sam**, wbudowanym koderem, bez żadnego
+zewnętrznego narzędzia. Na Windowsie nie trzeba niczego doinstalowywać: hasło,
+`api.tls.enabled: true`, host `0.0.0.0` — i tyle. Gdy `openssl` jednak jest
+w `PATH`, mostek nadal korzysta z niego (ta droga jest sprawdzona w boju);
+w logu widać którą drogą poszedł:
+
+```
+[INFO] TLS: wystawiony certyfikat własny na PC-MAREK (…) — bez openssl-a, wbudowanym koderem
+```
+
+Własny, gotowy certyfikat można podać jak dotąd:
+
+```json
+"tls": { "enabled": true, "certFile": "C:/…/cert.pem", "keyFile": "C:/…/key.pem" }
+```
 
 ### 5. Zapisz odcisk certyfikatu
 

@@ -280,8 +280,9 @@ export class StatusApi {
         // Co było ŻĄDANE w konfiguracji i dlaczego ewentualnie odmówiliśmy.
         // Bez tego okno pokazywało „0.0.0.0" w Konfiguracji i localhost na
         // Stanie, a powód odmowy siedział wyłącznie w logu — czyli tam, gdzie
-        // użytkownik nie zagląda (zgłoszone 2026-09-08 z Windowsa, gdzie
-        // openssl-a zwykle nie ma, więc nie ma czym wystawić certyfikatu).
+        // użytkownik nie zagląda (zgłoszone 2026-09-08 z Windowsa, gdzie wtedy
+        // nie było czym wystawić certyfikatu; od 0.1.21 mostek wystawia go sam,
+        // ale powody odmowy zostały — hasło i wyłączony HTTPS).
         zadanyHost: String(this.cfg.api?.host || '127.0.0.1'),
         odrzucony: (this.tryb.powody || []).length > 0,
         powody: this.tryb.powody || [],

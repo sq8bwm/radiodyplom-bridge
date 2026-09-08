@@ -21,14 +21,13 @@ okno działa, PIN sprawdzony. Nasłuch w sieci ODRZUCONY, bo Windows nie ma
 `openssl` — czyli fail-closed zadziałał zgodnie z projektem. Powód nie docierał
 jednak do okna (znał go tylko log) i to zostało naprawione w 0.1.20.
 
-**Otwarte pytanie z tego wynikające:** czy wystawiać certyfikat BEZ `openssl`.
-Node nie umie tworzyć X.509, ale certyfikat samopodpisany da się zapisać ręcznie
-w DER (klucze i podpis są w `node:crypto`) — to około stu linii kodowania ASN.1.
-Zysk: nasłuch w sieci działałby na Windowsie od razu, bez instalowania
-czegokolwiek. Koszt: własna implementacja formatu, którego nie mamy czym
-niezależnie sprawdzić poza „przeglądarka przyjęła". Do decyzji, gdy pojawi się
-realna potrzeba — dziś na Windowsie zostaje tunel SSH albo własny plik
-certyfikatu.
+**Rozstrzygnięte w 0.1.21:** certyfikat wystawiamy BEZ `openssl` (`src/cert.js`,
+własny koder DER). Obawa o „nie mamy czym tego sprawdzić" okazała się nietrafiona
+— sprawdzamy trzema niezależnymi drogami (`test/certyfikat.test.js`): parserem
+`crypto.X509Certificate`, PRAWDZIWYM uściskiem dłoni TLS (także po adresie IP)
+i `openssl x509` jako trzecią opinią tam, gdzie narzędzie jest. Błąd w kodowaniu
+`UTCTime` z pierwszej wersji wyłapał parser natychmiast („Bad time value").
+`openssl` nadal jest drogą pierwszą, gdy go widać w `PATH`.
 
 **Do sprawdzenia od 0.1.18 — przycisk „Zrestartuj teraz".** Na Linuksie
 sprawdzony klikaniem (nowy PID, zmiana wymagająca restartu zastosowana, czyste
@@ -242,18 +241,18 @@ Co powstało, w kolejności ustalonej wcześniej:
 4. **CSRF** — token w nagłówku `X-CSRF-Token`, wydawany po zalogowaniu i trzymany
    tylko w pamięci strony. Ciasteczko sesji: `HttpOnly`, `SameSite=Strict`,
    `Secure` przy TLS.
-5. **TLS** — `node:https`, certyfikat własny wystawiany przez `openssl` przy
-   pierwszym starcie w tym trybie, do `<dane>/tls/` z prawami `0600`. Odcisk
-   SHA-256 w logu do porównania w przeglądarce.
+5. **TLS** — `node:https`, certyfikat własny wystawiany przy pierwszym starcie
+   w tym trybie, do `<dane>/tls/` z prawami `0600`. Wystawia `openssl`, gdy jest
+   w systemie, a gdy nie ma — wbudowany koder DER (`src/cert.js`, od 0.1.21).
+   Odcisk SHA-256 w logu do porównania w przeglądarce.
 
 **Fail-closed jest tu regułą, nie ozdobą:** brak hasła albo TLS-a = nasłuch
 zostaje na `127.0.0.1` i program mówi w logu dlaczego. Sprawdzone testem
 i doświadczalnie na uruchomionym programie.
 
-Zero nowych zależności. Jedyne oparcie o zewnętrzne narzędzie to `openssl` do
-wystawienia certyfikatu — Node umie X.509 tylko czytać. Gdy openssl-a brak
-(bywa na Windowsie), zostaje własny certyfikat w konfiguracji albo localhost
-z tunelem SSH.
+Zero nowych zależności i — od 0.1.21 — zero oparcia o zewnętrzne narzędzia:
+`openssl` jest używany, gdy jest, ale nie jest wymagany. Node umie X.509 tylko
+czytać, więc wystawianie robi własny koder DER.
 
 Przepis na odwrotne proxy został w dokumentacji jako droga dla tych, którzy
 mają je już postawione — bez rekomendowania go przeciętnemu użytkownikowi.

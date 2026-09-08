@@ -441,10 +441,13 @@ describe('powód odmowy dociera do interfejsu', () => {
     assert.match(A, /powody\.push\('tls-wylaczony'\)/);
   });
 
-  test('brak openssl to OSOBNY powód od braku certyfikatu', () => {
-    // Rada jest inna: bez narzędzia trzeba podać własny certyfikat albo je
-    // doinstalować (typowy Windows); z narzędziem problem jest w plikach.
-    assert.match(A, /czyOpenssl\(\) \? 'brak-certyfikatu' : 'brak-openssl'/);
+  test('brak openssl NIE jest już powodem odmowy', () => {
+    // Do 0.1.20 brak narzędzia oznaczał odmowę nasłuchu w sieci — i to była
+    // przyczyna zgłoszenia z Windowsa. Od 0.1.21 mostek wystawia certyfikat
+    // sam, więc został jeden powód: przygotowanie się nie udało.
+    assert.doesNotMatch(A, /'brak-openssl'/, 'kod ma zniknąć razem z powodem');
+    const blok = A.slice(A.indexOf('export function trybApi'));
+    assert.match(blok, /powody\.push\('brak-certyfikatu'\)/);
   });
 
   test('status niesie żądany adres, flagę odmowy i powody', () => {
@@ -470,9 +473,9 @@ describe('powód odmowy dociera do interfejsu', () => {
   });
 
   test('każdy kod ma tłumaczenie w obu językach', () => {
-    const kody = [...A.matchAll(/'(brak-hasla|tls-wylaczony|brak-openssl|brak-certyfikatu)':/g)]
+    const kody = [...A.matchAll(/'(brak-hasla|tls-wylaczony|brak-certyfikatu)':/g)]
       .map((m) => m[1]);
-    assert.ok(kody.length >= 4, `oczekiwałam czterech kodów, mam ${kody.length}`);
+    assert.ok(kody.length >= 3, `oczekiwałam trzech kodów, mam ${kody.length}`);
     for (const k of new Set(kody)) {
       const ile = [...S2.matchAll(new RegExp(`'refuse\\.${k}':`, 'g'))].length;
       assert.equal(ile, 2, `kod ${k} ma ${ile} tłumaczeń, a ma mieć 2 (pl i en)`);
@@ -484,6 +487,5 @@ describe('powód odmowy dociera do interfejsu', () => {
     assert.ok(m, 'brak porady po polsku');
     assert.match(m[1], /tunel SSH/);
     assert.match(m[1], /certFile/);
-    assert.match(m[1], /openssl/);
   });
 });

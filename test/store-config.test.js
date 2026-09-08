@@ -252,7 +252,11 @@ describe('Konfiguracja', () => {
     return mod;
   }
 
-  afterEach(() => { delete process.env.RD_CONFIG_DIR; delete process.env.RD_PIN; });
+  afterEach(() => {
+    delete process.env.RD_CONFIG_DIR;
+    delete process.env.RD_PIN;
+    delete process.env.RD_DATA_DIR;
+  });
 
   test('RD_CONFIG_DIR przekierowuje plik konfiguracji', async () => {
     writeFileSync(join(dir, 'config.json'), JSON.stringify(BASE));
@@ -271,6 +275,23 @@ describe('Konfiguracja', () => {
     writeFileSync(join(dir, 'config.json'), JSON.stringify({ ...BASE, dataDir: 'auto' }));
     const { loadConfig, defaultDataDir } = await loadFresh(dir);
     assert.ok(loadConfig().queue.dir.startsWith(defaultDataDir()));
+  });
+
+  test('RD_DATA_DIR wygrywa z katalogiem systemowym przy dataDir "auto"', async () => {
+    // Tego używa wersja portable i AppImage z katalogiem `radiodyplom-dane`
+    // obok pliku: bez tego konfiguracja jechała obok pliku, a kolejka i blokada
+    // katalogu danych zostawały w katalogu systemowym — więc dwie instancje
+    // wchodziły sobie w drogę mimo osobnych konfiguracji.
+    writeFileSync(join(dir, 'config.json'), JSON.stringify({ ...BASE, dataDir: 'auto' }));
+    process.env.RD_DATA_DIR = join(dir, 'obok');
+    try {
+      const { loadConfig, defaultDataDir } = await loadFresh(dir);
+      assert.equal(defaultDataDir(), join(dir, 'obok'));
+      // Ścieżki z konfiguracji (./data/queue) liczą się od tego katalogu.
+      assert.equal(loadConfig().queue.dir, join(dir, 'obok', 'data', 'queue'));
+    } finally {
+      delete process.env.RD_DATA_DIR;
+    }
   });
 
   // Brak PIN-u nie może być błędem krytycznym: w wersji instalowanej

@@ -58,6 +58,13 @@ blokadę — a w logu piszą identyczne linie. Stąd wiersz **„Instalacja"**
 w zakładce O programie (0.1.22), który mówi wprost *portable* wraz z nazwą
 klikniętego pliku.
 
+**Rozwiązane inaczej niż planowano (0.1.22):** portable i wersja instalowana
+mogą teraz pracować OBOK SIEBIE — katalog `radiodyplom-dane` obok pliku
+przenosi konfigurację i dane, a katalog `userData` (na którym wisi blokada
+jednej instancji Electrona) przestawiamy przed jej pobraniem. Sprawdzone na
+uruchomionym programie: instalowana na 12060/12061 i portable na 12070/12071
+naraz, każda z własną kolejką. Opis: docs/konfiguracja.md.
+
 Zostaje do sprawdzenia:
 
 - **powtórzyć restart portable na 0.1.22** i potwierdzić, że wiersz nadal mówi

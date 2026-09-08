@@ -81,6 +81,59 @@ data/seen.json klucze już obsłużone (deduplikacja)
 ```
 Zapis jest atomowy (`.tmp` + `rename`), więc ubicie procesu nie uszkodzi kolejki.
 
+### Portable i AppImage: dane obok pliku programu
+
+Domyślnie **każda** wersja z okienkiem trzyma dane w katalogu użytkownika:
+
+| System | Konfiguracja | Dane (`dataDir: "auto"`) |
+|---|---|---|
+| Windows | `%APPDATA%\radiodyplom-bridge` | `%APPDATA%\radiodyplom-bridge\data` |
+| Linux | `~/.config/radiodyplom-bridge` | `~/.local/share/radiodyplom-bridge/data` |
+
+Znaczy to, że **portable dzieli wszystko z wersją instalowaną** (a AppImage
+z paczką `.deb`): ten sam PIN, tę samą kolejkę, ten sam certyfikat i tę samą
+blokadę — więc obie nie uruchomią się obok siebie, a na cudzym komputerze
+portable zostawia w profilu jawny PIN.
+
+Od 0.1.22 da się to zmienić, **na życzenie**: utwórz obok pliku programu katalog
+
+```
+radiodyplom-dane
+```
+
+Sama jego obecność przenosi tam konfigurację **i** dane. Nie ma katalogu —
+wszystko działa jak dotąd, więc zwykła aktualizacja nikomu nic nie przenosi.
+Zakładka *O programie* pokazuje wtedy „portable · dane obok pliku programu",
+a w logu jest linia `Dane obok pliku programu: …`. Katalog tylko do odczytu
+(zablokowany pendrive) nie jest udawany: program wraca do domyślnego katalogu
+i mówi o tym w logu.
+
+Po co to komu:
+
+- **pendrive** — konfiguracja, PIN i kolejka jadą z plikiem, a na obcym
+  komputerze nie zostaje nic;
+- **dwie instancje naraz** — patrz niżej.
+
+### Dwie instancje na jednej maszynie
+
+Sensowne, gdy jedna obsługuje logger lokalny, a druga akcję dyplomową. Trzeba
+dać drugiej instancji **osobne dane i osobne porty** — inaczej zatrzyma ją
+jedna z dwóch blokad opisanych niżej:
+
+1. utwórz `radiodyplom-dane` obok pliku portable (albo AppImage'a),
+2. w `radiodyplom-dane/config.json` ustaw inne porty, na przykład
+   `udp.port: 12070` i `api.port: 12071`.
+
+Sprawdzone na uruchomionym programie: wersja instalowana na `12060/12061`
+i portable na `12070/12071` pracują jednocześnie, każda z własną kolejką.
+
+**O czym pamiętać:** deduplikacja jest osobna dla każdej instancji, więc gdyby
+logger wysyłał to samo QSO na oba porty, poleciałoby **dwa razy**. Kolejka też
+jest osobna — QSO czekające w jednej instancji nie zostanie wysłane przez drugą.
+
+Bez okienka to samo robi zmienna `RD_DATA_DIR` (dane) razem
+z `RD_CONFIG_DIR` (konfiguracja).
+
 ### Zajęty port UDP
 
 Trzy różne sytuacje, często mylone:
@@ -135,7 +188,13 @@ drugi mógłby wysłać QSO zakolejkowane przez pierwszego — **z własnym PIN-
 pod inną stację**. Dotyczy to np. jednoczesnego uruchomienia UI i usługi systemd.
 
 Blokada po nieżyjącym procesie (twarde ubicie, restart maszyny) jest przejmowana
-automatycznie. Jeśli świadomie chcesz dwie instancje, daj każdej własny `dataDir`.
+automatycznie. Jeśli świadomie chcesz dwie instancje, daj każdej własny `dataDir`
+i własne porty — przepis wyżej, w „Dwie instancje na jednej maszynie".
+
+**Trzecia blokada, nie nasza:** Electron pozwala na jedno okno na jeden katalog
+`userData`. Druga instancja tylko pokazuje okno pierwszej i kończy pracę. Dlatego
+katalog danych obok pliku ustawiamy **przed** pobraniem tej blokady — bez tego
+osobne porty i osobny `dataDir` nic by nie dały.
 
 
 ## Model uprawnień (zmierzony 2026-09-02)

@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('bridge', {
   quit: () => ipcRenderer.invoke('quit'),
   restart: () => ipcRenderer.invoke('restart'),
   openLog: () => ipcRenderer.invoke('openLog'),
+  showConfigFile: () => ipcRenderer.invoke('showConfigFile'),
   saveReport: () => ipcRenderer.invoke('report:save'),
   openUrl: (url) => ipcRenderer.invoke('openUrl', url),
   getConfig: () => ipcRenderer.invoke('config:get'),

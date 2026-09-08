@@ -180,6 +180,12 @@ const DICT = {
     'about.author': 'Autor',
     'about.license': 'Licencja',
     'about.install': 'Instalacja',
+    'startFail.title': 'Mostek nie wystartował — nic nie jest odbierane ani wysyłane.',
+    'startFail.badge': 'rdzeń nie działa',
+    'startFail.hint': 'Program działa dalej tylko jako okno. Popraw plik konfiguracji '
+      + 'i uruchom program ponownie. Najczęstsza przyczyna: port UDP zajęty przez '
+      + 'inną instancję — wtedy zmień udp.port (i api.port) w jednej z nich.',
+    'btn.showConfigFile': 'Pokaż plik konfiguracji',
     'install.instalator': 'z instalatora',
     'install.portable': 'portable',
     'install.appimage': 'AppImage',
@@ -187,6 +193,7 @@ const DICT = {
     'install.pakiet': 'pakiet',
     'install.headless': 'usługa bez interfejsu',
     'install.zrodla': 'ze źródeł',
+    'install.daneObok': 'dane obok pliku programu',
     'about.newVersion': 'jest nowsza: {n}',
     'badge.update': 'NOWA WERSJA {n}',
     'btn.getUpdate': 'Pobierz {n}',
@@ -520,6 +527,12 @@ const DICT = {
     'about.author': 'Author',
     'about.license': 'License',
     'about.install': 'Installation',
+    'startFail.title': 'The bridge did not start — nothing is received or sent.',
+    'startFail.badge': 'core not running',
+    'startFail.hint': 'Only the window is running. Fix the configuration file and '
+      + 'start the program again. Most common cause: the UDP port is taken by another '
+      + 'instance — then change udp.port (and api.port) in one of them.',
+    'btn.showConfigFile': 'Show configuration file',
     'install.instalator': 'installer',
     'install.portable': 'portable',
     'install.appimage': 'AppImage',
@@ -527,6 +540,7 @@ const DICT = {
     'install.pakiet': 'package',
     'install.headless': 'headless service',
     'install.zrodla': 'from source',
+    'install.daneObok': 'data next to the program file',
     'about.newVersion': 'newer available: {n}',
     'badge.update': 'NEW VERSION {n}',
     'btn.getUpdate': 'Download {n}',

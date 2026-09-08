@@ -11,6 +11,9 @@
 // teraz" w wersji portable). Nie zmienia to zachowania programu, ale zmienia
 // możliwość jego sprawdzenia — i to samo trafia do zgłoszenia błędu, gdzie
 // „portable" bywa całym wyjaśnieniem dziwnego zachowania.
+import { existsSync, accessSync, constants } from 'node:fs';
+import { join, dirname } from 'node:path';
+
 /**
  * Nazwa pliku ze ścieżki — dzieląc po OBU separatorach.
  *
@@ -60,4 +63,45 @@ export function rodzajInstalacji({
     return { rodzaj: 'headless', plik: null };
   }
   return { rodzaj: 'zrodla', plik: null };
+}
+
+// ---------- katalog danych obok pliku ----------
+
+/** Nazwa katalogu, którym włącza się tryb „dane jadą z plikiem". */
+export const KATALOG_PRZENOSNY = 'radiodyplom-dane';
+
+/**
+ * Katalog danych OBOK uruchomionego pliku — dla portable i AppImage'a.
+ *
+ * Świadomie NA ŻYCZENIE: dopiero istnienie katalogu `radiodyplom-dane` obok
+ * pliku włącza ten tryb. Gdyby portable zawsze pisał tam, gdzie leży,
+ * uruchomienie z „Pobranych" rozsypywałoby tam konfigurację, kolejkę
+ * i certyfikat, a ludzie, którzy dziś mają dane w %APPDATA%, straciliby do
+ * nich dostęp po zwykłej aktualizacji.
+ *
+ * Po co w ogóle: bez tego portable i wersja instalowana dzielą JEDEN katalog
+ * (`%APPDATA%\radiodyplom-bridge`, na Linuksie `~/.config/radiodyplom-bridge`)
+ * — ten sam PIN, tę samą kolejkę i tę samą blokadę jednej instancji, więc nie
+ * dają się uruchomić obok siebie. Na cudzym komputerze zostawia to jawny PIN
+ * w profilu użytkownika.
+ *
+ * @returns {{katalog:string, blad?:string}|null} `null` = zostaje domyślny
+ */
+export function katalogDanychObokPliku({ env = process.env } = {}) {
+  const obok = env.PORTABLE_EXECUTABLE_DIR
+    || (env.APPIMAGE ? dirname(env.APPIMAGE) : null);
+  if (!obok) return null;
+
+  const katalog = join(obok, KATALOG_PRZENOSNY);
+  if (!existsSync(katalog)) return null;
+
+  // Pendrive bywa zablokowany do zapisu, a AppImage leży czasem na nośniku
+  // tylko do odczytu. Wtedy NIE udajemy, że się udało — wracamy do
+  // domyślnego katalogu i mówimy o tym w logu.
+  try {
+    accessSync(katalog, constants.W_OK);
+  } catch {
+    return { katalog, blad: 'tylko-do-odczytu' };
+  }
+  return { katalog };
 }

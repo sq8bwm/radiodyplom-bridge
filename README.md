@@ -72,6 +72,12 @@ Wersje z interfejsem są **tylko 64-bitowe na procesory Intel/AMD** — stąd `x
 Na Linuksie `.deb` dodaje pozycję do menu (**Internet / Sieć**). AppImage niczego
 nie instaluje — uruchamiasz plik i tyle, więc w menu się nie pojawi.
 
+Wersje **portable** i **AppImage** trzymają dane w profilu użytkownika, czyli
+tam samo co wersje instalowane. Jeśli mają być naprawdę przenośne — albo mają
+działać **obok** wersji zainstalowanej — utwórz obok pliku katalog
+`radiodyplom-dane`: konfiguracja, PIN i kolejka pojadą wtedy z plikiem
+([opis](docs/konfiguracja.md#portable-i-appimage-dane-obok-pliku-programu)).
+
 **Windows 10 lub nowszy** (64-bitowy). Na Windows 7 i 8 program się nie uruchomi —
 system odmówi wczytania pliku komunikatem *„nie jest prawidłową aplikacją systemu
 Win32"*. Nie da się tego obejść, ale mostek **nie musi stać na tym samym

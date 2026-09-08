@@ -39,6 +39,11 @@ function examplePath() {
  * Katalog danych właściwy dla systemu (dla dataDir: "auto").
  */
 export function defaultDataDir() {
+  // Jawne wskazanie z otoczenia wygrywa z katalogiem systemowym. Używa tego
+  // wersja portable i AppImage z katalogiem `radiodyplom-dane` obok pliku:
+  // konfiguracja i dane MUSZĄ tam być razem, inaczej dwie instancje dzielą
+  // kolejkę i blokadę katalogu danych, choć każda ma własny config.
+  if (process.env.RD_DATA_DIR) return resolve(process.env.RD_DATA_DIR);
   if (process.platform === 'win32') {
     return join(process.env.APPDATA || join(homedir(), 'AppData', 'Roaming'), APP);
   }

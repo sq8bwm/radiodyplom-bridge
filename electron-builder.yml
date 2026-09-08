@@ -88,9 +88,13 @@ linux:
       Keywords: krótkofalarstwo;krotkofalarstwo;hamradio;ham;radio;QSO;log;logger;QLog;N1MM;WSJT-X;JTDX;MSHV;ADIF;dyplom;radiodyplom;
       StartupNotify: 'true'
 
-appImage:
-  # `license` jest opcją WYŁĄCZNIE AppImage'a (sprawdzone w schemacie
-  # electron-buildera) – w sekcji `linux` byłby po cichu ignorowany.
-  # Do .deb licencja trafia przez pole "license" z package.json,
-  # widoczne w `apt show` i `dpkg -I`.
-  license: LICENSE
+# ŚWIADOMIE BEZ `appImage: license:`. Ta opcja nie „dokłada tekstu licencji",
+# tylko robi z niej BRAMKĘ: `AppRun` pokazuje przez zenity tekst GPL
+# z przyciskami Agree/Disagree i przy „Disagree" nie uruchamia programu
+# (znacznik zgody: `~/.config/RadioDyplom Bridge/eulaAccepted`).
+# Dla GPL to nieprawda o licencji — GPLv3 §9 mówi wprost, że uruchomienie
+# programu NIE wymaga jej akceptacji. Tekst licencji i tak jest: w paczce,
+# w przycisku „Pełny tekst licencji" i w zdaniu o braku gwarancji na zakładce
+# O programie. Do .deb licencja trafia przez pole "license" z package.json,
+# widoczne w `apt show` i `dpkg -I`.
+# Zobaczone 2026-09-08: pierwsze uruchomienie AppImage'a na świeżym koncie.

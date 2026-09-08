@@ -324,6 +324,31 @@ Do 0.1.24 strona nie miała `<meta viewport>` i przeglądarka na telefonie
 rysowała ją tak, jakby ekran miał 980 px, a potem pomniejszała całość — dało
 się z tego korzystać po powiększeniu palcami, ale niewygodnie.
 
+### Powiększanie widoku
+
+Dwie niezależne drogi, bo działają w różnych miejscach i skalują różne rzeczy:
+
+| Droga | Gdzie działa | Co skaluje |
+|---|---|---|
+| **Ctrl `+`, Ctrl `−`, Ctrl `0`** oraz szczypanie dwoma palcami | okno na pulpicie | **wszystko** — tekst, odstępy, ikony, ramki |
+| **ikona `aA`** w nagłówku: normalny → duży → bardzo duży | okno i przeglądarka (także telefon) | tylko tekst, więc na małym ekranie zostaje więcej treści |
+
+Oba wybory są **zapamiętywane** (`ui.zoom` i `fontScale` w konfiguracji), bo kto
+potrzebuje większego widoku, potrzebuje go przy każdym starcie.
+
+Od 0.1.26 wszystkie rozmiary są **względne**, więc program szanuje też
+ustawienie „większa czcionka" z systemu albo z przeglądarki — wcześniej,
+przy rozmiarach wpisanych w pikselach, było ono po prostu ignorowane. Ikona
+`aA` mnoży tę podstawę: duży to 118%, bardzo duży 140%.
+
+W przeglądarce w trybie **tylko do odczytu** wybór skali nie zapisze się do
+konfiguracji (bo żaden zapis się nie zapisze) — działa wtedy do końca sesji.
+
+Kontrasty w motywie jasnym są dobrane pomiarem do progu 4,5:1 wobec tła —
+dotyczy to szarego tekstu podpowiedzi oraz kolorów ostrzeżeń i potwierdzeń,
+którymi pisane są małe podpisy. Focus klawiatury jest widoczny na wszystkim,
+co da się kliknąć.
+
 ### Gdy rdzeń nie wystartuje
 
 Okno bez rdzenia nie ma czego pokazywać: stan, konfiguracja i statystyki idą

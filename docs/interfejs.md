@@ -310,6 +310,12 @@ palcem, dwukolumnowe pary pól schodzą do jednej kolumny, a pola i przyciski
 rosną pod palec. Tabele przewijają się w bok **wewnątrz** swoich paneli, więc
 nagłówek nie ucieka razem z treścią.
 
+Prawa krawędź paska zakładek jest **wygaszona** — to znak, że pasek się
+przesuwa. Bez tego ostatnia zakładka wyglądała na uciętą i nic nie mówiło,
+że da się do niej dojechać palcem. Rząd przycisków w nagłówku łamie się na
+dwie linie, gdy trzeba: przy interfejsie wystawionym w sieć dochodzi ikona
+kłódki i bez tego „Zakończ" wychodził za krawędź.
+
 To ten sam plik `index.html`, który jedzie w oknie programu — więc te reguły
 wchodzą też, gdy ktoś zwęzi okno na monitorze. Okno startuje w 900×700, czyli
 domyślnie ich nie widać.

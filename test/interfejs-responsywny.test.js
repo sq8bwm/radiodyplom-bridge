@@ -63,11 +63,24 @@ describe('układ na wąskim ekranie', () => {
     assert.match(blokWaski(), /input, select, textarea \{ font-size:16px/);
   });
 
-  test('zakładki zostają w jednym rzędzie, przewijanym', () => {
-    // Sześć zakładek zawiniętych do drugiego rzędu zabierało pół ekranu.
+  test('zakładki w jednym rzędzie, ale przewijanie musi być WIDOCZNE', () => {
+    // Sam przewijany pasek dawał wrażenie ucięcia („O programie też jest
+    // ucięte", 2026-09-08). Rząd zostaje — przewijanie jest na telefonie
+    // naturalne — ale krawędź musi się wygaszać, żeby było widać, że dalej
+    // coś jest.
     const b = blokWaski();
     assert.match(b, /nav \{[^}]*flex-wrap:nowrap/);
     assert.match(b, /nav \{[^}]*overflow-x:auto/);
+    assert.match(b, /nav \{[^}]*mask-image:linear-gradient\(to right/);
+  });
+
+  test('rząd przycisków w nagłówku może się złamać', () => {
+    // `.hdr-actions` jest jednym pudełkiem flex. Bez zawijania w środku
+    // dodatkowa ikona (kłódka przy interfejsie w sieci) wypychała „Zakończ"
+    // za prawą krawędź ekranu — zgłoszone 2026-09-08 z telefonu.
+    const b = blokWaski();
+    assert.match(b, /\.hdr-actions \{[^}]*flex-wrap:wrap/);
+    assert.match(b, /header #btnPause, header #btnQuit \{ min-width:0; \}/);
   });
 
   test('każda tabela siedzi w opakowaniu przewijanym w poziomie', () => {

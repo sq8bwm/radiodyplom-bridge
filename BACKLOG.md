@@ -290,6 +290,41 @@ publicznej nazwy i przekierowania portu, czyli wystawienia shacku do internetu),
 kont wieloosobowych (jedno hasło wystarcza na stację) i trwałych sesji
 (restart = ponowne logowanie; trwałe trzeba by unieważniać przy zmianie hasła).
 
+### Interfejs responsywny albo adaptacyjny — do zrobienia
+
+Zamówione 2026-09-08, po pierwszym wejściu z telefonu na interfejs w sieci
+lokalnej. Okno **działa** na telefonie i da się z niego korzystać, ale jest to
+układ pisany pod monitor, tylko pomniejszony przez przeglądarkę.
+
+Co konkretnie widać na telefonie (zrzut z Chrome/Android, 0.1.21):
+
+- pasek pięciu liczników w JEDNYM rzędzie — kolumny wychodzą bardzo wąskie,
+  a podpisy („ODEBRANE Z LOGGERA", „POMINIĘTE (DUPLIKATY)") łamią się na trzy
+  linie;
+- zakładki (Stan, Kolejka, Konfiguracja, Statystyki, Log, O programie) w jednym
+  rzędzie mikroskopijnym drukiem;
+- tabele Kolejki i Statystyk przewijają się w bok wewnątrz swoich paneli — to
+  działa, ale na telefonie oznacza szukanie kolumn;
+- formularz Konfiguracji ma pola pełnej szerokości, więc jest znośny, ale pary
+  „etykieta + pole" nie zwijają się w pion.
+
+Do rozstrzygnięcia PRZED robotą: responsywny (jeden układ, punkty załamania
+w CSS) czy adaptacyjny (osobny, uproszczony widok dla wąskiego ekranu). Za
+responsywnym: jedno źródło prawdy, żadnych rozjazdów między widokami — a cały
+interfejs jest już zbudowany z paneli w gridzie, więc punkty załamania to
+głównie liczba kolumn. Za adaptacyjnym: z telefonu robi się w praktyce dwie
+rzeczy — patrzy na stan i wstrzymuje/wznawia — więc osobny widok mógłby być
+znacznie prostszy niż okno na monitorze.
+
+Wstępny pomysł na zakres (responsywny, `@media (max-width: 600px)`):
+liczniki po dwa w rzędzie, zakładki jako pasek przewijany w poziomie albo
+zwinięte w listę, tabele jako karty „etykieta: wartość" zamiast wierszy,
+`font-size` i wysokość przycisków pod palec (min. 44 px).
+
+Uwaga na spójność: to samo `index.html` jedzie w oknie Electrona i w
+przeglądarce, więc punkty załamania nie mogą zepsuć okna na małym monitorze
+(okno startuje w 900×700).
+
 ### Statystyki — zrobione, co jeszcze warto dołożyć
 Zakładka i importer historii gotowe w 0.1.10 —
 [docs/statystyki.md](docs/statystyki.md). Historia z logów wczytana: 1114 kopii,

@@ -42,27 +42,33 @@ i `openssl x509` jako trzecią opinią tam, gdzie narzędzie jest. Błąd w kodo
 `UTCTime` z pierwszej wersji wyłapał parser natychmiast („Bad time value").
 `openssl` nadal jest drogą pierwszą, gdy go widać w `PATH`.
 
-**Przycisk „Zrestartuj teraz" — Windows sprawdzony w wersji instalacyjnej.**
-Na Linuksie sprawdzony klikaniem (nowy PID, zmiana wymagająca restartu
-zastosowana, czyste zamknięcie). **Potwierdzone 2026-09-08 na Windowsie
-w wersji z instalatora: restart działa.** Zostaje ryzyko nr 1 poniżej, bo
-dotyczy wyłącznie wersji **portable**, której nikt jeszcze nie klikał:
+**Przycisk „Zrestartuj teraz" — sprawdzony na wszystkich trzech drogach.**
+Linux ze źródeł: klikaniem (nowy PID, zmiana wymagająca restartu zastosowana,
+czyste zamknięcie). **Windows z instalatora, 2026-09-08: działa.**
+**Windows portable, 2026-09-08: dwa restarty pod rząd, po każdym JEDNA ikona
+w zasobniku** — czyli blokada jednej instancji jest oddawana poprawnie, a to
+było większe z dwóch ryzyk utwardzanych w ciemno (nowy proces startuje, gdy
+stary może jeszcze trzymać blokadę; zwalniamy ją jawnie przed wyjściem, ale
+wyścig zależy od kolejności zamykania w systemie).
 
-1. **Wersja portable — nadal nietestowana.** Rozpakowuje się do katalogu
-   tymczasowego, więc `process.execPath` wskazuje kopię, nie plik kliknięty
-   przez użytkownika.
-   Restart wskazuje więc `PORTABLE_EXECUTABLE_FILE` (zmienną ustawia instalator
-   portable electron-buildera — sprawdzone w `app-builder-lib/templates/nsis/portable.nsi`).
-   Do potwierdzenia: czy po restarcie działa nadal jedna instancja i czy stary
-   katalog tymczasowy jest sprzątany.
-2. **Blokada jednej instancji.** Nowy proces startuje, gdy stary może jeszcze
-   trzymać blokadę; wtedy nowa instancja zamknęłaby się i użytkownik zostałby
-   bez programu. Zwalniamy ją jawnie przed wyjściem, ale wyścig zależy od
-   kolejności zamykania w systemie. Do potwierdzenia: restart pod obciążeniem
-   (logger nadający QSO) i kilka restartów po sobie.
+Przy okazji wyszło, czego nie dało się sprawdzić: **która wersja właściwie
+wystartowała**. Instalator i portable dzielą na Windowsie ten sam
+`%APPDATA%\radiodyplom-bridge` — tę samą konfigurację, ten sam PIN i tę samą
+blokadę — a w logu piszą identyczne linie. Stąd wiersz **„Instalacja"**
+w zakładce O programie (0.1.22), który mówi wprost *portable* wraz z nazwą
+klikniętego pliku.
 
-Do sprawdzenia także w instalatorze NSIS: czy po restarcie ikona w zasobniku
-jest jedna, a nie dwie.
+Zostaje do sprawdzenia:
+
+- **powtórzyć restart portable na 0.1.22** i potwierdzić, że wiersz nadal mówi
+  „portable" — dopiero to zamyka pytanie, w którą stronę celuje
+  `PORTABLE_EXECUTABLE_FILE` (zmienną ustawia instalator portable
+  electron-buildera, sprawdzone w
+  `app-builder-lib/templates/nsis/portable.nsi`);
+- **czy stary katalog tymczasowy portable jest sprzątany** po restarcie —
+  program go nie tworzy i nie usuwa, robi to launcher, więc może zostawać;
+- **restart pod obciążeniem**, z loggerem nadającym QSO.
+
 
 ## Świadomie odłożone
 

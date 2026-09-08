@@ -583,6 +583,17 @@ function flashHint(text) {
 // na sztywno — inaczej wersja w oknie rozjechałaby się z nazwą instalatora.
 let about = null;
 
+/**
+ * „portable (radiodyplom-bridge-0.1.21-x64-portable.exe)" — nazwa pliku ma tu
+ * sens tylko przy portable i AppImage, bo tylko tam użytkownik sam wybiera,
+ * który plik klika.
+ */
+function instalacjaOpis(inst) {
+  if (!inst?.rodzaj) return '—';
+  const nazwa = esc(t(`install.${inst.rodzaj}`));
+  return inst.plik ? `${nazwa} <span class="muted">(${esc(inst.plik)})</span>` : nazwa;
+}
+
 function renderAbout(s) {
   about = {
     version: s.version,
@@ -601,6 +612,7 @@ function renderAbout(s) {
     [t('about.version'), wersja],
     [t('about.author'), esc(s.author || '—')],
     [t('about.license'), esc(s.license || '—')],
+    [t('about.install'), instalacjaOpis(s.instalacja)],
   ];
   $('aboutInfo').innerHTML = `<dl class="kv">${
     rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;

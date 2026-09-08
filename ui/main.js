@@ -6,16 +6,21 @@
 // Rdzeń jest tu OSADZONY (startDaemon), a nie uruchamiany osobno — dzięki temu
 // UI rozmawia z nim bezpośrednio, bez HTTP. Serwer HTTP zostaje włączony tylko
 // po to, by dało się też podejrzeć stan z przeglądarki albo skryptu.
-import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, shell } from 'electron';
+import {
+  app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, shell, dialog,
+} from 'electron';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { loadConfig, configPath } from '../src/config.js';
+import { loadConfig, configPath, examplePath } from '../src/config.js';
 import { buildReport, saveReport } from '../src/report.js';
 import { startDaemon } from '../src/daemon.js';
 import { log } from '../src/log.js';
 import { closeFileLog } from '../src/logfile.js';
 import { t, setLang } from './strings.js';
-import { katalogDanychObokPliku } from '../src/instalacja.js';
+import {
+  katalogDanychObokPliku, rodzajInstalacji, zalozKatalogDanych, KATALOG_PRZENOSNY,
+} from '../src/instalacja.js';
+import { spawn } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -53,11 +58,101 @@ if (daneObok?.katalog && !daneObok.blad) {
 // QSO odebrane w tym okienku wpadłoby do kolejki, której nikt już nie
 // obsługuje. Zaobserwowane 2026-09-04 przy dwóch instancjach na różnych
 // konfiguracjach (różne porty, więc blokady nie zdążyły zaprotestować).
-const mamyBlokadeInstancji = app.requestSingleInstanceLock();
+// Plik, który użytkownik NAPRAWDĘ kliknął. `process.execPath` przy AppImage
+// i portable wskazuje kopię w katalogu tymczasowym (`/tmp/.mount_…`,
+// `%TEMP%\…`), czyli ścieżkę, która człowiekowi nic nie mówi.
+const mojPlik = process.env.APPIMAGE || process.env.PORTABLE_EXECUTABLE_FILE
+  || process.execPath;
+
+// `additionalData` dojdzie do instancji, która już działa — inaczej znałaby
+// tylko `argv[0]` drugiej, czyli znów ścieżkę tymczasową.
+const mamyBlokadeInstancji = app.requestSingleInstanceLock({
+  plik: mojPlik,
+  rodzaj: rodzajInstalacji().rodzaj,
+});
 if (!mamyBlokadeInstancji) {
   app.quit();
 } else {
-  app.on('second-instance', () => showWindow());
+  app.on('second-instance', (_zdarzenie, argv, _katalog, dodatkowe) => {
+    showWindow();
+    // Drugie kliknięcie TEJ SAMEJ ikony ma tylko pokazać okno i nic nie mówić.
+    // Ale gdy ktoś uruchamia INNY PLIK (AppImage przy działającej paczce .deb,
+    // portable przy instalatorze), pokazanie cudzego okna jest mylące: wygląda,
+    // jakby nowy plik nie działał. Zgłoszone 2026-09-08 — „uaktywnia mi
+    // uruchomioną wersję zainstalowaną zamiast nowej instancji".
+    // `dodatkowe` mamy od 0.1.23; starsza druga instancja przyśle tylko argv.
+    const skad = dodatkowe?.plik || argv?.[0];
+    if (!skad || skad === mojPlik || skad === process.execPath) return;
+
+    const opis = (plik, rodzaj) => (rodzaj ? `${t(`install.${rodzaj}`)} — ${plik}` : plik);
+    const ja = opis(mojPlik, rodzajInstalacji().rodzaj);
+    const on = opis(skad, dodatkowe?.rodzaj);
+    log.warn(`Druga instancja: ${on} — działa już ${ja}; pytam użytkownika`);
+    zapytajODrugaInstancje({ skad, ja, on })
+      .catch((err) => log.error('Druga instancja: nie udało się zapytać', err.message));
+  });
+}
+
+/**
+ * Pytanie przy próbie uruchomienia DRUGIEJ instancji z innego pliku.
+ *
+ * Zamiast samego komunikatu jest wybór, bo obie odpowiedzi są sensowne:
+ * zwykle chce się pracować dalej na tym, co działa, ale czasem właśnie po to
+ * kliknięto drugi plik, żeby mieć osobną instancję (np. akcja dyplomowa obok
+ * logowania lokalnego).
+ */
+async function zapytajODrugaInstancje({ skad, ja, on }) {
+  const wybor = await dialog.showMessageBox(win ?? undefined, {
+    type: 'question',
+    title: t('secondInstance.title'),
+    message: t('secondInstance.title'),
+    detail: `${t('secondInstance.running')}\n${ja}\n\n`
+      + `${t('secondInstance.launched')}\n${on}\n\n${t('secondInstance.question')}`,
+    buttons: [t('secondInstance.keep'), t('secondInstance.create')],
+    defaultId: 0,
+    // Escape ma znaczyć „nic nie zmieniaj" — zakładanie katalogu obok cudzego
+    // pliku nie może być skutkiem przypadkowego zamknięcia okna.
+    cancelId: 0,
+    noLink: true,
+  });
+  if (wybor.response !== 1) return;
+
+  try {
+    const { katalog, porty, byloJuz } = await zalozKatalogDanych({
+      plik: skad, przykladowy: examplePath(),
+    });
+    log.info(`Druga instancja: katalog ${katalog}`
+      + `${byloJuz ? ' (konfiguracja już była — nie ruszam)' : ''}`
+      + `${porty ? `, porty UDP ${porty.udp} i API ${porty.api}` : ''}`);
+    // Druga instancja już się zamknęła (nie dostała blokady), więc trzeba ją
+    // uruchomić na nowo — tym razem trafi na własny katalog danych.
+    spawn(skad, [], { detached: true, stdio: 'ignore' }).unref();
+    await dialog.showMessageBox(win ?? undefined, {
+      type: 'info',
+      title: t('secondInstance.createdTitle'),
+      message: t('secondInstance.createdTitle'),
+      detail: `${katalog}\n\n`
+        + (porty
+          ? `${t('secondInstance.ports').replace('{udp}', porty.udp).replace('{api}', porty.api)}\n\n`
+          : '')
+        + t('secondInstance.createdHint'),
+      buttons: [t('secondInstance.ok')],
+      noLink: true,
+    });
+  } catch (err) {
+    // Najczęstszy przypadek: plik leży w miejscu bez prawa zapisu (/opt,
+    // pendrive tylko do odczytu, katalog Program Files).
+    log.error(`Druga instancja: nie mogę założyć katalogu: ${err.message}`);
+    await dialog.showMessageBox(win ?? undefined, {
+      type: 'error',
+      title: t('secondInstance.failedTitle'),
+      message: t('secondInstance.failedTitle'),
+      detail: `${err.message}\n\n${t('secondInstance.failedHint')
+        .replace('{katalog}', KATALOG_PRZENOSNY)}`,
+      buttons: [t('secondInstance.ok')],
+      noLink: true,
+    });
+  }
 }
 
 function iconFor(state) {

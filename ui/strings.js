@@ -180,6 +180,25 @@ const DICT = {
     'about.author': 'Autor',
     'about.license': 'Licencja',
     'about.install': 'Instalacja',
+    'secondInstance.title': 'Mostek już działa',
+    'secondInstance.running': 'Działa już ta wersja:',
+    'secondInstance.launched': 'Uruchomiono:',
+    'secondInstance.question': 'Obie wersje dzielą ten sam katalog konfiguracji, '
+      + 'a jednocześnie może działać tylko jedna. Pracować dalej na tej, która '
+      + 'działa, czy założyć uruchomionej wersji własny katalog na dane '
+      + '(„radiodyplom-dane" obok jej pliku) i uruchomić ją obok?',
+    'secondInstance.keep': 'Pracuj dalej na działającej',
+    'secondInstance.create': 'Załóż katalog i uruchom obok',
+    'secondInstance.createdTitle': 'Katalog na dane utworzony',
+    'secondInstance.ports': 'Ustawione porty: UDP {udp} (logger), interfejs {api}.',
+    'secondInstance.createdHint': 'Ta instancja ma własną konfigurację, więc jest '
+      + 'w trybie próbnym i bez PIN-u — wpisz go w jej zakładce Konfiguracja. '
+      + 'Logger, który ma do niej trafiać, musi wysyłać na jej port UDP.',
+    'secondInstance.failedTitle': 'Nie mogę założyć katalogu na dane',
+    'secondInstance.failedHint': 'Najczęściej znaczy to brak prawa zapisu w miejscu, '
+      + 'gdzie leży plik programu. Przenieś plik tam, gdzie możesz zapisywać, '
+      + 'albo utwórz katalog „{katalog}" obok niego samodzielnie.',
+    'secondInstance.ok': 'Rozumiem',
     'startFail.title': 'Mostek nie wystartował — nic nie jest odbierane ani wysyłane.',
     'startFail.badge': 'rdzeń nie działa',
     'startFail.hint': 'Program działa dalej tylko jako okno. Popraw plik konfiguracji '
@@ -527,6 +546,25 @@ const DICT = {
     'about.author': 'Author',
     'about.license': 'License',
     'about.install': 'Installation',
+    'secondInstance.title': 'The bridge is already running',
+    'secondInstance.running': 'Already running:',
+    'secondInstance.launched': 'You started:',
+    'secondInstance.question': 'Both versions share the same configuration '
+      + 'directory and only one can run at a time. Keep working with the running '
+      + 'one, or give the one you started its own data directory '
+      + '("radiodyplom-dane" next to its file) and run it alongside?',
+    'secondInstance.keep': 'Keep the running one',
+    'secondInstance.create': 'Create the directory and run alongside',
+    'secondInstance.createdTitle': 'Data directory created',
+    'secondInstance.ports': 'Ports set: UDP {udp} (logger), interface {api}.',
+    'secondInstance.createdHint': 'This instance has its own configuration, so it '
+      + 'starts in dry-run mode with no PIN — enter it on its Configuration tab. '
+      + 'The logger that should reach it must send to its UDP port.',
+    'secondInstance.failedTitle': 'Cannot create the data directory',
+    'secondInstance.failedHint': 'Usually this means no write permission where the '
+      + 'program file is. Move the file somewhere you can write to, or create the '
+      + '"{katalog}" directory next to it yourself.',
+    'secondInstance.ok': 'OK',
     'startFail.title': 'The bridge did not start — nothing is received or sent.',
     'startFail.badge': 'core not running',
     'startFail.hint': 'Only the window is running. Fix the configuration file and '

@@ -11,8 +11,12 @@
 // teraz" w wersji portable). Nie zmienia to zachowania programu, ale zmienia
 // możliwość jego sprawdzenia — i to samo trafia do zgłoszenia błędu, gdzie
 // „portable" bywa całym wyjaśnieniem dziwnego zachowania.
-import { existsSync, accessSync, constants } from 'node:fs';
+import {
+  existsSync, accessSync, constants, mkdirSync, readFileSync, writeFileSync,
+} from 'node:fs';
 import { join, dirname } from 'node:path';
+import { createServer } from 'node:net';
+import { createSocket } from 'node:dgram';
 
 /**
  * Nazwa pliku ze ścieżki — dzieląc po OBU separatorach.
@@ -104,4 +108,67 @@ export function katalogDanychObokPliku({ env = process.env } = {}) {
     return { katalog, blad: 'tylko-do-odczytu' };
   }
   return { katalog };
+}
+
+// ---------- zakładanie katalogu na życzenie ----------
+
+/** Czy port TCP jest wolny — próbą zajęcia, bo tylko to jest rozstrzygające. */
+const wolnyTcp = (port) => new Promise((gotowe) => {
+  const s = createServer();
+  s.once('error', () => gotowe(false));
+  s.listen({ host: '127.0.0.1', port }, () => s.close(() => gotowe(true)));
+});
+
+/** To samo dla UDP. Osobno, bo numer portu TCP i UDP to dwie różne rzeczy. */
+const wolnyUdp = (port) => new Promise((gotowe) => {
+  const s = createSocket('udp4');
+  s.once('error', () => gotowe(false));
+  s.bind({ address: '127.0.0.1', port }, () => s.close(() => gotowe(true)));
+});
+
+/**
+ * Wolna para portów dla drugiej instancji: UDP dla loggera i o jeden wyżej dla
+ * interfejsu — tak samo jak w domyślnej konfiguracji (12060/12061).
+ *
+ * Skaczemy po dziesiątkach, żeby numery były zapamiętywalne: 12070, 12080…
+ * Bez tego świeża konfiguracja dostawała domyślne 12060, czyli port zajęty
+ * przez instancję, która już działa — druga natychmiast padała na blokadzie.
+ */
+export async function wolnaParaPortow({ od = 12070, doKtorego = 12200 } = {}) {
+  for (let p = od; p <= doKtorego; p += 10) {
+    // eslint-disable-next-line no-await-in-loop -- próby MUSZĄ być po kolei
+    if (await wolnyUdp(p) && await wolnyTcp(p + 1)) return { udp: p, api: p + 1 };
+  }
+  return null;
+}
+
+/**
+ * Zakłada katalog `radiodyplom-dane` obok wskazanego pliku programu i wpisuje
+ * do niego konfigurację z wolnymi portami.
+ *
+ * Robione WYŁĄCZNIE na wyraźne życzenie użytkownika (pytanie przy próbie
+ * uruchomienia drugiej instancji) — dlatego wolno tu zapisywać obok pliku.
+ * Istniejącej konfiguracji nie ruszamy: mogła zostać po wcześniejszej pracy.
+ *
+ * PIN-u NIE kopiujemy z działającej instancji. Sekret sam z siebie nie
+ * powinien wędrować do katalogu, który bywa na pendrivie albo na dysku
+ * współdzielonym — wpisanie go zostaje decyzją człowieka.
+ *
+ * @returns {Promise<{katalog:string, porty:{udp:number,api:number}|null, byloJuz:boolean}>}
+ */
+export async function zalozKatalogDanych({ plik, przykladowy }) {
+  const katalog = join(dirname(plik), KATALOG_PRZENOSNY);
+  mkdirSync(katalog, { recursive: true });
+
+  const plikCfg = join(katalog, 'config.json');
+  if (existsSync(plikCfg)) return { katalog, porty: null, byloJuz: true };
+
+  const porty = await wolnaParaPortow();
+  const cfg = JSON.parse(readFileSync(przykladowy, 'utf8'));
+  if (porty) {
+    cfg.udp.port = porty.udp;
+    cfg.api.port = porty.api;
+  }
+  writeFileSync(plikCfg, `${JSON.stringify(cfg, null, 2)}\n`);
+  return { katalog, porty, byloJuz: false };
 }

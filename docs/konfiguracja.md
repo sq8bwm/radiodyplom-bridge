@@ -127,6 +127,27 @@ jedna z dwóch blokad opisanych niżej:
 Sprawdzone na uruchomionym programie: wersja instalowana na `12060/12061`
 i portable na `12070/12071` pracują jednocześnie, każda z własną kolejką.
 
+**Bez katalogu `radiodyplom-dane` druga wersja się nie uruchomi** — pokaże się
+okno tej, która już działa. Wygląda to tak, jakby kliknięty plik nie działał,
+więc od 0.1.23 program **pyta**, co zrobić:
+
+- *Pracuj dalej na działającej* — zachowanie jak dotąd,
+- *Załóż katalog i uruchom obok* — program sam tworzy `radiodyplom-dane` obok
+  klikniętego pliku, **dobiera wolne porty** (pierwsza wolna para od 12070:
+  UDP i o jeden wyżej interfejs) i uruchamia tę wersję ponownie, już na własnym
+  katalogu.
+
+Nowa instancja ma **własną, świeżą konfigurację**: tryb próbny i bez PIN-u —
+PIN-u nie kopiujemy, bo katalog bywa na pendrivie albo na dysku współdzielonym.
+Trzeba go wpisać w jej zakładce Konfiguracja, a logger, który ma do niej
+trafiać, musi wysyłać na jej port UDP.
+
+Gdy obok pliku nie da się zapisywać (`/opt`, *Program Files*, nośnik tylko do
+odczytu), program to mówi wprost, zamiast po cichu nie zrobić nic.
+
+Powód całej tej sytuacji jest w blokadzie jednej instancji Electrona (niżej,
+„trzecia blokada").
+
 **O czym pamiętać:** deduplikacja jest osobna dla każdej instancji, więc gdyby
 logger wysyłał to samo QSO na oba porty, poleciałoby **dwa razy**. Kolejka też
 jest osobna — QSO czekające w jednej instancji nie zostanie wysłane przez drugą.

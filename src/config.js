@@ -31,7 +31,7 @@ export function configPath() {
 }
 
 /** Wzorzec dostarczany z programem – służy do zasiania pierwszej konfiguracji. */
-function examplePath() {
+export function examplePath() {
   return resolve(ROOT, 'config.example.json');
 }
 

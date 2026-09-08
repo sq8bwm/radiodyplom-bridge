@@ -249,9 +249,26 @@ Własny, gotowy certyfikat można podać jak dotąd:
 journalctl -u radiodyplom-bridge | grep "Odcisk certyfikatu" | tail -1
 ```
 
-Przy pierwszym wejściu przeglądarka spyta o zaufanie — **to jedyny moment**,
-w którym możesz porównać odcisk i upewnić się, że łączysz się z własną malinką.
-Warto go wtedy mieć pod ręką.
+Przy pierwszym wejściu przeglądarka pokaże ostrzeżenie
+(`ERR_CERT_AUTHORITY_INVALID` w Chrome) — bo certyfikatu nie podpisał żaden
+urząd. Trzeba je przejść: *Zaawansowane → Otwórz stronę (niebezpieczną)*.
+
+**Odcisku na tej stronie nie widać** — ani na telefonie, ani na komputerze.
+Żeby faktycznie porównać, trzeba go zapytać serwera z boku:
+
+```bash
+openssl s_client -connect 192.168.8.183:12061 </dev/null 2>/dev/null \
+  | openssl x509 -noout -fingerprint -sha256
+```
+
+Wynik musi być identyczny z linią z logu. Na komputerze można też zajrzeć
+w podglądzie certyfikatu przeglądarki (Firefox: *kłódka → Połączenie nie jest
+bezpieczne → Więcej informacji → Wyświetl certyfikat*).
+
+Co daje samo przejście ostrzeżenia bez porównywania: przeglądarka zapamiętuje
+zgodę **dla tego konkretnego certyfikatu**. Jeśli ostrzeżenie wróci, a Ty
+certyfikatu nie zmieniałeś, to znaczy, że po drugiej stronie jest coś innego
+niż wcześniej — i wtedy warto sprawdzić, co.
 
 ### 6. Adres do wpisania na telefonie
 

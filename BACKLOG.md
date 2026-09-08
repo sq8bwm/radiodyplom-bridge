@@ -25,8 +25,14 @@ docierał jednak do okna (znał go tylko log) i to zostało naprawione w 0.1.20.
 w sieci DZIAŁA na Windowsie bez instalowania czegokolwiek. W logu certyfikat
 wystawiony „bez openssl-a, wbudowanym koderem", z adresem maszyny w SAN;
 `https://0.0.0.0:12061`, kłódka w oknie, logowanie z przeglądarki przez adres
-w sieci lokalnej udane. Zostaje do sprawdzenia wejście z DRUGIEGO urządzenia
-(telefon) i porównanie odcisku.
+w sieci lokalnej udane.
+
+**Wejście z telefonu potwierdzone (Chrome/Android, ta sama sieć):** ostrzeżenie
+`ERR_CERT_AUTHORITY_INVALID` — czyli „nikt zaufany tego nie podpisał", a NIE
+niezgodność nazwy, więc adres IP w SAN działa. Po przejściu ostrzeżenia całe
+okno działa poprawnie na ekranie telefonu. Ubocznie wyszło, że dokumentacja
+obiecywała porównanie odcisku „przy pierwszym wejściu" — a strona ostrzeżenia
+odcisku nie pokazuje; opis poprawiony na `openssl s_client`.
 
 **Rozstrzygnięte w 0.1.21:** certyfikat wystawiamy BEZ `openssl` (`src/cert.js`,
 własny koder DER). Obawa o „nie mamy czym tego sprawdzić" okazała się nietrafiona

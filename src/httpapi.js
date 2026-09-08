@@ -20,6 +20,7 @@ import { readRecords, parseDay } from './journal.js';
 import { aggregate, filterRecords, filterOptions } from './stats.js';
 import { summarizeTargets } from './fanout.js';
 import { rodzajInstalacji, katalogDanychObokPliku } from './instalacja.js';
+import { DOMYSLNY_PORT_UDP } from './config.js';
 import {
   Sesje, Blokada, sprawdzHaslo, hasloUstawione, odczytajCiastko,
   ciastkoSesji, ciastkoWygaszone, trybApi, odciskCertyfikatu, adresyLokalne,
@@ -195,6 +196,9 @@ export class StatusApi {
         port: this.listener.port,
         multicastGroups: this.listener.multicastGroups,
         localOnly: this.listener.host === '127.0.0.1',
+        // Czy port jest ten z dokumentacji. Gdy nie, okno musi o tym
+        // powiedzieć — logger trzeba wtedy ustawić inaczej, niż mówi README.
+        domyslnyPort: this.listener.port === DOMYSLNY_PORT_UDP,
         stats: this.listener.stats,
         // Rozbicie tego, co przyszło, ale QSO z tego nie powstało. Bez tego
         // różnica między „odebrane" a „źródła" nie była widoczna NIGDZIE

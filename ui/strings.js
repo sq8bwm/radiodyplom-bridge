@@ -279,6 +279,9 @@ const DICT = {
 
     'note.localhost': 'Nasłuch tylko na localhost. Jeśli logger działa na innym komputerze '
       + 'albo wysyła rozgłoszeniowo, ustaw adres 0.0.0.0 w zakładce Konfiguracja.',
+    'note.otherPort': 'Ta instancja nasłuchuje na porcie {n}, nie na domyślnym '
+      + '12060 — logger musi wysyłać właśnie tutaj. Port bywa zmieniany przy '
+      + 'pierwszym uruchomieniu, gdy domyślny jest już zajęty.',
     'note.anyhost': 'Adres 0.0.0.0 otwiera port na całą sieć lokalną — każdy w tej sieci '
       + 'może wtedy dopisać QSO do Twojej akcji.',
 
@@ -646,6 +649,9 @@ const DICT = {
 
     'note.localhost': 'Listening on localhost only. If the logger runs on another computer '
       + 'or broadcasts, set the address to 0.0.0.0 in Settings.',
+    'note.otherPort': 'This instance listens on port {n}, not the default 12060 '
+      + '— the logger must send here. The port may be changed on first run when '
+      + 'the default one is already taken.',
     'note.anyhost': 'Address 0.0.0.0 opens the port to the whole local network — anyone on '
       + 'it could then add QSOs to your award activity.',
 

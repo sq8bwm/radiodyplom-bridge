@@ -16,9 +16,9 @@ import { join } from 'node:path';
 
 import {
   rodzajInstalacji, katalogDanychObokPliku, KATALOG_PRZENOSNY,
-  wolnaParaPortow, zalozKatalogDanych,
+  wolnaParaPortow, zalozKatalogDanych, dostosujPortyPrzyZasiewie,
 } from '../src/instalacja.js';
-import { examplePath } from '../src/config.js';
+import { examplePath, DOMYSLNY_PORT_UDP } from '../src/config.js';
 
 const ELECTRON = { electron: '44.0.0', defaultApp: undefined };
 
@@ -418,5 +418,92 @@ describe('zakładanie katalogu na dane na życzenie', () => {
     } finally {
       chmodSync(obok, 0o700);
     }
+  });
+});
+
+describe('porty przy pierwszym uruchomieniu', () => {
+  const tymczasowe = [];
+  const kosz = () => {
+    const d = mkdtempSync(join(tmpdir(), 'rd-porty-'));
+    tymczasowe.push(d);
+    return d;
+  };
+  after(() => tymczasowe.forEach((d) => rmSync(d, { recursive: true, force: true })));
+
+  const zasiej = (porty) => {
+    const dir = kosz();
+    const cfg = JSON.parse(readFileSync(examplePath(), 'utf8'));
+    if (porty) { cfg.udp.port = porty.udp; cfg.api.port = porty.api; }
+    const plik = join(dir, 'config.json');
+    writeFileSync(plik, JSON.stringify(cfg, null, 2));
+    return plik;
+  };
+
+  test('domyślny port wolny — nie ruszamy niczego', async () => {
+    // Cicha zmiana portu przy wolnym domyślnym byłaby szkodliwa: dokumentacja
+    // i logger mówią 12060.
+    const plik = zasiej({ udp: 12190, api: 12191 });
+    const przed = readFileSync(plik, 'utf8');
+    assert.equal(await dostosujPortyPrzyZasiewie(plik), null);
+    assert.equal(readFileSync(plik, 'utf8'), przed, 'plik miał zostać nietknięty');
+  });
+
+  test('zajęty port UDP — konfiguracja dostaje inny, zapisany na dysk', async () => {
+    const { createSocket } = await import('node:dgram');
+    // Zajmujemy TAK, JAK NASZ MOSTEK: z reuseAddr. Właśnie ten przypadek jest
+    // groźny, bo sonda z reuseAddr uznałaby taki port za wolny.
+    const zajete = createSocket({ type: 'udp4', reuseAddr: true });
+    await new Promise((r) => zajete.bind({ address: '127.0.0.1', port: 12180 }, r));
+    try {
+      const plik = zasiej({ udp: 12180, api: 12181 });
+      const porty = await dostosujPortyPrzyZasiewie(plik);
+      assert.ok(porty, 'porty miały zostać dobrane');
+      assert.notEqual(porty.udp, 12180);
+      assert.equal(porty.api, porty.udp + 1);
+      const cfg = JSON.parse(readFileSync(plik, 'utf8'));
+      assert.equal(cfg.udp.port, porty.udp, 'nowy port musi trafić do pliku');
+      assert.equal(cfg.api.port, porty.api);
+    } finally {
+      zajete.close();
+    }
+  });
+
+  test('sonda UDP nie może używać reuseAddr', async () => {
+    // Zmierzone: z reuseAddr port trzymany przez nasz mostek wychodzi „wolny".
+    const A = readFileSync(new URL('../src/instalacja.js', import.meta.url), 'utf8');
+    const blok = A.slice(A.indexOf('const wolnyUdp'), A.indexOf('export async function wolnaParaPortow'));
+    assert.doesNotMatch(blok, /reuseAddr:\s*true/, 'sonda z reuseAddr nie wykryje zajętego portu');
+    assert.match(blok, /createSocket\('udp4'\)/);
+  });
+
+  test('nieczytelna konfiguracja nie wywala startu', async () => {
+    const dir = kosz();
+    const plik = join(dir, 'config.json');
+    writeFileSync(plik, 'to nie jest JSON');
+    assert.equal(await dostosujPortyPrzyZasiewie(plik), null);
+  });
+
+  test('porty ruszamy TYLKO przy zasiewie', () => {
+    // Gdyby to chodziło przy każdym starcie, zmiana portu przez użytkownika
+    // byłaby cicho nadpisywana.
+    const M = readFileSync(new URL('../ui/main.js', import.meta.url), 'utf8');
+    assert.match(M, /if \(ensureConfig\(\)\) \{\n\s*const porty = await dostosujPortyPrzyZasiewie/);
+  });
+
+  test('domyślny port zgadza się z szablonem konfiguracji', () => {
+    // Dwa źródła prawdy: stała w kodzie i config.example.json. Rozjechanie się
+    // dałoby w oknie ostrzeżenie „inny port" przy najzwyklejszej instalacji.
+    const cfg = JSON.parse(readFileSync(examplePath(), 'utf8'));
+    assert.equal(DOMYSLNY_PORT_UDP, cfg.udp.port);
+  });
+
+  test('okno mówi, gdy port jest inny niż domyślny', () => {
+    const R = readFileSync(new URL('../ui/renderer.js', import.meta.url), 'utf8');
+    const S = readFileSync(new URL('../ui/strings.js', import.meta.url), 'utf8');
+    const H = readFileSync(new URL('../src/httpapi.js', import.meta.url), 'utf8');
+    assert.match(H, /domyslnyPort: this\.listener\.port === DOMYSLNY_PORT_UDP/);
+    assert.match(R, /inny\.hidden = s\.listener\.domyslnyPort !== false/);
+    const ile = [...S.matchAll(/'note\.otherPort':/g)].length;
+    assert.equal(ile, 2, `note.otherPort ma ${ile} tłumaczeń, a ma mieć 2 (pl i en)`);
   });
 });

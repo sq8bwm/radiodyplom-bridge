@@ -8,13 +8,17 @@
 // głównie o Windowsa — instalator kontra portable.
 import { test, describe, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, mkdirSync, rmSync, chmodSync } from 'node:fs';
+import {
+  readFileSync, mkdtempSync, mkdirSync, rmSync, chmodSync, writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
   rodzajInstalacji, katalogDanychObokPliku, KATALOG_PRZENOSNY,
+  wolnaParaPortow, zalozKatalogDanych,
 } from '../src/instalacja.js';
+import { examplePath } from '../src/config.js';
 
 const ELECTRON = { electron: '44.0.0', defaultApp: undefined };
 
@@ -266,21 +270,48 @@ describe('druga instancja mówi, co się stało', () => {
     // Zgłoszone 2026-09-08: AppImage przy działającej paczce .deb „uaktywnia
     // wersję zainstalowaną", co wygląda jak niedziałający plik.
     const blok = M.slice(M.indexOf("app.on('second-instance'"));
-    assert.match(blok, /dialog\.showMessageBox/);
-    assert.match(blok, /secondInstance\.howTo/);
+    assert.match(blok, /zapytajODrugaInstancje\(\{ skad, ja, on \}\)/);
     assert.match(blok, /log\.warn/);
+    // Pytanie samo w sobie jest w funkcji pomocniczej — sprawdzane osobno.
+    assert.match(M, /async function zapytajODrugaInstancje/);
+    assert.match(M, /dialog\.showMessageBox/);
   });
 
-  test('rada mówi o katalogu radiodyplom-dane i portach', () => {
-    const m = S.match(/'secondInstance\.howTo': '([^']*(?:'\s*\+\s*'[^']*)*)'/);
-    assert.ok(m, 'brak rady dla drugiej instancji');
+  test('to PYTANIE z dwiema odpowiedziami, nie komunikat', () => {
+    // Obie odpowiedzi są sensowne: zwykle chce się pracować dalej na tej
+    // instancji, która działa, ale czasem właśnie po to kliknięto drugi plik.
+    const blok = M.slice(M.indexOf('async function zapytajODrugaInstancje'));
+    assert.match(blok, /type: 'question'/);
+    assert.match(blok, /buttons: \[t\('secondInstance\.keep'\), t\('secondInstance\.create'\)\]/);
+    assert.match(blok, /if \(wybor\.response !== 1\) return;/);
+  });
+
+  test('Escape znaczy „nic nie zmieniaj"', () => {
+    // Zakładanie katalogu obok pliku nie może być skutkiem zamknięcia okna.
+    const blok = M.slice(M.indexOf('async function zapytajODrugaInstancje'));
+    assert.match(blok, /defaultId: 0/);
+    assert.match(blok, /cancelId: 0/);
+  });
+
+  test('po założeniu katalogu druga instancja jest uruchamiana na nowo', () => {
+    // Ta, która pytała, już się zamknęła (nie dostała blokady), więc bez
+    // ponownego uruchomienia człowiek musiałby kliknąć plik jeszcze raz.
+    const blok = M.slice(M.indexOf('async function zapytajODrugaInstancje'));
+    assert.match(blok, /spawn\(skad, \[\], \{ detached: true, stdio: 'ignore' \}\)\.unref\(\)/);
+  });
+
+  test('pytanie mówi o katalogu radiodyplom-dane', () => {
+    const m = S.match(/'secondInstance\.question': '([^']*(?:'\s*\+\s*'[^']*)*)'/);
+    assert.ok(m, 'brak pytania dla drugiej instancji');
     assert.match(m[1], /radiodyplom-dane/);
-    assert.match(m[1], /udp\.port/);
   });
 
   test('teksty są w obu językach', () => {
     for (const k of ['secondInstance.title', 'secondInstance.running',
-      'secondInstance.launched', 'secondInstance.howTo', 'secondInstance.ok']) {
+      'secondInstance.launched', 'secondInstance.question', 'secondInstance.keep',
+      'secondInstance.create', 'secondInstance.createdTitle', 'secondInstance.ports',
+      'secondInstance.createdHint', 'secondInstance.failedTitle',
+      'secondInstance.failedHint', 'secondInstance.ok']) {
       const ile = [...S.matchAll(new RegExp(`'${k.replace('.', '\\.')}':`, 'g'))].length;
       assert.equal(ile, 2, `${k} ma ${ile} tłumaczeń, a ma mieć 2 (pl i en)`);
     }
@@ -313,6 +344,79 @@ describe('nieudany start rdzenia widoczny w oknie', () => {
     for (const k of ['startFail.title', 'startFail.badge', 'startFail.hint', 'btn.showConfigFile']) {
       const ile = [...S.matchAll(new RegExp(`'${k.replace('.', '\\.')}':`, 'g'))].length;
       assert.equal(ile, 2, `${k} ma ${ile} tłumaczeń, a ma mieć 2 (pl i en)`);
+    }
+  });
+});
+
+describe('zakładanie katalogu na dane na życzenie', () => {
+  const tymczasowe = [];
+  const kosz = () => {
+    const d = mkdtempSync(join(tmpdir(), 'rd-zaloz-'));
+    tymczasowe.push(d);
+    return d;
+  };
+  after(() => tymczasowe.forEach((d) => {
+    try { chmodSync(d, 0o700); } catch { /* mogło zostać skasowane */ }
+    rmSync(d, { recursive: true, force: true });
+  }));
+
+  test('wolna para portów: UDP i o jeden wyżej interfejs', async () => {
+    const p = await wolnaParaPortow();
+    assert.ok(p, 'nie znalazłam wolnej pary portów');
+    assert.equal(p.api, p.udp + 1);
+    assert.ok(p.udp >= 12070, `pierwsza para ma być od 12070, jest ${p.udp}`);
+  });
+
+  test('zajęty port jest pomijany', async () => {
+    // Sedno sprawy: bez tego świeża konfiguracja dostawała 12060 — port
+    // instancji, która już działa — i druga instancja padała na starcie.
+    const { createSocket } = await import('node:dgram');
+    const zajete = createSocket('udp4');
+    await new Promise((r) => zajete.bind({ address: '127.0.0.1', port: 12070 }, r));
+    try {
+      const p = await wolnaParaPortow();
+      assert.notEqual(p.udp, 12070, 'zajęty port nie może zostać wybrany');
+    } finally {
+      zajete.close();
+    }
+  });
+
+  test('zakłada katalog i wpisuje konfigurację z wolnymi portami', async () => {
+    const obok = kosz();
+    const plik = join(obok, 'radiodyplom-bridge-portable.exe');
+    writeFileSync(plik, 'udawany plik programu');
+    const w = await zalozKatalogDanych({ plik, przykladowy: examplePath() });
+    assert.equal(w.katalog, join(obok, KATALOG_PRZENOSNY));
+    assert.equal(w.byloJuz, false);
+    const cfg = JSON.parse(readFileSync(join(w.katalog, 'config.json'), 'utf8'));
+    assert.equal(cfg.udp.port, w.porty.udp);
+    assert.equal(cfg.api.port, w.porty.api);
+    // PIN-u NIE kopiujemy z działającej instancji — katalog bywa na pendrivie.
+    assert.equal(cfg.radiodyplom.pin, 'WSTAW-PIN');
+    assert.equal(cfg.radiodyplom.dryRun, true);
+  });
+
+  test('istniejącej konfiguracji nie ruszamy', async () => {
+    const obok = kosz();
+    const plik = join(obok, 'portable.exe');
+    writeFileSync(plik, 'x');
+    const katalog = join(obok, KATALOG_PRZENOSNY);
+    mkdirSync(katalog);
+    writeFileSync(join(katalog, 'config.json'), '{"moje":"ustawienia"}');
+    const w = await zalozKatalogDanych({ plik, przykladowy: examplePath() });
+    assert.equal(w.byloJuz, true);
+    assert.equal(readFileSync(join(katalog, 'config.json'), 'utf8'), '{"moje":"ustawienia"}');
+  });
+
+  test('brak prawa zapisu obok pliku kończy się wyjątkiem, nie ciszą', async () => {
+    const obok = kosz();
+    const plik = join(obok, 'portable.exe');
+    writeFileSync(plik, 'x');
+    chmodSync(obok, 0o500);
+    try {
+      await assert.rejects(() => zalozKatalogDanych({ plik, przykladowy: examplePath() }));
+    } finally {
+      chmodSync(obok, 0o700);
     }
   });
 });

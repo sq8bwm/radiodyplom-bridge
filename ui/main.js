@@ -11,13 +11,16 @@ import {
 } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { loadConfig, configPath } from '../src/config.js';
+import { loadConfig, configPath, examplePath } from '../src/config.js';
 import { buildReport, saveReport } from '../src/report.js';
 import { startDaemon } from '../src/daemon.js';
 import { log } from '../src/log.js';
 import { closeFileLog } from '../src/logfile.js';
 import { t, setLang } from './strings.js';
-import { katalogDanychObokPliku, rodzajInstalacji } from '../src/instalacja.js';
+import {
+  katalogDanychObokPliku, rodzajInstalacji, zalozKatalogDanych, KATALOG_PRZENOSNY,
+} from '../src/instalacja.js';
+import { spawn } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -84,17 +87,72 @@ if (!mamyBlokadeInstancji) {
     const opis = (plik, rodzaj) => (rodzaj ? `${t(`install.${rodzaj}`)} — ${plik}` : plik);
     const ja = opis(mojPlik, rodzajInstalacji().rodzaj);
     const on = opis(skad, dodatkowe?.rodzaj);
-    log.warn(`Druga instancja: ${on} — działa już ${ja}; pokazuję okno działającej`);
-    dialog.showMessageBox(win ?? undefined, {
+    log.warn(`Druga instancja: ${on} — działa już ${ja}; pytam użytkownika`);
+    zapytajODrugaInstancje({ skad, ja, on })
+      .catch((err) => log.error('Druga instancja: nie udało się zapytać', err.message));
+  });
+}
+
+/**
+ * Pytanie przy próbie uruchomienia DRUGIEJ instancji z innego pliku.
+ *
+ * Zamiast samego komunikatu jest wybór, bo obie odpowiedzi są sensowne:
+ * zwykle chce się pracować dalej na tym, co działa, ale czasem właśnie po to
+ * kliknięto drugi plik, żeby mieć osobną instancję (np. akcja dyplomowa obok
+ * logowania lokalnego).
+ */
+async function zapytajODrugaInstancje({ skad, ja, on }) {
+  const wybor = await dialog.showMessageBox(win ?? undefined, {
+    type: 'question',
+    title: t('secondInstance.title'),
+    message: t('secondInstance.title'),
+    detail: `${t('secondInstance.running')}\n${ja}\n\n`
+      + `${t('secondInstance.launched')}\n${on}\n\n${t('secondInstance.question')}`,
+    buttons: [t('secondInstance.keep'), t('secondInstance.create')],
+    defaultId: 0,
+    // Escape ma znaczyć „nic nie zmieniaj" — zakładanie katalogu obok cudzego
+    // pliku nie może być skutkiem przypadkowego zamknięcia okna.
+    cancelId: 0,
+    noLink: true,
+  });
+  if (wybor.response !== 1) return;
+
+  try {
+    const { katalog, porty, byloJuz } = await zalozKatalogDanych({
+      plik: skad, przykladowy: examplePath(),
+    });
+    log.info(`Druga instancja: katalog ${katalog}`
+      + `${byloJuz ? ' (konfiguracja już była — nie ruszam)' : ''}`
+      + `${porty ? `, porty UDP ${porty.udp} i API ${porty.api}` : ''}`);
+    // Druga instancja już się zamknęła (nie dostała blokady), więc trzeba ją
+    // uruchomić na nowo — tym razem trafi na własny katalog danych.
+    spawn(skad, [], { detached: true, stdio: 'ignore' }).unref();
+    await dialog.showMessageBox(win ?? undefined, {
       type: 'info',
-      title: t('secondInstance.title'),
-      message: t('secondInstance.title'),
-      detail: `${t('secondInstance.running')}\n${ja}\n\n`
-        + `${t('secondInstance.launched')}\n${on}\n\n${t('secondInstance.howTo')}`,
+      title: t('secondInstance.createdTitle'),
+      message: t('secondInstance.createdTitle'),
+      detail: `${katalog}\n\n`
+        + (porty
+          ? `${t('secondInstance.ports').replace('{udp}', porty.udp).replace('{api}', porty.api)}\n\n`
+          : '')
+        + t('secondInstance.createdHint'),
       buttons: [t('secondInstance.ok')],
       noLink: true,
-    }).catch(() => { /* brak okna nadrzędnego nie może wywalić programu */ });
-  });
+    });
+  } catch (err) {
+    // Najczęstszy przypadek: plik leży w miejscu bez prawa zapisu (/opt,
+    // pendrive tylko do odczytu, katalog Program Files).
+    log.error(`Druga instancja: nie mogę założyć katalogu: ${err.message}`);
+    await dialog.showMessageBox(win ?? undefined, {
+      type: 'error',
+      title: t('secondInstance.failedTitle'),
+      message: t('secondInstance.failedTitle'),
+      detail: `${err.message}\n\n${t('secondInstance.failedHint')
+        .replace('{katalog}', KATALOG_PRZENOSNY)}`,
+      buttons: [t('secondInstance.ok')],
+      noLink: true,
+    });
+  }
 }
 
 function iconFor(state) {

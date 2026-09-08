@@ -290,6 +290,21 @@ publicznej nazwy i przekierowania portu, czyli wystawienia shacku do internetu),
 kont wieloosobowych (jedno hasło wystarcza na stację) i trwałych sesji
 (restart = ponowne logowanie; trwałe trzeba by unieważniać przy zmianie hasła).
 
+### Dymki podpowiedzi są nieosiągalne na telefonie
+
+Zauważone 2026-09-08 przy skracaniu komunikatu o niedopuszczonym znaku. Ocena
+celów rozgałęziania to mały znacznik (`✓`, `•`, `!`) z całym wyjaśnieniem
+w atrybucie `title` — czyli w dymku, który pokazuje się po NAJECHANIU myszką.
+Dotyk nie ma najechania, więc z telefonu tej informacji **nie da się przeczytać
+w ogóle**, a to jedyne miejsce, gdzie program mówi, dlaczego kopia nie pójdzie.
+
+To samo dotyczy kilku innych dymków: kart liczników (`cursor:help`), ikony
+kłódki i plakietki stanu.
+
+Do rozważenia (nie zamówione): kliknięcie znacznika rozwija tekst pod wierszem
+albo pokazuje go w małym oknie. Ważne, żeby nie zamieniać dymka na stały tekst
+przy każdym wierszu — przy pięciu celach zrobiłby z formularza ścianę.
+
 ### Interfejs responsywny — etap 1 ZROBIONY w 0.1.25
 
 Zamówione 2026-09-08, po pierwszym wejściu z telefonu na interfejs w sieci

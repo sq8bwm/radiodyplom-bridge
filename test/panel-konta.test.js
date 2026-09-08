@@ -51,9 +51,11 @@ describe('ostrzeżenie o znaku wskazuje właściwą przyczynę', () => {
     // stację w Managerze") kierowała tylko w jedno miejsce, i to nie zawsze to.
     const m = S2.match(/'chk\.missingStation': '([^']*(?:'\s*\+\s*'[^']*)*)'/);
     assert.ok(m, 'brak komunikatu o niedopuszczonym znaku');
-    assert.match(m[1], /DWA/, 'komunikat musi mówić o dwóch warunkach');
-    assert.match(m[1], /dodana do akcji/);
-    assert.match(m[1], /konto/);
+    assert.match(m[1], /dodana do akcji/, 'musi wymieniać warunek akcji');
+    assert.match(m[1], /do tego konta/, 'musi wymieniać warunek konta');
+    // Dymek, nie okno — musi być krótki. Zgłoszone 2026-09-08: „ten komunikat
+    // jest strasznie długi".
+    assert.ok(m[1].length < 160, `dymek ma ${m[1].length} znaków, limit 160`);
     assert.doesNotMatch(m[1], /Dopisz stację w Managerze/);
     // „aktywator" to złe słowo — w akcji dodaje się STACJE (poprawione przez
     // autora 2026-09-08: „a właściwie nie jako aktywator, a jako stacja").
@@ -70,7 +72,7 @@ describe('ostrzeżenie o znaku wskazuje właściwą przyczynę', () => {
   test('podpowiedź przy rozgałęzianiu też mówi o obu warunkach', () => {
     const m = S2.match(/'hint\.fanout': '([^']*(?:'\s*\+\s*'[^']*)*)'/);
     assert.ok(m);
-    assert.match(m[1], /DO AKCJI/);
+    assert.match(m[1], /dodany do akcji/);
     assert.match(m[1], /konta/);
     assert.doesNotMatch(m[1], /ktywator/);
   });
@@ -83,8 +85,8 @@ describe('ostrzeżenie o znaku wskazuje właściwą przyczynę', () => {
       assert.equal(ile, 2, `${k} ma ${ile} wystąpień, a ma mieć 2`);
     }
     const en = S2.slice(S2.indexOf("'chk.ok': 'The service"));
-    assert.match(en, /TWO conditions must/);
-    assert.match(en, /added to the action AND your account/);
+    assert.match(en, /added to the action and to this account/);
+    assert.match(en, /added to the action and to the account/);
     assert.doesNotMatch(en, /ctivator/, 'w akcji dodaje się STACJE, nie „aktywatorów"');
   });
 });

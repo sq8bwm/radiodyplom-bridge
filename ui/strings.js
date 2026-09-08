@@ -246,25 +246,29 @@ const DICT = {
     'account.noActions': 'brak — w tej chwili nie ma do czego zapisywać',
     'account.unknown': 'Jeszcze nie sprawdzono.',
     'account.offline': 'Brak łączności z serwisem — dane konta nieznane.',
-    'chk.ok': 'Konto {konto} ma tę stację na liście. Kopie się zapiszą.',
+    'chk.ok': 'Serwis pozwala kontu {konto} logować na ten znak. Kopie się zapiszą.',
     'chk.noActiveAction': 'Uprawnienia są, ale konto {konto} nie ma teraz aktywnej akcji '
       + 'dyplomowej. QSO wysłane dziś nigdzie nie trafi.',
-    'chk.missingStation': 'Konto {konto} NIE ma stacji {stacja} na liście uprawnień. '
-      + 'Te kopie wrócą jako odrzucone. Dopisz stację w Managerze na radiodyplom.pl.',
+    'chk.missingStation': 'Serwis nie pozwala kontu {konto} logować na znak {stacja} '
+      + 'w trwającej akcji. Te kopie wrócą jako odrzucone. Najczęstsza przyczyna: '
+      + 'stacja nie jest dodana do akcji jako AKTYWATOR — samo uprawnienie konta '
+      + 'nie wystarcza. Sprawdź to w akcji na radiodyplom.pl.',
     'chk.badPin': 'Serwis odrzucił PIN tego celu. Kopie nie pójdą.',
     'chk.apiDisabled': 'Konto {konto} ma wyłączone API. Kopie nie pójdą.',
     'chk.noPin': 'Brak PIN-u — ani przy tym celu, ani głównego.',
-    'confirm.targetsRejected': 'Serwis nie przyjmie kopii dla: {stacje}.\n\nTe konta nie '
-      + 'mają tych znaków na liście stacji, więc QSO wrócą jako odrzucone.\n\nZapisać '
-      + 'mimo to? (jeśli właśnie dopisujesz stację w Managerze — zapisz, sprawdzenie '
-      + 'odświeży się samo)',
+    'confirm.targetsRejected': 'Serwis nie przyjmie kopii dla: {stacje}.\n\nTe znaki nie '
+      + 'są dopuszczone do logowania w trwającej akcji — najczęściej nie są w niej '
+      + 'dodane jako aktywatorzy — więc QSO wrócą jako odrzucone.\n\nZapisać mimo to? '
+      + '(jeśli właśnie to poprawiasz na radiodyplom.pl — zapisz, sprawdzenie odświeży '
+      + 'się samo)',
     'confirm.dropTargetPin': 'Usunąć własny PIN z celów: {stacje}?\n\nTe kopie polecą '
       + 'wtedy PIN-em głównym, a jeśli te stacje nie są przypisane do Twojego konta, '
       + 'wrócą jako odrzucone.\n\nSekretu nie da się odczytać z okna, więc trzeba go '
       + 'będzie wpisać na nowo.',
     'hint.targetIncomplete': 'NIE ZAPISANO — każda pozycja wymaga znaku stacji.',
     'hint.fanout': 'Puste = jedno QSO ze znakiem stacji z loggera. Każdy znak stacji musi '
-      + 'być na liście stacji Twojego konta w Managerze — inaczej serwer nie zapisze kopii.',
+      + 'być dopuszczony do logowania w akcji — czyli dodany do niej jako aktywator. '
+      + 'Uprawnienie konta „mogę logować jako wszystkie stacje" tego NIE zastępuje.',
     'hint.requeue': '„Ponów odrzucone" wraca do kolejki WSZYSTKIE odrzucone — także te, '
       + 'które serwer odrzucił wcześniej. Ma to sens po poprawieniu uprawnień '
       + 'w Managerze; QSO naprawdę błędne wrócą tu z tym samym błędem.',
@@ -620,26 +624,29 @@ const DICT = {
     'account.noActions': 'none — there is nothing to save into right now',
     'account.unknown': 'Not checked yet.',
     'account.offline': 'No connection to the service — account details unknown.',
-    'chk.ok': 'Account {konto} has this station listed. Copies will be saved.',
+    'chk.ok': 'The service lets account {konto} log for this callsign. Copies will be saved.',
     'chk.noActiveAction': 'Rights are fine, but account {konto} has no active award '
       + 'right now. A QSO sent today would not be saved anywhere.',
-    'chk.missingStation': 'Account {konto} does NOT have station {stacja} in its rights. '
-      + 'Those copies will come back rejected. Add the station in the radiodyplom.pl Manager.',
+    'chk.missingStation': 'The service does not let account {konto} log for {stacja} in '
+      + 'the running action. Those copies will come back rejected. Most common cause: the '
+      + 'station is not added to the action as an ACTIVATOR — an account-level right is '
+      + 'not enough. Check it in the action on radiodyplom.pl.',
     'chk.badPin': 'The service rejected this target PIN. Copies will not be sent.',
     'chk.apiDisabled': 'Account {konto} has the API disabled. Copies will not be sent.',
     'chk.noPin': 'No PIN — neither on this target nor the main one.',
     'confirm.targetsRejected': 'The service will not accept copies for: {stacje}.\n\nThose '
-      + 'accounts do not have these callsigns in their station list, so the QSOs will come '
-      + 'back rejected.\n\nSave anyway? (if you are adding the station in the Manager right '
-      + 'now — save, the check refreshes itself)',
+      + 'callsigns are not allowed to log in the running action — usually they are not '
+      + 'added to it as activators — so the QSOs will come back rejected.\n\nSave anyway? '
+      + '(if you are fixing it on radiodyplom.pl right now — save, the check refreshes '
+      + 'itself)',
     'confirm.dropTargetPin': 'Remove the own PIN from: {stacje}?\n\nThose copies will then '
       + 'be sent with the main PIN, and if those stations are not assigned to your '
       + 'account they will come back rejected.\n\nThe secret cannot be read back from '
       + 'the window, so you would have to type it again.',
     'hint.targetIncomplete': 'NOT SAVED — every row needs a station callsign.',
     'hint.fanout': 'Empty = one QSO with the station callsign from the logger. Every station '
-      + 'callsign must be on your account\'s station list in the Manager — otherwise the '
-      + 'server will not store that copy.',
+      + 'callsign must be allowed to log in the action — that is, added to it as an '
+      + 'activator. An account-level right to log for all stations does NOT replace that.',
     'hint.requeue': '“Retry rejected” puts ALL rejected QSOs back in the queue, including '
       + 'those the server refused earlier. That makes sense after fixing permissions '
       + 'in the Manager; genuinely bad QSOs will come back with the same error.',

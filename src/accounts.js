@@ -92,7 +92,22 @@ export function verifyTargets({ targets = [], mainPin = null, accounts = new Map
       wynik.state = acc.code === 'INVALID_API_KEY' ? 'bad-pin' : 'unknown';
     } else if (acc.apiEnabled === false) wynik.state = 'api-disabled';
     else if (acc.stations === null) wynik.state = 'unknown';   // starszy serwis: nie wiemy
-    else if (!acc.stations.includes(station)) wynik.state = 'missing-station';
+    else if (acc.stations.length === 0) {
+      // PUSTA lista to nie to samo co „tego znaku tam nie ma". Serwis podaje
+      // stacje TYLKO w trakcie akcji (rozstrzygnięte 2026-09-08: po założeniu
+      // akcji próbnej lista się pojawiła), więc poza akcją pusta lista znaczy
+      // „nie ma czego pokazać", a nie „nie masz uprawnień". Sprawdzenie
+      // kolejności — najpierw pusto, potem zawartość — jest tu całą różnicą
+      // między spokojną informacją a ostrzeżeniem „kopie wrócą jako NOT_SAVED".
+      if (Array.isArray(acc.activeActions) && acc.activeActions.length === 0) {
+        wynik.state = 'no-active-action';
+      } else if (!Array.isArray(acc.activeActions)) {
+        wynik.state = 'unknown';       // nie wiemy nawet, czy akcja trwa
+      } else {
+        // Akcja TRWA, a lista pusta — to już prawdziwy brak uprawnień.
+        wynik.state = 'missing-station';
+      }
+    } else if (!acc.stations.includes(station)) wynik.state = 'missing-station';
     else if (Array.isArray(acc.activeActions) && acc.activeActions.length === 0) {
       // Uprawnienia są, ale w tej chwili nie ma do czego zapisać. Stan
       // przechodni — zależy od kalendarza akcji, nie od konfiguracji — więc

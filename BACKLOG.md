@@ -528,7 +528,11 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - Fan-out na dwie stacje: oba QSO **punktowane** (reguła duplikatu obejmuje stację).
 - PIN jest per profil użytkownika; wysyłka w imieniu innej stacji wymaga jej PIN-u.
 - **Lista stacji przychodzi TYLKO w trakcie akcji** (rozstrzygnięte
-  2026-09-08). Poza akcją serwis oddaje pustą listę, a nasz komunikat brzmiał
+  2026-09-08). Ta sama pomyłka siedziała w DWÓCH miejscach: w panelu konta
+  (0.1.27) i w sprawdzaniu celów rozgałęziania (0.1.28) — tam była gorsza, bo
+  pusta lista dawała stan BLOKUJĄCY („kopie wrócą jako NOT_SAVED") przy
+  poprawnej konfiguracji. Rozstrzyga kolejność sprawdzeń: najpierw „lista jest
+  pusta", potem „czy jest na niej ten znak". Poza akcją serwis oddaje pustą listę, a nasz komunikat brzmiał
   „brak — konto nie ma przypisanej żadnej stacji", czyli jak awaria konta —
   i niepokoił bez powodu przez kilka dni. Potwierdzone doświadczalnie: po
   założeniu akcji próbnej komunikat zniknął, a stacje się pokazały. Od 0.1.27

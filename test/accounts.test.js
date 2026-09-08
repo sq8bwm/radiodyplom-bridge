@@ -171,6 +171,43 @@ describe('verifyTargets', () => {
     assert.equal(c.blocking, false);
   });
 
+  test('PUSTA lista stacji poza akcją to NIE brak uprawnień', () => {
+    // Serwis podaje listę stacji tylko w trakcie akcji (rozstrzygnięte
+    // 2026-09-08 akcją próbną). Poza akcją oddaje pustą, a my mówiliśmy wtedy
+    // „konto tego celu nie ma tego znaku na liście stacji. Te kopie wrócą jako
+    // NOT_SAVED" — czyli straszyliśmy blokadą przy POPRAWNEJ konfiguracji.
+    const acc = new Map([['G', konto('SQ8BWM', [], [])]]);
+    const [c] = verifyTargets({ targets: [{ station_callsign: 'SN8N' }], mainPin: 'G', accounts: acc });
+    assert.equal(c.state, 'no-active-action');
+    assert.equal(c.blocking, false, 'poprawna konfiguracja nie może być zgłaszana jako blokada');
+  });
+
+  test('pusta lista W TRAKCIE akcji to już prawdziwy brak uprawnień', () => {
+    // Wtedy serwis MIAŁBY co pokazać, a nie pokazuje nic — kopie nie pójdą.
+    const acc = new Map([['G', konto('SQ8BWM', [], [{ id: 7, name: 'Akcja' }])]]);
+    const [c] = verifyTargets({ targets: [{ station_callsign: 'SN8N' }], mainPin: 'G', accounts: acc });
+    assert.equal(c.state, 'missing-station');
+    assert.equal(c.blocking, true);
+  });
+
+  test('pusta lista przy nieznanym stanie akcji → nie wiemy', () => {
+    // Starszy serwis nie podaje `activeActions`. Zgadywanie w którąkolwiek
+    // stronę byłoby gorsze od przyznania się, że nie wiemy.
+    const acc = new Map([['G', konto('SQ8BWM', [], null)]]);
+    const [c] = verifyTargets({ targets: [{ station_callsign: 'SN8N' }], mainPin: 'G', accounts: acc });
+    assert.equal(c.state, 'unknown');
+    assert.equal(c.blocking, false);
+  });
+
+  test('znak SPOZA niepustej listy nadal jest blokadą', () => {
+    // Sedno rozróżnienia: pusta lista to brak danych, lista bez tego znaku to
+    // fakt. Tego przypadku poprawka nie może rozmiękczyć.
+    const acc = new Map([['G', konto('SQ8BWM', ['SP1XYZ'], [{ id: 7, name: 'Akcja' }])]]);
+    const [c] = verifyTargets({ targets: [{ station_callsign: 'SN8N' }], mainPin: 'G', accounts: acc });
+    assert.equal(c.state, 'missing-station');
+    assert.equal(c.blocking, true);
+  });
+
   test('brak activeActions w odpowiedzi nie udaje braku akcji', () => {
     const acc = new Map([['G', konto('SQ8BWM', ['SN8N'], null)]]);
     const [c] = verifyTargets({ targets: [{ station_callsign: 'SN8N' }], mainPin: 'G', accounts: acc });

@@ -315,6 +315,34 @@ dochodzi do szerokości okna).
 w rendererze. Dziś tabele działają, tylko trzeba przewijać. Warto zobaczyć na
 telefonie z prawdziwą kolejką, czy w ogóle przeszkadza.
 
+### Powiększanie widoku — ZROBIONE w 0.1.26, dostępność szerzej otwarta
+
+Zamówione 2026-09-08 jako „wersja dla niedowidzących, z większą czcionką".
+Zrobione BEZ osobnej wersji — jeden interfejs, który się skaluje, bo drugi
+byłby drugim źródłem prawdy.
+
+Co jest: powiększanie okna (Ctrl +/-/0, szczypanie), skala czcionki z ikony
+w nagłówku (trzy stopnie), wszystkie rozmiary w `rem` — czyli program szanuje
+ustawienie systemowe, które wcześniej ignorował — kontrasty w motywie jasnym
+dobrane pomiarem do 4,5:1 i widoczny focus na wszystkim klikalnym.
+
+Świadomie odrzucone po zobaczeniu zrzutów: podniesienie najmniejszych podpisów
+z 11 na 12 px. Łamało dwa z pięciu podpisów kart na dwie linie i podwyższało
+rząd liczników — koszt estetyczny za mały zysk. Rozmiary są w `rem`, więc i tak
+rosną razem ze skalą i z ustawieniem systemowym.
+
+**Czego NIE ma, a należy do dostępności** (do rozważenia, nie zamówione):
+
+- **czytnik ekranu** — ikony nagłówka mają `aria-label`, ale nie sprawdzaliśmy
+  całości: kolejności czytania, opisów pól formularza, komunikatów o zmianie
+  stanu (`aria-live` przy licznikach i banerach),
+- **nawigacja klawiaturą** — focus jest teraz widoczny, ale nie sprawdzaliśmy,
+  czy da się dojść do wszystkiego bez myszki (zakładki, dialogi, wiersze
+  rozgałęzień),
+- **tryb wysokiego kontrastu** systemu (`prefers-contrast`) — dziś nieobsługiwany,
+- **ograniczenie animacji** (`prefers-reduced-motion`) — nie mamy animacji poza
+  przewijaniem, więc prawdopodobnie nic do zrobienia; do potwierdzenia.
+
 ### Statystyki — zrobione, co jeszcze warto dołożyć
 Zakładka i importer historii gotowe w 0.1.10 —
 [docs/statystyki.md](docs/statystyki.md). Historia z logów wczytana: 1114 kopii,

@@ -57,10 +57,12 @@ describe('układ na wąskim ekranie', () => {
     assert.match(blokWaski(), /\.two, \.three \{ grid-template-columns:1fr; \}/);
   });
 
-  test('pola mają 16 px, żeby telefon nie przybliżał widoku', () => {
+  test('pola mają pełny rozmiar podstawowy, żeby telefon nie przybliżał widoku', () => {
     // Przeglądarki na telefonach przybliżają stronę przy wejściu w pole
-    // mniejsze niż 16 px i po wyjściu zostawiają ją przybliżoną.
-    assert.match(blokWaski(), /input, select, textarea \{ font-size:16px/);
+    // mniejsze niż 16 px i po wyjściu zostawiają ją przybliżoną. `1rem` to
+    // przy domyślnych ustawieniach dokładnie 16 px — a gdy ktoś ustawił sobie
+    // inną podstawę, jego wybór jest ważniejszy od tego progu.
+    assert.match(blokWaski(), /input, select, textarea \{ font-size:1rem/);
   });
 
   test('zakładki w jednym rzędzie, ale przewijanie musi być WIDOCZNE', () => {

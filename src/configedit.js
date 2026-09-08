@@ -25,6 +25,13 @@ import { EVENT_RING } from './worker.js';
  */
 const THEMES = ['auto', 'light', 'dark'];
 
+/**
+ * Stopnie skali czcionki. Lista MUSI zgadzać się z SKALE w ui/renderer.js
+ * i z tłumaczeniami `fs.*` — pilnuje tego test. Powtórzona tu, a nie
+ * zaimportowana z `ui/`, bo paczka bez interfejsu kopiuje tylko `src/`.
+ */
+const SKALE = ['normal', 'duzy', 'bardzo-duzy'];
+
 /** Zmiany wymagające restartu (nie da się ich zastosować na żywo). */
 const RESTART_KEYS = ['udp.host', 'udp.port', 'udp.multicastGroups', 'api.port', 'api.enabled',
   'dataDir', 'queue.dir', 'queue.failedDir', 'queue.seenFile',
@@ -86,7 +93,8 @@ export function editableConfig(cfg) {
     // rozsypania swojej dotychczasowej treści, więc stara wartość wygrywała
     // i po restarcie okno wracało do poprzedniego motywu.
     theme: THEMES.includes(cfg.theme) ? cfg.theme : 'auto',
-    ui: { recentEvents: cfg.ui?.recentEvents ?? 20 },
+    fontScale: SKALE.includes(cfg.fontScale) ? cfg.fontScale : 'normal',
+    ui: { recentEvents: cfg.ui?.recentEvents ?? 20, zoom: cfg.ui?.zoom ?? 1 },
   };
 }
 
@@ -249,6 +257,14 @@ export function applyConfig(daemon, patch) {
       }
     }
   }
+  // Powiększenie okna (Ctrl +/-). Zapisujemy je, bo osoba, która potrzebuje
+  // większego widoku, potrzebuje go PRZY KAŻDYM starcie — inaczej trzeba
+  // powiększać za każdym razem. Granice jak w przeglądarkach: od 80% do 300%.
+  if (patch.ui && patch.ui.zoom !== undefined) {
+    const z = Number(patch.ui.zoom);
+    cfg.ui = cfg.ui || {};
+    if (Number.isFinite(z)) cfg.ui.zoom = Math.max(0.8, Math.min(3, z));
+  }
   if (patch.ui && patch.ui.recentEvents !== undefined) {
     // Te same widełki co przy wczytywaniu — inaczej dałoby się je obejść
     // zapisem z interfejsu, a status puchłby przy każdym odpytaniu.
@@ -263,6 +279,11 @@ export function applyConfig(daemon, patch) {
   // pola wraca do CSS-a jako atrybut, a nieznana zostawiłaby okno bez palety.
   if (patch.theme !== undefined) {
     cfg.theme = THEMES.includes(patch.theme) ? patch.theme : 'auto';
+  }
+  // Skala czcionki — tak samo walidowana wobec listy: nieznana wartość
+  // zostawiłaby atrybut, do którego nie ma reguły w CSS.
+  if (patch.fontScale !== undefined) {
+    cfg.fontScale = SKALE.includes(patch.fontScale) ? patch.fontScale : 'normal';
   }
 
   // --- zastosuj na żywo, co się da ---
@@ -363,7 +384,16 @@ export function writeConfigFile(cfg) {
     // rozsypania swojej dotychczasowej treści, więc stara wartość wygrywała
     // i po restarcie okno wracało do poprzedniego motywu.
     theme: cfg.theme || 'auto',
-    ui: { ...(original.ui || {}), recentEvents: cfg.ui?.recentEvents ?? 20 },
+    // Bez tego wybór ginął przy pierwszym zapisie z okna — rozwinięcie
+    // `original` wygrywa, a tam tego pola jeszcze nie ma.
+    fontScale: cfg.fontScale || 'normal',
+    ui: {
+      ...(original.ui || {}),
+      recentEvents: cfg.ui?.recentEvents ?? 20,
+      // Bez tego powiększenie ginęło przy każdym zapisie z okna: rozwinięcie
+      // `original` wygrywa, a tam tego pola jeszcze nie było.
+      zoom: cfg.ui?.zoom ?? 1,
+    },
   };
   if (cfg.dataDir) out.dataDir = cfg.dataDir;
   else delete out.dataDir;

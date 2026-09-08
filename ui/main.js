@@ -259,6 +259,47 @@ function showWindow() {
     if (!quitting) { e.preventDefault(); win.hide(); }
   });
   win.on('closed', () => { win = null; });
+
+  // Powiększanie okna: Ctrl +, Ctrl -, Ctrl 0.
+  //
+  // Po co, skoro jest już skalowanie czcionki (ikona w nagłówku): to skaluje
+  // WSZYSTKO — czcionkę, odstępy, ikony i grubość ramek — czyli działa też
+  // tam, gdzie sama czcionka nie wystarcza. Zapisujemy wybór, bo kto
+  // potrzebuje większego widoku, potrzebuje go przy każdym starcie.
+  //
+  // Program nie ma paska menu (żyje w zasobniku), więc nie ma gdzie powiesić
+  // akceleratorów — łapiemy klawisze przed przekazaniem ich stronie.
+  const zoomZapisz = (z) => {
+    try { daemon?.saveConfig?.({ ui: { zoom: z } }); } catch { /* rdzeń jeszcze wstaje */ }
+  };
+  win.webContents.on('before-input-event', (zdarzenie, klawisz) => {
+    if (klawisz.type !== 'keyDown' || !(klawisz.control || klawisz.meta)) return;
+    // `+` bywa pod różnymi nazwami: „+", „=", a na klawiaturze numerycznej
+    // „Add". Bez tego skrót działał tylko na jednym układzie klawiatury.
+    const wPlus = ['+', '=', 'Add'].includes(klawisz.key);
+    const wMinus = ['-', '_', 'Subtract'].includes(klawisz.key);
+    const wZero = klawisz.key === '0';
+    if (!wPlus && !wMinus && !wZero) return;
+    zdarzenie.preventDefault();
+    const teraz = win.webContents.getZoomFactor();
+    const nowy = wZero ? 1
+      : Math.max(0.8, Math.min(3, Number((teraz + (wPlus ? 0.1 : -0.1)).toFixed(2))));
+    win.webContents.setZoomFactor(nowy);
+    zoomZapisz(nowy);
+    log.info(`Powiększenie okna: ${Math.round(nowy * 100)}%`);
+  });
+
+  // Zapamiętane powiększenie stosujemy PO wczytaniu strony: `setZoomFactor`
+  // ustawione wcześniej jest gubione przy nawigacji.
+  win.webContents.on('did-finish-load', () => {
+    const z = Number(daemon?.getConfig?.()?.ui?.zoom) || 1;
+    // ZAWSZE, także dla 1: Chromium pamięta powiększenie sam (per adres) i bez
+    // jawnego ustawienia jego pamięć wygrywała z konfiguracją — okno wstawało
+    // powiększone, choć w pliku było `zoom: 1`. Zobaczone na zrzucie.
+    win.webContents.setZoomFactor(Math.max(0.8, Math.min(3, z)));
+    // Szczypanie dwoma palcami na ekranach dotykowych i gładzikach.
+    win.webContents.setVisualZoomLevelLimits(1, 3).catch(() => {});
+  });
 }
 
 if (mamyBlokadeInstancji) app.whenReady().then(async () => {

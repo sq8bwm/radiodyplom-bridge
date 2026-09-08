@@ -80,3 +80,15 @@ describe('wpis .desktop dla Linuksa', () => {
     assert.match(String(kw), /;$/);
   });
 });
+
+describe('AppImage bez bramki licencyjnej', () => {
+  test('appImage.license NIE jest ustawione', () => {
+    // Ta opcja nie dokłada tekstu licencji — robi z niej okno Agree/Disagree,
+    // które przy „Disagree" NIE uruchamia programu. Dla GPL to nieprawda
+    // o licencji: GPLv3 §9 mówi, że uruchomienie nie wymaga jej akceptacji.
+    // Zobaczone 2026-09-08 na pierwszym uruchomieniu AppImage'a ze świeżym
+    // katalogiem domowym, więc pilnujemy, żeby nie wróciło.
+    assert.equal(cfg.appImage?.license, undefined,
+      'appImage.license wraca jako klikana zgoda na licencję — patrz komentarz w electron-builder.yml');
+  });
+});

@@ -298,7 +298,20 @@ Windowsie instalator i portable **dzielą ten sam katalog danych**
 i tę samą blokadę jednej instancji — więc po restarcie nie było jak
 stwierdzić, który plik właściwie działa. Ten sam rodzaj (bez ścieżki) jedzie
 w zgłoszeniu błędu, gdzie „portable" bywa całym wyjaśnieniem dziwnego
-zachowania.
+zachowania. Dopisek *„dane obok pliku programu"* znaczy, że ta instancja ma
+własny katalog `radiodyplom-dane` — czyli własny PIN, własną kolejkę i własne
+porty ([opis](konfiguracja.md#portable-i-appimage-dane-obok-pliku-programu)).
+
+### Gdy rdzeń nie wystartuje
+
+Okno bez rdzenia nie ma czego pokazywać: stan, konfiguracja i statystyki idą
+właśnie z niego. Dlatego przy nieudanym starcie okno pokazuje **czerwony baner
+z powodem** i przycisk **Pokaż plik konfiguracji** — zakładka Konfiguracja jest
+wtedy pusta, więc jedyną drogą naprawy jest plik. Do 0.1.21 powód siedział
+wyłącznie w logu, a okno wyglądało na „jeszcze wstaje" — na zawsze.
+
+Najczęstsza przyczyna to zajęty port UDP: druga instancja mostka albo inny
+program. Wtedy trzeba zmienić `udp.port` (i `api.port`) w jednej z nich.
 
 Zakładka „O programie" **nie ma niczego wpisanego na sztywno** — wersję, autora,
 licencję i adres repozytorium bierze z `/api/status`, czyli z `package.json`.

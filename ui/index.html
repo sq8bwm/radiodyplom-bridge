@@ -228,6 +228,12 @@
   .restart-bar { margin:10px 16px 0; border-left-color:var(--warn);
                  display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .restart-bar #restartText { flex:1; min-width:12ch; }
+  /* Ten sam układ co baner restartu, ale kolor awarii — nie ostrzeżenia. */
+  .fail-bar { margin:10px 16px 0; border-left-color:var(--err);
+              display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  .fail-bar > div { flex:1; min-width:20ch; }
+  .fail-bar #startFailText { font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+                             font-size:12px; margin-top:4px; overflow-wrap:anywhere; }
   .hint { font-size:12px; color:var(--muted); margin-top:6px; }
   /* Pary „etykieta: wartość" w zakładce O programie. */
   dl.kv { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; margin:0; }
@@ -276,6 +282,18 @@
      Dlatego przycisk restartu jest TUTAJ, a nie obok „Zakończ": stały przycisk
      w nagłówku zapraszałby do restartu w trakcie akcji, a restart przerywa
      nasłuch UDP — QSO wysłane w tym okienku nie ma jak wrócić. -->
+<!-- Baner „rdzeń nie wystartował". Osobny od restartowego, bo to nie jest
+     ostrzeżenie, a awaria: bez rdzenia nie ma stanu, nie ma konfiguracji
+     w oknie i nic nie leci. Dotąd okno pokazywało wtedy pusty szkielet
+     i wyglądało na „jeszcze wstaje" — na zawsze. -->
+<div class="note fail-bar" id="startFailNote" hidden>
+  <div>
+    <b data-i18n="startFail.title"></b>
+    <div id="startFailText"></div>
+    <div class="hint" data-i18n="startFail.hint"></div>
+  </div>
+  <button class="act" id="btnShowConfig" data-i18n="btn.showConfigFile" hidden></button>
+</div>
 <div class="note restart-bar" id="restartNote" hidden>
   <span id="restartText"></span>
   <button class="act" id="btnRestart" data-i18n="btn.restart" hidden></button>

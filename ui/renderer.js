@@ -562,9 +562,39 @@ let ostatniStatus = null;
 async function refresh() {
   try {
     ostatniStatus = await window.bridge.status();
+    // Rdzeń NIE wystartował: statusu nie ma, jest tylko powód. Bez tej gałęzi
+    // `renderStatus` rzucał wyjątek, ten sam `catch` niżej go zjadał i okno do
+    // końca świata wyglądało na „jeszcze wstaje".
+    if (ostatniStatus?.bladStartu) {
+      pokazBladStartu(ostatniStatus);
+      return;
+    }
+    $('startFailNote').hidden = true;
     renderStatus(ostatniStatus);
     zastosujTryb(ostatniStatus.api);
   } catch { /* rdzeń wstaje */ }
+}
+
+/**
+ * Awaria startu w oknie: powód, plakietka na czerwono i droga naprawy.
+ *
+ * Przycisk pokazuje PLIK konfiguracji, bo zakładka Konfiguracja bierze dane
+ * z rdzenia — a rdzenia nie ma. Bez tego jedyną drogą byłoby szukanie katalogu
+ * `%APPDATA%` na pamięć.
+ */
+function pokazBladStartu(s) {
+  $('startFailNote').hidden = false;
+  $('startFailText').textContent = s.bladStartu;
+  const btn = $('btnShowConfig');
+  btn.hidden = !window.bridge.showConfigFile;
+  // Te same klasy, którymi kieruje się zwykły stan — inaczej plakietka
+  // wyglądałaby na wyłączoną, a nie na awarię.
+  const badge = $('profile');
+  badge.className = 'badge st-error';
+  badge.textContent = t('startFail.badge');
+  badge.title = s.bladStartu;
+  $('dot').className = 'dot err';
+  $('dot').title = s.bladStartu;
 }
 
 /**
@@ -591,7 +621,12 @@ let about = null;
 function instalacjaOpis(inst) {
   if (!inst?.rodzaj) return '—';
   const nazwa = esc(t(`install.${inst.rodzaj}`));
-  return inst.plik ? `${nazwa} <span class="muted">(${esc(inst.plik)})</span>` : nazwa;
+  const plik = inst.plik ? ` <span class="muted">(${esc(inst.plik)})</span>` : '';
+  // Osobny katalog danych zmienia wszystko: inna konfiguracja, inny PIN, inna
+  // kolejka. Jeśli działa, musi być widać.
+  const dane = inst.daneObok
+    ? ` <span class="muted">· ${esc(t('install.daneObok'))}</span>` : '';
+  return `${nazwa}${plik}${dane}`;
 }
 
 function renderAbout(s) {
@@ -1270,6 +1305,7 @@ $('btnPause').onclick = async () => {
   await (s.queue.paused ? window.bridge.resume() : window.bridge.pause());
   refresh();
 };
+$('btnShowConfig').onclick = () => window.bridge.showConfigFile?.();
 $('btnRequeue').onclick = async () => {
   const s = await window.bridge.status();
   // PUŁAPKA: w trybie próbnym przywrócone QSO przejdą „na sucho" i zostaną

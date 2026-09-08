@@ -15,6 +15,7 @@ import { startDaemon } from '../src/daemon.js';
 import { log } from '../src/log.js';
 import { closeFileLog } from '../src/logfile.js';
 import { t, setLang } from './strings.js';
+import { katalogDanychObokPliku } from '../src/instalacja.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -22,9 +23,29 @@ let daemon = null;
 let win = null;
 let tray = null;
 let quitting = false;
+let bladStartu = null;
 
-// Jedna instancja – dwie próbowałyby zająć ten sam port UDP i tylko jedna
-// dostawałaby datagramy, co byłoby bardzo mylące w diagnostyce.
+// Katalog danych USTALAMY TU, przed blokadą jednej instancji — bo ta blokada
+// jest w Electronie zawieszona właśnie na katalogu `userData`. Dopóki portable
+// i wersja instalowana miały ten sam katalog, druga z nich nie dawała się
+// uruchomić w ogóle; po przestawieniu katalogu dwie instancje na RÓŻNYCH
+// portach są możliwe (opis w docs/konfiguracja.md).
+const daneObok = katalogDanychObokPliku();
+if (daneObok?.katalog && !daneObok.blad) {
+  app.setPath('userData', daneObok.katalog);
+  // JAWNIE, a nie licząc na gałąź `app.isPackaged` niżej: inaczej ten tryb
+  // działał tylko w wersji spakowanej i nie dawał się sprawdzić na źródłach —
+  // co od razu wyszło przy pierwszej próbie z dwiema instancjami.
+  process.env.RD_CONFIG_DIR = daneObok.katalog;
+  // I DANE, nie tylko konfiguracja: `dataDir: "auto"` wskazuje inaczej katalog
+  // systemowy (na Linuksie ~/.local/share), więc dwie instancje wchodziłyby
+  // sobie w kolejkę i w blokadę katalogu danych — sprawdzone doświadczalnie.
+  process.env.RD_DATA_DIR = daneObok.katalog;
+}
+
+// Jedna instancja NA JEDEN KATALOG DANYCH – dwie na tym samym katalogu
+// próbowałyby zająć ten sam port UDP i tylko jedna dostawałaby datagramy,
+// co byłoby bardzo mylące w diagnostyce.
 //
 // UWAGA: samo `app.quit()` NIE przerywa wykonywania tego modułu. Bez flagi
 // niżej `app.whenReady()` i tak startował cały rdzeń — przejmował blokadę
@@ -146,6 +167,12 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
   // Po instalacji katalog programu jest tylko do odczytu — konfiguracja i dane
   // muszą trafić do katalogu użytkownika. W trybie deweloperskim zostaje projekt.
   if (app.isPackaged) process.env.RD_CONFIG_DIR = app.getPath('userData');
+  if (daneObok?.blad === 'tylko-do-odczytu') {
+    log.warn(`Katalog ${daneObok.katalog} jest tylko do odczytu — dane zostają `
+      + `w ${app.getPath('userData')}`);
+  } else if (daneObok?.katalog) {
+    log.info(`Dane obok pliku programu: ${daneObok.katalog}`);
+  }
 
   const cfg = loadConfig({ seed: true });
   setLang(cfg.language || 'pl');
@@ -156,6 +183,12 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
   try {
     daemon = await startDaemon(cfg);
   } catch (err) {
+    // Powód MUSI dotrzeć do okna. Bez tego okno pokazywało pusty szkielet
+    // z szarą kreską w plakietce i wyglądało na „jeszcze wstaje" — na zawsze
+    // (zobaczone 2026-09-08 przy dwóch instancjach na jednym porcie UDP).
+    // API stanu wtedy nie działa, bo startuje razem z rdzeniem, więc jedyną
+    // drogą jest IPC.
+    bladStartu = err.message;
     log.error('Rdzeń nie wystartował', err.message);
   }
 
@@ -174,7 +207,14 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
   showWindow();
 
   // --- most IPC: renderer nie ma dostępu do Node, wszystko idzie tędy ---
-  ipcMain.handle('status', () => daemon?.status() ?? null);
+  ipcMain.handle('status', () => daemon?.status()
+    ?? (bladStartu ? { bladStartu, configFile: configPath() } : null));
+  // „Pokaż plik konfiguracji" — przy nieudanym starcie zakładka Konfiguracja
+  // jest pusta (dane idą z rdzenia), więc jedyną drogą naprawy jest plik.
+  ipcMain.handle('showConfigFile', () => {
+    shell.showItemInFolder(configPath());
+    return true;
+  });
   ipcMain.handle('log', (_e, n) => daemon?.log(n) ?? []);
   ipcMain.handle('pause', () => { daemon.pause(); refreshTray(); return true; });
   ipcMain.handle('resume', () => { daemon.resume(); refreshTray(); return true; });

@@ -336,6 +336,13 @@ Dwie niezależne drogi, bo działają w różnych miejscach i skalują różne r
 Oba wybory są **zapamiętywane** (`ui.zoom` i `fontScale` w konfiguracji), bo kto
 potrzebuje większego widoku, potrzebuje go przy każdym starcie.
 
+Te dwie drogi są **niezależne** i tak ma być: **Ctrl `0` zeruje tylko
+powiększenie okna**, a wybrany rozmiar tekstu zostaje. Powiększenie jest jak
+lupa — rzecz chwilowa, związana z tym monitorem; rozmiar tekstu to deklaracja
+„tak chcę czytać", więc lupa nie ma prawa jej kasować. Do rozmiaru tekstu
+wraca się kolejnym kliknięciem `aA`: cykl ma trzy stopnie, a dymek mówi, co
+zrobi następny klik.
+
 Od 0.1.26 wszystkie rozmiary są **względne**, więc program szanuje też
 ustawienie „większa czcionka" z systemu albo z przeglądarki — wcześniej,
 przy rozmiarach wpisanych w pikselach, było ono po prostu ignorowane. Ikona

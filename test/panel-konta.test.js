@@ -43,25 +43,38 @@ describe('ostrzeżenie o znaku wskazuje właściwą przyczynę', () => {
   const S2 = readFileSync(new URL('../ui/strings.js', import.meta.url), 'utf8');
   const D = readFileSync(new URL('../src/daemon.js', import.meta.url), 'utf8');
 
-  test('mówi o AKTYWATORZE w akcji, nie o liście stacji konta', () => {
-    // Ustalone 2026-09-08 na żywej akcji: konto z uprawnieniem „wszystkie
-    // stacje" nie mogło logować na SN8N, bo SN8N nie był w akcji aktywatorem.
-    // Dawna rada („dopisz stację w Managerze") kierowała więc w złe miejsce.
+  test('wymienia OBA warunki: akcja i konto', () => {
+    // Ustalone 2026-09-08 na żywej akcji: konto z zaznaczonym „mogę logować
+    // jako wszystkie stacje" nie mogło logować na SN8N, bo SN8N nie był dodany
+    // do akcji. Serwis oddaje w obu przypadkach `savedTo: []`, więc nie da się
+    // wskazać jednej przyczyny — trzeba wymienić dwie. Dawna rada („dopisz
+    // stację w Managerze") kierowała tylko w jedno miejsce, i to nie zawsze to.
     const m = S2.match(/'chk\.missingStation': '([^']*(?:'\s*\+\s*'[^']*)*)'/);
     assert.ok(m, 'brak komunikatu o niedopuszczonym znaku');
-    assert.match(m[1], /AKTYWATOR/);
+    assert.match(m[1], /dodana do akcji/, 'musi wymieniać warunek akcji');
+    assert.match(m[1], /do tego konta/, 'musi wymieniać warunek konta');
+    // Dymek, nie okno — musi być krótki. Zgłoszone 2026-09-08: „ten komunikat
+    // jest strasznie długi".
+    assert.ok(m[1].length < 160, `dymek ma ${m[1].length} znaków, limit 160`);
     assert.doesNotMatch(m[1], /Dopisz stację w Managerze/);
+    // „aktywator" to złe słowo — w akcji dodaje się STACJE (poprawione przez
+    // autora 2026-09-08: „a właściwie nie jako aktywator, a jako stacja").
+    assert.doesNotMatch(m[1], /ktywator/);
   });
 
   test('to samo w logu daemona', () => {
-    const blok = D.slice(D.indexOf("if (c.state === 'missing-station')"));
-    assert.match(blok.slice(0, 800), /aktywator/);
+    const blok = D.slice(D.indexOf("if (c.state === 'missing-station')"), D.indexOf("if (c.state === 'missing-station')") + 900);
+    assert.match(blok, /dwa warunki/);
+    assert.match(blok, /dodana do akcji/);
+    assert.doesNotMatch(blok, /ktywator/);
   });
 
-  test('podpowiedź przy rozgałęzianiu też mówi o akcji', () => {
+  test('podpowiedź przy rozgałęzianiu też mówi o obu warunkach', () => {
     const m = S2.match(/'hint\.fanout': '([^']*(?:'\s*\+\s*'[^']*)*)'/);
     assert.ok(m);
-    assert.match(m[1], /aktywator/);
+    assert.match(m[1], /dodany do akcji/);
+    assert.match(m[1], /konta/);
+    assert.doesNotMatch(m[1], /ktywator/);
   });
 
   test('oba języki mają tę samą treść co do sensu', () => {
@@ -72,7 +85,8 @@ describe('ostrzeżenie o znaku wskazuje właściwą przyczynę', () => {
       assert.equal(ile, 2, `${k} ma ${ile} wystąpień, a ma mieć 2`);
     }
     const en = S2.slice(S2.indexOf("'chk.ok': 'The service"));
-    assert.match(en, /ACTIVATOR/);
-    assert.match(en, /activator/);
+    assert.match(en, /added to the action and to this account/);
+    assert.match(en, /added to the action and to the account/);
+    assert.doesNotMatch(en, /ctivator/, 'w akcji dodaje się STACJE, nie „aktywatorów"');
   });
 });

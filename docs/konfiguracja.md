@@ -259,7 +259,7 @@ Z tego wynikają dwie rzeczy, obie sprawdzone:
 
 | Pole | Czy serwer je sprawdza |
 |---|---|
-| `station_callsign` | **tak** — i to wobec TRWAJĄCEJ AKCJI: znak musi być w niej **aktywatorem**, a konto (PIN) musi mieć prawo nim logować |
+| `station_callsign` | **tak** — i to wobec TRWAJĄCEJ AKCJI: stacja musi być **dodana do akcji**, a konto (PIN) musi ją mieć dodaną jako stację, na którą wolno logować |
 | `operator` | **tylko jako znak** — dowolny poprawny callsign przechodzi, z żadną listą nie jest wiązany |
 
 Pomiar, przy PIN-ie konta `SQ8BWM` i stacji `SQ8BWM` (na liście):
@@ -285,16 +285,17 @@ w akcji. To zmiana na radiodyplom.pl, nie w tym programie.
 Uprawnienie konta i dopuszczenie w akcji to **dwie osobne rzeczy** i muszą być
 spełnione OBIE:
 
-1. konto, którego PIN-em leci QSO, ma prawo logować na ten znak stacji
-   (bywa uprawnienie „Wszystkie stacje"),
-2. ten znak jest **aktywatorem w trwającej akcji**.
+1. **stacja jest dodana do akcji** — to ustawia organizator akcji na
+   radiodyplom.pl,
+2. **konto, którego PIN-em leci QSO, ma tę stację dodaną** jako taką, na którą
+   wolno mu logować.
 
-Zmierzone na żywej akcji próbnej: konto `SQ8BWM` z uprawnieniem „wszystkie
-stacje" **nie mogło** logować na znak `SN8N`, bo `SN8N` nie został dodany do
-akcji jako aktywator. Odpowiedź serwisu jest w takim wypadku nieodróżnialna od
-braku uprawnień konta (`savedTo: []`), więc program nie umie tych dwóch
-przyczyn rozdzielić — i dlatego jego ostrzeżenie wskazuje na **częstszą**
-z nich (brak aktywatora), zamiast twierdzić, że konto nie ma stacji.
+Zmierzone na żywej akcji próbnej: konto `SQ8BWM` **nie mogło** logować na znak
+`SN8N`, bo `SN8N` nie był dodany do akcji — mimo zaznaczonego na koncie
+uprawnienia „mogę logować jako wszystkie stacje". Odpowiedź serwisu jest
+w obu wypadkach identyczna (`savedTo: []`), więc program nie umie rozdzielić
+tych przyczyn — dlatego jego ostrzeżenie **wymienia oba warunki** zamiast
+twierdzić, że konto nie ma stacji.
 
 Ma to też drugą konsekwencję: **lista stacji z API jest listą z kontekstu
 akcji.** Poza akcją przychodzi pusta — co nie znaczy „konto nie ma stacji"

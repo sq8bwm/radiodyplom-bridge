@@ -290,6 +290,21 @@ publicznej nazwy i przekierowania portu, czyli wystawienia shacku do internetu),
 kont wieloosobowych (jedno hasło wystarcza na stację) i trwałych sesji
 (restart = ponowne logowanie; trwałe trzeba by unieważniać przy zmianie hasła).
 
+### Dymki podpowiedzi są nieosiągalne na telefonie
+
+Zauważone 2026-09-08 przy skracaniu komunikatu o niedopuszczonym znaku. Ocena
+celów rozgałęziania to mały znacznik (`✓`, `•`, `!`) z całym wyjaśnieniem
+w atrybucie `title` — czyli w dymku, który pokazuje się po NAJECHANIU myszką.
+Dotyk nie ma najechania, więc z telefonu tej informacji **nie da się przeczytać
+w ogóle**, a to jedyne miejsce, gdzie program mówi, dlaczego kopia nie pójdzie.
+
+To samo dotyczy kilku innych dymków: kart liczników (`cursor:help`), ikony
+kłódki i plakietki stanu.
+
+Do rozważenia (nie zamówione): kliknięcie znacznika rozwija tekst pod wierszem
+albo pokazuje go w małym oknie. Ważne, żeby nie zamieniać dymka na stały tekst
+przy każdym wierszu — przy pięciu celach zrobiłby z formularza ścianę.
+
 ### Interfejs responsywny — etap 1 ZROBIONY w 0.1.25
 
 Zamówione 2026-09-08, po pierwszym wejściu z telefonu na interfejs w sieci
@@ -550,11 +565,12 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   ustalony ostatecznie: PIN należy do KONTA, a serwer sprawdza wyłącznie
   `station_callsign` — `operator` jest polem opisowym i nie jest weryfikowany.
   **Uzupełnione 2026-09-08 na żywej akcji:** sprawdzenie idzie wobec TRWAJĄCEJ
-  AKCJI, nie tylko wobec konta. Znak musi być w akcji **aktywatorem**; konto
-  z uprawnieniem „wszystkie stacje" NIE mogło logować na `SN8N`, bo `SN8N` nie
-  był aktywatorem w akcji. Serwis oddaje w obu przypadkach to samo
-  (`savedTo: []`), więc program nie rozdziela tych przyczyn i wskazuje
-  częstszą. Dlatego PIN przy celu jest potrzebny tylko
+  AKCJI, nie tylko wobec konta. Dwa warunki naraz: stacja **dodana do akcji**
+  (ustawia organizator) ORAZ **dodana do konta**, z którego leci QSO. Konto
+  z zaznaczonym „mogę logować jako wszystkie stacje" NIE mogło logować na
+  `SN8N`, bo `SN8N` nie był dodany do akcji. Serwis oddaje w obu przypadkach to
+  samo (`savedTo: []`), więc program nie rozdziela tych przyczyn i wymienia oba
+  warunki. Dlatego PIN przy celu jest potrzebny tylko
   wtedy, gdy stacja nie jest przypisana do własnego konta. Bez bazy użytkowników:
   jedno pole przy regule wystarcza.
   PIN celu ma cztery stany (nieprzysłany / zamaskowany / nowy / pusty), bo bez

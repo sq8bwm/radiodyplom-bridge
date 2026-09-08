@@ -267,12 +267,30 @@
     main { padding:10px; }
     .panel { padding:10px 12px; }
     header { padding:10px 12px; gap:8px; }
+    /* Rząd przycisków MUSI móc się złamać w środku. `.hdr-actions` jest jednym
+       nieziewającym pudełkiem flex, więc przy dodatkowej ikonie (kłódka, gdy
+       interfejs jest w sieci) przestawał się mieścić i „Zakończ" wychodził za
+       prawą krawędź ekranu — zgłoszone 2026-09-08 z telefonu. Rozpychacz jest
+       tu zbędny: przyciski i tak zajmują cały rząd. */
+    header .grow { display:none; }
+    .hdr-actions { flex:1 1 100%; flex-wrap:wrap; row-gap:8px; }
+    /* Stała szerokość ma trzymać przyciski w miejscu przy zmianie języka na
+       monitorze. Na telefonie ważniejsze jest, żeby się zmieściły. */
+    header #btnPause, header #btnQuit { min-width:0; }
     /* Znak i PIN w nagłówku muszą oddać miejsce plakietkom stanu. */
     #profile { max-width:20ch; }
 
-    /* Zakładek jest sześć — zawinięte do drugiego rzędu zabierały pół ekranu.
-       Zamiast tego jeden rząd przewijany palcem w poziomie. */
-    nav { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+    /* Zakładki w JEDNYM rzędzie przewijanym palcem — zawinięte do drugiego
+       rzędu zabierałyby wysokość przyklejonego nagłówka, a przewijanie jest
+       na telefonie naturalne.
+       Do tego miękkie wygaszenie prawej krawędzi: bez niego ostatnia zakładka
+       wyglądała po prostu na UCIĘTĄ i nic nie mówiło, że pasek się przesuwa
+       (zgłoszone 2026-09-08 z telefonu: „O programie też jest ucięte").
+       `mask-image` nie zmienia układu ani nie łapie dotyku, więc jest tu
+       tańsze od nakładki w DOM. */
+    nav { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
+          -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent);
+          mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent); }
     nav::-webkit-scrollbar { display:none; }
     nav button { white-space:nowrap; padding:8px 10px; font-size:14px; }
 

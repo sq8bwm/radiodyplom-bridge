@@ -40,7 +40,11 @@
     color-scheme: light;
     --on-accent: #fff;
     --bg: #f6f7f9; --panel: #fff; --line: #e2e6ec; --text: #1e2430;
-    --muted: #6b7480; --ok: #1c9d5b; --warn: #b8860b; --err: #c0392b; --accent: #2c3e50;
+    /* Kolory pomocnicze przyciemnione do 4,5:1 wobec TŁA, nie tylko panelu —
+       zmierzone: dawne wartości dawały muted 4,42:1, warn 3,25:1, ok 3,49:1,
+       czyli poniżej progu dla małego tekstu, a właśnie małym tekstem są pisane
+       podpowiedzi i podpisy. Motyw ciemny był w porządku (6:1 i więcej). */
+    --muted: #666e79; --ok: #157f49; --warn: #8a6508; --err: #c0392b; --accent: #2c3e50;
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
@@ -105,7 +109,12 @@
                     background:var(--panel); color:var(--text);
                     border:1px solid var(--line); border-radius:6px; }
   button.icon-btn:hover { border-color:var(--accent); }
-  button.icon-btn:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  /* Widoczny focus na wszystkim, co interaktywne. Dotąd była tylko jedna taka
+     reguła — na ikonach — więc kto nawiguje klawiaturą (bo nie widzi kursora),
+     ten nie wiedział, gdzie jest. */
+  button:focus-visible, input:focus-visible, select:focus-visible,
+  textarea:focus-visible, [tabindex]:focus-visible, a:focus-visible {
+    outline:2px solid var(--accent); outline-offset:1px; }
   /* Ikona w `em`, nie w `px`: przy powiększonej czcionce mały piktogram
      w dużym przycisku wygląda na pomyłkę i nadal jest nieczytelny. */
   button.icon-btn svg { width:1.15em; height:1.15em; display:block; }

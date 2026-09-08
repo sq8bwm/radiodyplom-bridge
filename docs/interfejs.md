@@ -302,6 +302,22 @@ zachowania. Dopisek *„dane obok pliku programu"* znaczy, że ta instancja ma
 własny katalog `radiodyplom-dane` — czyli własny PIN, własną kolejkę i własne
 porty ([opis](konfiguracja.md#portable-i-appimage-dane-obok-pliku-programu)).
 
+### Wąski ekran
+
+Od 0.1.25 układ dostosowuje się do szerokości: przy ekranie węższym niż 620 px
+liczniki idą po dwa w rzędzie, zakładki zostają w jednym rzędzie przewijanym
+palcem, dwukolumnowe pary pól schodzą do jednej kolumny, a pola i przyciski
+rosną pod palec. Tabele przewijają się w bok **wewnątrz** swoich paneli, więc
+nagłówek nie ucieka razem z treścią.
+
+To ten sam plik `index.html`, który jedzie w oknie programu — więc te reguły
+wchodzą też, gdy ktoś zwęzi okno na monitorze. Okno startuje w 900×700, czyli
+domyślnie ich nie widać.
+
+Do 0.1.24 strona nie miała `<meta viewport>` i przeglądarka na telefonie
+rysowała ją tak, jakby ekran miał 980 px, a potem pomniejszała całość — dało
+się z tego korzystać po powiększeniu palcami, ale niewygodnie.
+
 ### Gdy rdzeń nie wystartuje
 
 Okno bez rdzenia nie ma czego pokazywać: stan, konfiguracja i statystyki idą

@@ -157,7 +157,7 @@ pasmach i emisjach. Szczegóły: [Statystyki](docs/statystyki.md).
 
 Mostek nie potrzebuje ani monitora, ani środowiska graficznego.
 
-**Paczka bez interfejsu** (`radiodyplom-bridge-headless-*-all.deb`, **64 kB**)
+**Paczka bez interfejsu** (`radiodyplom-bridge-headless-*-all.deb`, **120 kB**)
 instaluje usługę systemd na własnym koncie bez praw roota. Jedna paczka działa na
 **arm64, armhf i amd64** — rdzeń to czysty JavaScript bez zależności, więc nie ma
 tu kodu natywnego do skompilowania. PIN leży w osobnym pliku z prawami `0640`,

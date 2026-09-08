@@ -297,14 +297,14 @@ export async function startDaemon(cfg, opts = {}) {
       const czyje = c.pinSource === 'own' ? `PIN celu${c.operator ? ` (${c.operator})` : ''}`
         : `PIN główny${c.operator ? ` (${c.operator})` : ''}`;
       if (c.state === 'missing-station') {
-        // Nie „konto nie ma tego znaku", bo to mylące: uprawnienie konta może
-        // być szerokie („mogę logować jako wszystkie stacje") i mimo to znak
-        // bywa niedopuszczony, gdy nie jest dodany do AKCJI jako aktywator
-        // (ustalone 2026-09-08 na żywej akcji próbnej ze znakiem SN8N).
+        // Nie „konto nie ma tego znaku", bo to mylące. Muszą być spełnione DWA
+        // warunki: stacja jest dodana do AKCJI i jest dodana do KONTA, z którego
+        // leci kopia. Ustalone 2026-09-08 na żywej akcji próbnej: znak SN8N nie
+        // był dodany do akcji, więc konto nie mogło nim logować.
         log.warn(`Cel ${c.station}: serwis nie pozwala logować na ten znak `
           + `w trwającej akcji (${czyje}). Te kopie wrócą jako NOT_SAVED. `
-          + 'Najczęstsza przyczyna: stacja nie jest dodana do akcji jako aktywator — '
-          + 'samo uprawnienie konta nie wystarcza.');
+          + 'Sprawdź dwa warunki: czy stacja jest dodana do akcji i czy jest dodana '
+          + 'do konta, z którego lecą kopie.');
       } else if (c.state === 'bad-pin') {
         log.warn(`Cel ${c.station}: serwis odrzucił PIN tego celu. Kopie nie pójdą.`);
       } else if (c.state === 'api-disabled') {

@@ -550,11 +550,12 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   ustalony ostatecznie: PIN należy do KONTA, a serwer sprawdza wyłącznie
   `station_callsign` — `operator` jest polem opisowym i nie jest weryfikowany.
   **Uzupełnione 2026-09-08 na żywej akcji:** sprawdzenie idzie wobec TRWAJĄCEJ
-  AKCJI, nie tylko wobec konta. Znak musi być w akcji **aktywatorem**; konto
-  z uprawnieniem „wszystkie stacje" NIE mogło logować na `SN8N`, bo `SN8N` nie
-  był aktywatorem w akcji. Serwis oddaje w obu przypadkach to samo
-  (`savedTo: []`), więc program nie rozdziela tych przyczyn i wskazuje
-  częstszą. Dlatego PIN przy celu jest potrzebny tylko
+  AKCJI, nie tylko wobec konta. Dwa warunki naraz: stacja **dodana do akcji**
+  (ustawia organizator) ORAZ **dodana do konta**, z którego leci QSO. Konto
+  z zaznaczonym „mogę logować jako wszystkie stacje" NIE mogło logować na
+  `SN8N`, bo `SN8N` nie był dodany do akcji. Serwis oddaje w obu przypadkach to
+  samo (`savedTo: []`), więc program nie rozdziela tych przyczyn i wymienia oba
+  warunki. Dlatego PIN przy celu jest potrzebny tylko
   wtedy, gdy stacja nie jest przypisana do własnego konta. Bez bazy użytkowników:
   jedno pole przy regule wystarcza.
   PIN celu ma cztery stany (nieprzysłany / zamaskowany / nowy / pusty), bo bez

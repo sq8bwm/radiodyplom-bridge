@@ -4,7 +4,7 @@ Rdzeń mostka to **czysty JavaScript bez żadnych zależności** — 232 kB kodu
 Nie potrzebuje Electrona ani środowiska graficznego, więc na małym komputerze
 pracuje jako zwykła usługa systemowa.
 
-Paczka `radiodyplom-bridge-headless` waży **64 kB** wobec 94 MB wersji
+Paczka `radiodyplom-bridge-headless` waży **120 kB** wobec 94 MB wersji
 z interfejsem, i ma `Architecture: all` — ta sama działa na **arm64, armhf
 i amd64**.
 

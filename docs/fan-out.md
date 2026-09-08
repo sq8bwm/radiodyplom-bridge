@@ -23,8 +23,11 @@ znakiem stacji. Konfiguruje się to listą celów:
 Cel opisują cztery pola:
 
 - `station_callsign` — **wymagany**. Znak stacji; **nadpisuje** znak z loggera.
-  To jedyne pole, które serwer sprawdza — musi być na liście stacji konta,
-  którego PIN-em leci ta kopia.
+  To jedyne pole, które serwer sprawdza — i sprawdza je wobec **trwającej
+  akcji**, nie tylko wobec konta: znak musi być dodany do akcji jako
+  **aktywator**. Uprawnienie konta „mogę logować jako wszystkie stacje" tego
+  NIE zastępuje (zmierzone 2026-09-08 na znaku SN8N: konto miało szerokie
+  uprawnienie, a kopia i tak nie miała gdzie się zapisać).
 - `operator` — opcjonalny. Trafia do pola `OPERATOR` w QSO; serwer go **nie
   weryfikuje** (sprawdzone: przechodzi nawet znak nieistniejący). Bez niego
   zostaje operator z loggera.
@@ -72,9 +75,20 @@ to konkretna osoba.
   z 0.1.x, nadal działa, nie ma jej w interfejsie. Przy jednym koncie z listą
   stacji nie jest potrzebna.
 
-**Jeden PIN wystarcza na wszystkie stacje**, które masz na liście stacji swojego
-konta w Managerze (patrz [Model uprawnień](konfiguracja.md)). Znak spoza tej
-listy wraca jako `NOT_SAVED` — daemon mówi o tym też na starcie.
+**Jeden PIN wystarcza na wszystkie stacje**, na które wolno Ci logować w danej
+akcji (patrz [Model uprawnień](konfiguracja.md)). Znak, którego akcja nie
+dopuszcza, wraca jako `NOT_SAVED` — daemon mówi o tym też na starcie.
+
+**Dwa warunki, nie jeden.** Żeby kopia się zapisała, musi się zgadzać jedno
+i drugie: konto (PIN) ma prawo logować na ten znak **oraz** znak jest
+w trwającej akcji aktywatorem. Drugi warunek jest ustawiany w samej akcji na
+radiodyplom.pl i to on częściej bywa przyczyną odrzuceń, bo o nim się zapomina.
+
+Lista stacji, którą oddaje API — i którą pokazujemy w panelu *Konto* — jest
+listą z **kontekstu akcji**: poza akcją jest pusta, a w trakcie zawiera znaki
+dopuszczone w tej akcji. Dlatego mostek nie ostrzega o pustej liście poza
+akcją (od 0.1.28) i dlatego ostrzeżenie w trakcie akcji mówi o aktywatorze,
+a nie o „liście stacji konta" (od 0.1.29).
 
 Pozostałe pola (data, czas, znak korespondenta, pasmo, emisja, raporty, `freq`,
 komentarz) są w każdej kopii identyczne.
@@ -93,9 +107,11 @@ status — awaria jednej nie blokuje pozostałych.
 > (Nie przeszło jeszcze testu end-to-end na dwóch stacjach, bo wymaga dwóch
 > znaków uprawnionych w akcji.)
 >
-> **Fan-out na inny znak stacji NIE wymaga drugiego PIN-u** — wymaga, żeby ten
-> znak był na liście stacji Twojego konta. Wcześniejsza wersja tej dokumentacji
-> twierdziła inaczej; sprostowanie i pomiar w „Model uprawnień".
+> **Fan-out na inny znak stacji NIE wymaga drugiego PIN-u** — wymaga, żeby na
+> ten znak wolno Ci było logować w akcji, czyli żeby był w niej aktywatorem.
+> Wcześniejsze wersje tej dokumentacji mówiły najpierw o drugim PIN-ie, potem
+> o „liście stacji konta"; oba opisy były niepełne, sprostowanie i pomiar
+> w „Model uprawnień".
 
 **Uwaga na przepustowość:** trzy cele to trzy żądania na jedno QSO, a limit wynosi
 10/min. Przy trzech celach realna przepustowość to ok. 3 QSO/min; nadmiar czeka

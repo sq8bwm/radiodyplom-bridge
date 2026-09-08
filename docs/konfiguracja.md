@@ -259,7 +259,7 @@ Z tego wynikają dwie rzeczy, obie sprawdzone:
 
 | Pole | Czy serwer je sprawdza |
 |---|---|
-| `station_callsign` | **tak** — musi być na liście stacji konta, do którego należy PIN |
+| `station_callsign` | **tak** — i to wobec TRWAJĄCEJ AKCJI: znak musi być w niej **aktywatorem**, a konto (PIN) musi mieć prawo nim logować |
 | `operator` | **tylko jako znak** — dowolny poprawny callsign przechodzi, z żadną listą nie jest wiązany |
 
 Pomiar, przy PIN-ie konta `SQ8BWM` i stacji `SQ8BWM` (na liście):
@@ -277,8 +277,29 @@ brak aktywnych akcji dyplomowych i uprawnień dla podanego znaku."* Daemon
 rozpoznaje to jako trwały błąd `NOT_SAVED` i odkłada QSO do `data/failed/`.
 
 **Wniosek dla fan-outu: wystarczy JEDEN PIN.** Rozmnażanie na kilka znaków
-stacji nie wymaga kilku PIN-ów — wymaga, żeby te znaki były na liście stacji
-Twojego konta. Dodanie tam stacji jest zmianą w Managerze, nie w tym programie.
+stacji nie wymaga kilku PIN-ów — wymaga, żeby na te znaki wolno Ci było logować
+w akcji. To zmiana na radiodyplom.pl, nie w tym programie.
+
+### Dwa warunki, nie jeden (2026-09-08)
+
+Uprawnienie konta i dopuszczenie w akcji to **dwie osobne rzeczy** i muszą być
+spełnione OBIE:
+
+1. konto, którego PIN-em leci QSO, ma prawo logować na ten znak stacji
+   (bywa uprawnienie „Wszystkie stacje"),
+2. ten znak jest **aktywatorem w trwającej akcji**.
+
+Zmierzone na żywej akcji próbnej: konto `SQ8BWM` z uprawnieniem „wszystkie
+stacje" **nie mogło** logować na znak `SN8N`, bo `SN8N` nie został dodany do
+akcji jako aktywator. Odpowiedź serwisu jest w takim wypadku nieodróżnialna od
+braku uprawnień konta (`savedTo: []`), więc program nie umie tych dwóch
+przyczyn rozdzielić — i dlatego jego ostrzeżenie wskazuje na **częstszą**
+z nich (brak aktywatora), zamiast twierdzić, że konto nie ma stacji.
+
+Ma to też drugą konsekwencję: **lista stacji z API jest listą z kontekstu
+akcji.** Poza akcją przychodzi pusta — co nie znaczy „konto nie ma stacji"
+(patrz „Sprawdzanie konfiguracji wobec konta" niżej oraz wydania 0.1.27
+i 0.1.28).
 
 > Wcześniejsza wersja tej dokumentacji twierdziła, że „wysyłka na N znaków
 > stacji wymaga N PIN-ów". To był zły wniosek z jednego pomiaru: `SQ8BWA` nie

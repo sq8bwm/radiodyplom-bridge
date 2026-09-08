@@ -547,9 +547,14 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   błędy API tłumaczone po kodzie. Zweryfikowane zrzutami w obu językach.
 - Cel `.deb` włączony (opiekun: `author` z `package.json`).
 - **PIN przy celu rozgałęziania i znacznik „Aktywna"** (2026-09-03). Model
-  ustalony ostatecznie: PIN należy do KONTA, konto ma listę przypisanych stacji,
-  a serwer sprawdza wyłącznie `station_callsign` — `operator` jest polem
-  opisowym i nie jest weryfikowany. Dlatego PIN przy celu jest potrzebny tylko
+  ustalony ostatecznie: PIN należy do KONTA, a serwer sprawdza wyłącznie
+  `station_callsign` — `operator` jest polem opisowym i nie jest weryfikowany.
+  **Uzupełnione 2026-09-08 na żywej akcji:** sprawdzenie idzie wobec TRWAJĄCEJ
+  AKCJI, nie tylko wobec konta. Znak musi być w akcji **aktywatorem**; konto
+  z uprawnieniem „wszystkie stacje" NIE mogło logować na `SN8N`, bo `SN8N` nie
+  był aktywatorem w akcji. Serwis oddaje w obu przypadkach to samo
+  (`savedTo: []`), więc program nie rozdziela tych przyczyn i wskazuje
+  częstszą. Dlatego PIN przy celu jest potrzebny tylko
   wtedy, gdy stacja nie jest przypisana do własnego konta. Bez bazy użytkowników:
   jedno pole przy regule wystarcza.
   PIN celu ma cztery stany (nieprzysłany / zamaskowany / nowy / pusty), bo bez

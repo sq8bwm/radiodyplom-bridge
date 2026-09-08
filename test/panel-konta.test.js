@@ -38,3 +38,41 @@ describe('panel konta: brak stacji poza akcją to NIE awaria', () => {
     }
   });
 });
+
+describe('ostrzeżenie o znaku wskazuje właściwą przyczynę', () => {
+  const S2 = readFileSync(new URL('../ui/strings.js', import.meta.url), 'utf8');
+  const D = readFileSync(new URL('../src/daemon.js', import.meta.url), 'utf8');
+
+  test('mówi o AKTYWATORZE w akcji, nie o liście stacji konta', () => {
+    // Ustalone 2026-09-08 na żywej akcji: konto z uprawnieniem „wszystkie
+    // stacje" nie mogło logować na SN8N, bo SN8N nie był w akcji aktywatorem.
+    // Dawna rada („dopisz stację w Managerze") kierowała więc w złe miejsce.
+    const m = S2.match(/'chk\.missingStation': '([^']*(?:'\s*\+\s*'[^']*)*)'/);
+    assert.ok(m, 'brak komunikatu o niedopuszczonym znaku');
+    assert.match(m[1], /AKTYWATOR/);
+    assert.doesNotMatch(m[1], /Dopisz stację w Managerze/);
+  });
+
+  test('to samo w logu daemona', () => {
+    const blok = D.slice(D.indexOf("if (c.state === 'missing-station')"));
+    assert.match(blok.slice(0, 800), /aktywator/);
+  });
+
+  test('podpowiedź przy rozgałęzianiu też mówi o akcji', () => {
+    const m = S2.match(/'hint\.fanout': '([^']*(?:'\s*\+\s*'[^']*)*)'/);
+    assert.ok(m);
+    assert.match(m[1], /aktywator/);
+  });
+
+  test('oba języki mają tę samą treść co do sensu', () => {
+    // Klucz musi być w obu blokach — inaczej angielska wersja zostanie ze starą,
+    // myląco brzmiącą radą.
+    for (const k of ['chk.missingStation', 'hint.fanout', 'confirm.targetsRejected']) {
+      const ile = [...S2.matchAll(new RegExp(`'${k.replace('.', '\\.')}':`, 'g'))].length;
+      assert.equal(ile, 2, `${k} ma ${ile} wystąpień, a ma mieć 2`);
+    }
+    const en = S2.slice(S2.indexOf("'chk.ok': 'The service"));
+    assert.match(en, /ACTIVATOR/);
+    assert.match(en, /activator/);
+  });
+});

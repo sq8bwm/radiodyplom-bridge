@@ -42,13 +42,15 @@ i `openssl x509` jako trzecią opinią tam, gdzie narzędzie jest. Błąd w kodo
 `UTCTime` z pierwszej wersji wyłapał parser natychmiast („Bad time value").
 `openssl` nadal jest drogą pierwszą, gdy go widać w `PATH`.
 
-**Do sprawdzenia od 0.1.18 — przycisk „Zrestartuj teraz".** Na Linuksie
-sprawdzony klikaniem (nowy PID, zmiana wymagająca restartu zastosowana, czyste
-zamknięcie). Na Windowsie **nietestowany**, a są tam dwa ryzyka, które
-utwardziliśmy w ciemno i które trzeba potwierdzić na maszynie:
+**Przycisk „Zrestartuj teraz" — Windows sprawdzony w wersji instalacyjnej.**
+Na Linuksie sprawdzony klikaniem (nowy PID, zmiana wymagająca restartu
+zastosowana, czyste zamknięcie). **Potwierdzone 2026-09-08 na Windowsie
+w wersji z instalatora: restart działa.** Zostaje ryzyko nr 1 poniżej, bo
+dotyczy wyłącznie wersji **portable**, której nikt jeszcze nie klikał:
 
-1. **Wersja portable.** Rozpakowuje się do katalogu tymczasowego, więc
-   `process.execPath` wskazuje kopię, nie plik klikniętiy przez użytkownika.
+1. **Wersja portable — nadal nietestowana.** Rozpakowuje się do katalogu
+   tymczasowego, więc `process.execPath` wskazuje kopię, nie plik kliknięty
+   przez użytkownika.
    Restart wskazuje więc `PORTABLE_EXECUTABLE_FILE` (zmienną ustawia instalator
    portable electron-buildera — sprawdzone w `app-builder-lib/templates/nsis/portable.nsi`).
    Do potwierdzenia: czy po restarcie działa nadal jedna instancja i czy stary

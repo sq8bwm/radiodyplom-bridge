@@ -27,6 +27,15 @@
      na biało przy każdym starcie na ciemnym systemie.
      `color-scheme` dokłada to, czego nie ustawimy zmiennymi: paski przewijania,
      pola formularzy i menu kontekstowe. */
+  /* Podstawa rozmiaru: 100% = tyle, ile ustawiono w systemie albo
+     w przeglądarce. Dopóki wszystkie rozmiary były w `px`, to ustawienie było
+     IGNOROWANE — a osoba niedowidząca ma je zwykle już podniesione i oczekuje,
+     że program posłucha. Trzy stopnie z ikony w nagłówku mnożą tę podstawę,
+     więc działają też w przeglądarce, gdzie nie ma naszych skrótów Ctrl +/-. */
+  html { font-size:100%; }
+  html[data-fs="duzy"] { font-size:118%; }
+  html[data-fs="bardzo-duzy"] { font-size:140%; }
+
   :root {
     color-scheme: light;
     --on-accent: #fff;
@@ -62,13 +71,13 @@
            border-bottom:1px solid var(--line); background:var(--panel); }
   /* Nagłówek ma sporo kontrolek — nic nie może się łamać w środku wyrazu.
      Przy wąskim oknie cały pasek zawija się w całości, a nie etykiety. */
-  h1 { font-size:15px; margin:0; font-weight:600; white-space:nowrap; }
+  h1 { font-size:0.9375rem; margin:0; font-weight:600; white-space:nowrap; }
   header button, header select { white-space:nowrap; flex:none; }
   #profile { overflow:hidden; text-overflow:ellipsis; max-width:38ch; }
   .dot { width:10px; height:10px; border-radius:50%; background:var(--muted); flex:none; }
   .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.err{background:var(--err)}
   .grow { flex:1; }
-  .badge { font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--line);
+  .badge { font-size:0.6875rem; padding:0.15em 0.6em; border-radius:10px; border:1px solid var(--line);
            color:var(--muted); font-weight:500; white-space:nowrap; }
   /* Ikona nasłuchu w sieci: kolor niesie stan, kształt niesie szczegół.
      Otwarta kłódka i czerwień = można zapisywać z sieci; zamknięta i zieleń =
@@ -86,18 +95,20 @@
   .badge.st-ok    { color:var(--ok);   border-color:var(--ok);   background:color-mix(in srgb, var(--ok) 10%, transparent); }
   .badge.st-warn  { color:var(--warn); border-color:var(--warn); background:color-mix(in srgb, var(--warn) 12%, transparent); }
   .badge.st-error { color:var(--err);  border-color:var(--err);  background:color-mix(in srgb, var(--err) 12%, transparent); }
-  select.lang { width:auto; font-size:12px; padding:3px 6px; }
+  select.lang { width:auto; font-size:0.75rem; padding:3px 6px; }
   /* Przyciski ikonowe w nagłówku (motyw, język). Ikony są wbudowanymi SVG,
      a nie emoji: flagi państw NIE renderują się jako flagi na Windowsie —
      Segoe UI Emoji pokazuje wtedy litery „PL"/„GB", więc przycisk wyglądałby
      inaczej u większości odbiorców tego programu. */
   button.icon-btn { display:inline-flex; align-items:center; justify-content:center;
-                    width:30px; height:26px; padding:0; cursor:pointer;
+                    width:2.15em; height:1.85em; padding:0; cursor:pointer;
                     background:var(--panel); color:var(--text);
                     border:1px solid var(--line); border-radius:6px; }
   button.icon-btn:hover { border-color:var(--accent); }
   button.icon-btn:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
-  button.icon-btn svg { width:16px; height:16px; display:block; }
+  /* Ikona w `em`, nie w `px`: przy powiększonej czcionce mały piktogram
+     w dużym przycisku wygląda na pomyłkę i nadal jest nieczytelny. */
+  button.icon-btn svg { width:1.15em; height:1.15em; display:block; }
   /* Przyciski zawijają się CAŁĄ GRUPĄ, nie pojedynczo. Przy wąskim oknie
      „Zakończ" trafiał inaczej dokładnie pod plakietki na górze — a to jedyny
      przycisk w nagłówku, który przerywa przekazywanie QSO. */
@@ -127,45 +138,45 @@
   nav { display:flex; gap:4px; padding:8px 16px 0; background:var(--bg);
         border-bottom:1px solid var(--line); }
   nav button { background:none; border:none; border-bottom:2px solid transparent; color:var(--muted);
-               padding:6px 12px; cursor:pointer; font-size:13px; }
+               padding:0.45em 0.9em; cursor:pointer; font-size:0.8125rem; }
   nav button.active { color:var(--text); border-bottom-color:var(--accent); }
   main { padding:16px; }
   section { display:none; } section.active { display:block; }
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; }
-  .card .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  .card .v { font-size:22px; font-weight:600; margin-top:2px; }
+  .card .k { font-size:0.6875rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .card .v { font-size:1.375rem; font-weight:600; margin-top:2px; }
   /* Druga linia karty: skąd ta liczba i ile z niej jest z tej sesji.
      Bez tego licznik trwały stał obok licznika procesu i wyglądał na to samo. */
-  .card .s { font-size:11px; color:var(--muted); margin-top:3px; min-height:14px; }
+  .card .s { font-size:0.6875rem; color:var(--muted); margin-top:3px; min-height:14px; }
   .card { cursor:help; }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px;
            padding:12px 14px; margin-top:12px; }
-  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.04em;
+  .panel h2 { font-size:0.75rem; text-transform:uppercase; letter-spacing:.04em;
               color:var(--muted); margin:0 0 8px; font-weight:600; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { text-align:left; font-weight:500; color:var(--muted); font-size:11px;
+  table { width:100%; border-collapse:collapse; font-size:0.8125rem; }
+  th { text-align:left; font-weight:500; color:var(--muted); font-size:0.6875rem;
        text-transform:uppercase; padding:4px 6px; }
   td { padding:4px 6px; border-top:1px solid var(--line); }
   .empty { color:var(--muted); font-style:italic; padding:6px; }
   button.act { background:var(--accent); color:var(--on-accent); border:none; border-radius:6px;
-               padding:7px 14px; cursor:pointer; font-size:13px; }
+               padding:0.55em 1.1em; cursor:pointer; font-size:0.8125rem; }
   button.act.sec { background:none; color:var(--text); border:1px solid var(--line); }
   button.act.danger { color:var(--err); border-color:color-mix(in srgb, var(--err) 45%, var(--line)); }
   .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  label { display:block; font-size:12px; color:var(--muted); margin:10px 0 3px; }
+  label { display:block; font-size:0.75rem; color:var(--muted); margin:10px 0 3px; }
   /* `password` dopisany razem z polem hasła do interfejsu — bez niego pole
      zostawało w domyślnej szerokości przeglądarki i odstawało od reszty. */
   input[type=text], input[type=number], input[type=password], select {
-    width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
-    background:var(--bg); color:var(--text); font-size:13px; font-family:inherit; }
+    width:100%; padding:0.45em 0.6em; border:1px solid var(--line); border-radius:6px;
+    background:var(--bg); color:var(--text); font-size:0.8125rem; font-family:inherit; }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   /* Cel fan-outu: znacznik + znak stacji + operator + PIN + usuwanie. */
   .three { display:grid; grid-template-columns:auto 1fr 1fr 1fr auto auto; gap:8px; align-items:end; }
   .three.off input, .three.off .t-lbl { opacity:.45; }
   /* Znacznik uprawnień przy regule. Trwały, jak plakietka problemów —
      ostrzeżenie, które gaśnie samo, jest gorsze od żadnego. */
-  .t-chk { font-size:16px; line-height:32px; cursor:help; user-select:none; }
+  .t-chk { font-size:1rem; line-height:32px; cursor:help; user-select:none; }
   .t-chk.bad { color:var(--err); }
   .t-chk.warn { color:var(--warn); }
   .t-chk.ok { color:var(--ok); }
@@ -184,7 +195,7 @@
   /* `margin:0` jest tu istotne: globalna reguła `label` dokłada 10px u góry,
      co rozjeżdżało wyrównanie grup w rzędzie. */
   .st-controls .st-group { display:flex; flex-direction:column; gap:4px; margin:0; }
-  .st-cap { font-size:11px; color:var(--muted); text-transform:uppercase;
+  .st-cap { font-size:0.6875rem; color:var(--muted); text-transform:uppercase;
             letter-spacing:.04em; line-height:1.3; }
   /* Jedna wysokość dla list i przycisków — inaczej różnią się o 1–2 px
      i widać to jako drganie linii. */
@@ -200,7 +211,7 @@
   .st-bar span.fill { position:absolute; inset:0 auto 0 0; background:var(--accent); opacity:.16; }
   .st-bar span.lbl { position:relative; white-space:nowrap; overflow:hidden;
                      text-overflow:ellipsis; display:block; }
-  .st-num { font-variant-numeric:tabular-nums; color:var(--muted); font-size:12px; }
+  .st-num { font-variant-numeric:tabular-nums; color:var(--muted); font-size:0.75rem; }
   .st-num b { color:var(--text); font-variant-numeric:tabular-nums; }
 
   /* Pytania zadajemy WŁASNYM okienkiem, nie natywnym `confirm`.
@@ -224,7 +235,7 @@
      pola. Wpisana na sztywno rozjeżdżała się przy zawiniętym nagłówku,
      a `flex` na całym układzie powodował przewijanie strony zamiast logu. */
   pre#logbox { background:var(--bg); border:1px solid var(--line); border-radius:6px;
-       padding:10px; font-size:12px; overflow:auto; margin:0; min-height:120px;
+       padding:10px; font-size:0.75rem; overflow:auto; margin:0; min-height:120px;
        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap;
        /* Ładunki JSON nie mają spacji, więc samo pre-wrap ich nie złamie
           i log wymaga przewijania w bok. Łamiemy gdziekolwiek. */
@@ -240,14 +251,14 @@
               display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; }
   .fail-bar > div { flex:1; min-width:20ch; }
   .fail-bar #startFailText { font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-                             font-size:12px; margin-top:4px; overflow-wrap:anywhere; }
-  .hint { font-size:12px; color:var(--muted); margin-top:6px; }
+                             font-size:0.75rem; margin-top:4px; overflow-wrap:anywhere; }
+  .hint { font-size:0.75rem; color:var(--muted); margin-top:6px; }
   /* Pary „etykieta: wartość" w zakładce O programie. */
   dl.kv { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; margin:0; }
-  dl.kv dt { color:var(--muted); font-size:12px; }
-  dl.kv dd { margin:0; font-size:13px; }
+  dl.kv dt { color:var(--muted); font-size:0.75rem; }
+  dl.kv dd { margin:0; font-size:0.8125rem; }
   /* Lista ostatnich zdarzeń. Monospace w czasie, żeby kolumny się nie tańczyły. */
-  ul.events { list-style:none; margin:0; padding:0; font-size:13px; }
+  ul.events { list-style:none; margin:0; padding:0; font-size:0.8125rem; }
   ul.events li { padding:3px 0; border-top:1px solid var(--line); display:flex; gap:8px; }
 
   /* Tabele Kolejki przewijają się w bok WEWNĄTRZ panelu, nie ciągnąc za sobą
@@ -292,7 +303,7 @@
           -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent);
           mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent); }
     nav::-webkit-scrollbar { display:none; }
-    nav button { white-space:nowrap; padding:8px 10px; font-size:14px; }
+    nav button { white-space:nowrap; padding:8px 10px; font-size:0.875rem; }
 
     /* Siatki o sztywnej liczbie kolumn — jedyne miejsca, które NIE zawijają
        się same (`.three` to wiersz rozgałęzienia w Konfiguracji). */
@@ -300,8 +311,8 @@
 
     /* Pod palec: 16 px w polach to jedyny sposób, żeby przeglądarki na
        telefonach nie przybliżały widoku przy wejściu w pole. */
-    input, select, textarea { font-size:16px; min-height:40px; }
-    button.act { padding:10px 16px; font-size:14px; min-height:40px; }
+    input, select, textarea { font-size:1rem; min-height:40px; }
+    button.act { padding:10px 16px; font-size:0.875rem; min-height:40px; }
     .st-controls { gap:10px; }
     .st-controls .st-group { flex:1 1 100%; }
     .st-controls select { width:100%; min-width:0; }
@@ -310,7 +321,7 @@
 
     /* Tabele: mniejszy druk i bez łamania komórek — czytelniejsze jest
        przewinięcie w bok niż znak w trzech linijkach. */
-    .tbl-scroll table { font-size:12px; }
+    .tbl-scroll table { font-size:0.75rem; }
     .tbl-scroll th, .tbl-scroll td { white-space:nowrap; }
 
     /* „O programie": etykieta nad wartością, bo ścieżki plików są długie. */
@@ -321,13 +332,13 @@
   }
   ul.events li:first-child { border-top:none; }
   ul.events time { color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-                   font-size:12px; flex:none; }
+                   font-size:0.75rem; flex:none; }
   ul.events .what { flex:1; }
   ul.events li.bad .what { color:var(--err); }
   ul.events li.warn .what { color:var(--warn); }
   ul.events li.dup .what { color:var(--muted); }
   .note { border-left:3px solid var(--warn); padding:8px 10px; background:var(--panel);
-          border-radius:0 6px 6px 0; font-size:12px; margin-top:10px; }
+          border-radius:0 6px 6px 0; font-size:0.75rem; margin-top:10px; }
 </style>
 </head>
 <body>
@@ -347,6 +358,7 @@
   <div class="hdr-actions">
     <button class="icon-btn" id="langBtn" title="Język / Language"></button>
     <button class="icon-btn" id="themeBtn" title="Motyw / Theme"></button>
+    <button class="icon-btn" id="fsBtn" title="Rozmiar tekstu / Text size"></button>
     <button class="act sec" id="btnPause" data-i18n="btn.pause">Wstrzymaj</button>
     <span class="hdr-sep"></span>
     <button class="act sec danger" id="btnQuit" data-i18n="btn.quit" title=""></button>

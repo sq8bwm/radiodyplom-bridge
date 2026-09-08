@@ -19,6 +19,7 @@ function applyLang() {
   $('fMulticast').placeholder = t('hint.multicast');
   if (!$('btnQuit').hidden) $('btnQuit').title = t('hint.closeToTray');
   drawThemeButton();         // podpowiedzi są tłumaczone
+  drawSkalaButton();
   drawLangButton();
   refresh();
   if ($('konfig').classList.contains('active')) loadConfig();
@@ -53,6 +54,10 @@ function buildLangButton(active) {
 // główna platforma loggerów — przycisk wyglądałby inaczej u większości
 // odbiorców. SVG wygląda identycznie wszędzie i nie dokłada zależności.
 const SVG = {
+  // skala czcionki: małe „A" obok dużego — to samo znaczenie w każdym języku
+  litery: '<svg viewBox="0 0 16 16" fill="currentColor">'
+    + '<text x="0" y="12.5" font-size="8" font-family="serif">A</text>'
+    + '<text x="6.2" y="12.5" font-size="13" font-family="serif">A</text></svg>',
   // motyw
   auto: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">'
     + '<rect x="1.5" y="2.5" width="13" height="9" rx="1"/><path d="M6 14h4M8 11.5V14"/></svg>',
@@ -157,6 +162,46 @@ function zastosujTryb(api) {
 // Wybór trzymamy w konfiguracji, nie w localStorage: to samo okno otwiera się
 // w Electronie i w przeglądarce, a ustawienie ma być jedno.
 let motyw = 'auto';
+
+/** Stopnie skali czcionki. Kolejność = kolejność klikania. */
+const SKALE = ['normal', 'duzy', 'bardzo-duzy'];
+let skala = 'normal';
+
+/**
+ * Skala czcionki: mnoży podstawę ustawioną w systemie albo w przeglądarce.
+ *
+ * Osobna od powiększania okna (Ctrl +/-), bo tamto działa tylko w oknie na
+ * pulpicie i skaluje WSZYSTKO. To działa też w przeglądarce — czyli z telefonu
+ * — i rusza wyłącznie tekst, więc na małym ekranie zostaje więcej treści.
+ */
+function applySkala(wybor) {
+  skala = SKALE.includes(wybor) ? wybor : 'normal';
+  if (skala === 'normal') delete document.documentElement.dataset.fs;
+  else document.documentElement.dataset.fs = skala;
+}
+
+function drawSkalaButton() {
+  const b = $('fsBtn');
+  if (!b) return;
+  const nast = SKALE[(SKALE.indexOf(skala) + 1) % SKALE.length];
+  b.innerHTML = SVG.litery;
+  b.title = `${t(`fs.${skala}`)} → ${t(`fs.${nast}`)}`;
+  b.setAttribute('aria-label', t(`fs.${skala}`));
+}
+
+function buildSkalaButton(active) {
+  applySkala(active);
+  drawSkalaButton();
+  $('fsBtn').onclick = async () => {
+    const nast = SKALE[(SKALE.indexOf(skala) + 1) % SKALE.length];
+    applySkala(nast);
+    drawSkalaButton();
+    // Zapis jak przy motywie. W trybie tylko do odczytu przez przeglądarkę
+    // zapis się nie uda — wybór zostaje wtedy do końca sesji, co jest lepsze
+    // niż odmowa powiększenia tekstu.
+    try { await window.bridge.saveConfig({ fontScale: nast }); } catch { /* sesja wystarczy */ }
+  };
+}
 
 /**
  * Ustawia motyw na dokumencie.
@@ -1394,6 +1439,7 @@ $('btnQuit').onclick = async () => {
   await window.bridge.przygotujSesje?.();
   const cfg = await window.bridge.getConfig();
   buildThemeButton(cfg?.theme || 'auto');
+  buildSkalaButton(cfg?.fontScale || 'normal');
   setLang(cfg?.language || 'pl');
   buildLangButton(getLang());
   applyLang();

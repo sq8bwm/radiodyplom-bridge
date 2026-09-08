@@ -48,8 +48,10 @@
   },
   "language": "pl",
   "theme": "auto",
+  "fontScale": "normal",
   "ui": {
-    "recentEvents": 20
+    "recentEvents": 20,
+    "zoom": 1
   },
   "updates": {
     "check": true,

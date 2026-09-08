@@ -277,6 +277,14 @@ export class StatusApi {
         tls: !!this.tryb.tls,
         tylkoOdczyt: this.tylkoOdczyt(),
         wymagaLogowania: this.wymagaLogowania(),
+        // Co było ŻĄDANE w konfiguracji i dlaczego ewentualnie odmówiliśmy.
+        // Bez tego okno pokazywało „0.0.0.0" w Konfiguracji i localhost na
+        // Stanie, a powód odmowy siedział wyłącznie w logu — czyli tam, gdzie
+        // użytkownik nie zagląda (zgłoszone 2026-09-08 z Windowsa, gdzie
+        // openssl-a zwykle nie ma, więc nie ma czym wystawić certyfikatu).
+        zadanyHost: String(this.cfg.api?.host || '127.0.0.1'),
+        odrzucony: (this.tryb.powody || []).length > 0,
+        powody: this.tryb.powody || [],
         // Gotowe adresy do wpisania w przeglądarce. Przy nasłuchu na 0.0.0.0
         // sam adres „0.0.0.0" jest bezużyteczny — trzeba znać adresy maszyny.
         adresy: (() => {

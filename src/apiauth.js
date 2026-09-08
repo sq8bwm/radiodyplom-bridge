@@ -39,6 +39,21 @@ const PROG_BLOKADY = 5;
 const BLOKADA_MS = 60 * 1000;          // rośnie dwukrotnie do MAX
 const BLOKADA_MAX_MS = 15 * 60 * 1000;
 
+/**
+ * Powody odmowy nasłuchu w sieci — KODY, nie tekst.
+ *
+ * Kod jedzie do okna (które tłumaczy go na język użytkownika i dokłada radę,
+ * co zrobić), a tekst stąd trafia do logu. Wcześniej `powody` były polskim
+ * tekstem: w logu w porządku, ale okno nie miało z czego zbudować komunikatu,
+ * więc powód odmowy nie docierał do nikogo, kto do logu nie zagląda.
+ */
+export const POWODY = {
+  'brak-hasla': 'nie ustawiono hasła (api.auth.password)',
+  'tls-wylaczony': 'TLS wyłączony w konfiguracji',
+  'brak-openssl': 'brak certyfikatu, a openssl niedostępny',
+  'brak-certyfikatu': 'brak certyfikatu TLS',
+};
+
 export function czyLokalny(host) {
   return LOKALNE.has(String(host || '127.0.0.1'));
 }
@@ -288,19 +303,21 @@ export function trybApi({ cfg, dataDir }) {
     };
   }
 
-  if (!hasloUstawione(cfg)) {
-    powody.push('nie ustawiono hasła (api.auth.password)');
-  }
+  if (!hasloUstawione(cfg)) powody.push('brak-hasla');
+
   const tls = cfg?.api?.tls?.enabled === false ? null : przygotujCertyfikat({ cfg, dataDir });
   if (cfg?.api?.tls?.enabled === false) {
-    powody.push('TLS wyłączony w konfiguracji');
+    powody.push('tls-wylaczony');
   } else if (!tls) {
-    powody.push('brak certyfikatu TLS');
+    // Rozdzielone, bo rada jest inna: bez openssl-a trzeba podać własny
+    // certyfikat albo doinstalować narzędzie (typowy Windows), a przy jego
+    // obecności problem jest w plikach albo prawach.
+    powody.push(czyOpenssl() ? 'brak-certyfikatu' : 'brak-openssl');
   }
 
   if (powody.length) {
-    log.error(`API: nasłuch na ${zadany} ODRZUCONY — ${powody.join('; ')}. `
-      + 'Zostaję na 127.0.0.1.');
+    const opis = powody.map((k) => POWODY[k] || k).join('; ');
+    log.error(`API: nasłuch na ${zadany} ODRZUCONY — ${opis}. Zostaję na 127.0.0.1.`);
     return { host: '127.0.0.1', siec: false, tls: null, readOnly: false, powody };
   }
 

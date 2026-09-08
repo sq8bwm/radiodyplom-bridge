@@ -165,7 +165,7 @@ describe('reguły nasłuchu (fail-closed)', () => {
     const t = trybApi({ cfg: konf({ host: '0.0.0.0' }), dataDir });
     assert.equal(t.host, '127.0.0.1');
     assert.equal(t.siec, false);
-    assert.ok(t.powody.some((p) => /hasła/.test(p)), t.powody.join('; '));
+    assert.deepEqual(t.powody, ['brak-hasla'], 'powody są kodami, nie tekstem');
   });
 
   test('sieć z hasłem, ale TLS wyłączony → zostaje na localhoście', () => {
@@ -179,7 +179,7 @@ describe('reguły nasłuchu (fail-closed)', () => {
     });
     assert.equal(t.host, '127.0.0.1');
     assert.equal(t.siec, false);
-    assert.ok(t.powody.some((p) => /TLS/.test(p)), t.powody.join('; '));
+    assert.deepEqual(t.powody, ['tls-wylaczony']);
   });
 
   test('sieć z hasłem i TLS → wpuszcza, domyślnie TYLKO DO ODCZYTU', (t) => {
@@ -418,5 +418,72 @@ describe('adres interfejsu jest widoczny', () => {
     assert.match(R, /\$\('ifaceInfo'\)/);
     const H = readFileSync('ui/index.html', 'utf8');
     assert.match(H, /id="ifaceInfo"/);
+  });
+});
+
+// ------------------------------------------- odmowa musi być widoczna w oknie
+
+describe('powód odmowy dociera do interfejsu', () => {
+  // ZGŁOSZONE 2026-09-08 z Windowsa: „widzę, że nie ma znacznika otwarcia na
+  // sieć". Fail-closed zadziałał poprawnie (brak openssl → brak certyfikatu →
+  // zostajemy na localhoście), ale powód znał TYLKO log. Okno pokazywało
+  // „0.0.0.0" w Konfiguracji i localhost na Stanie, bez wyjaśnienia — a brak
+  // ikony nie jest komunikatem.
+  const A = readFileSync('src/apiauth.js', 'utf8');
+  const H = readFileSync('src/httpapi.js', 'utf8');
+  const R = readFileSync('ui/renderer.js', 'utf8');
+  const S2 = readFileSync('ui/strings.js', 'utf8');
+
+  test('powody są KODAMI, nie polskim tekstem', () => {
+    // Tekst nadaje się do logu, ale okno musi go przetłumaczyć.
+    assert.match(A, /export const POWODY = \{/);
+    assert.match(A, /powody\.push\('brak-hasla'\)/);
+    assert.match(A, /powody\.push\('tls-wylaczony'\)/);
+  });
+
+  test('brak openssl to OSOBNY powód od braku certyfikatu', () => {
+    // Rada jest inna: bez narzędzia trzeba podać własny certyfikat albo je
+    // doinstalować (typowy Windows); z narzędziem problem jest w plikach.
+    assert.match(A, /czyOpenssl\(\) \? 'brak-certyfikatu' : 'brak-openssl'/);
+  });
+
+  test('status niesie żądany adres, flagę odmowy i powody', () => {
+    const blok = H.slice(H.indexOf('      api: {'));
+    for (const pole of ['zadanyHost', 'odrzucony', 'powody']) {
+      assert.match(blok.slice(0, 2000), new RegExp(`${pole}:`), `brak ${pole}`);
+    }
+  });
+
+  test('okno pokazuje odmowę w OBU miejscach', () => {
+    // Na Stanie, bo tam widać adres, i w Konfiguracji, bo tam wybrano 0.0.0.0
+    // i tam użytkownik wróci sprawdzić, dlaczego „nie działa".
+    const iWarunek = R.indexOf('if (a.odrzucony)');
+    assert.ok(iWarunek > 0, 'brak warunku odmowy w renderze Stanu');
+    assert.match(R.slice(iWarunek, iWarunek + 500), /\$\('ifaceNote'\)/,
+      'warunek musi wypełniać notę panelu Interfejs');
+    // Anchor na WARUNKU, nie na pierwszym `apiNetHint` — ten pierwszy jest
+    // w innym miejscu (podpowiedź o wymuszonym trybie tylko do odczytu).
+    const iKonfig = R.indexOf('if (st?.odrzucony)');
+    assert.ok(iKonfig > 0, 'brak warunku odmowy w renderze Konfiguracji');
+    assert.match(R.slice(iKonfig, iKonfig + 500), /\$\('apiNetHint'\)/,
+      'warunek musi wypełniać podpowiedź w panelu Interfejs w sieci');
+  });
+
+  test('każdy kod ma tłumaczenie w obu językach', () => {
+    const kody = [...A.matchAll(/'(brak-hasla|tls-wylaczony|brak-openssl|brak-certyfikatu)':/g)]
+      .map((m) => m[1]);
+    assert.ok(kody.length >= 4, `oczekiwałam czterech kodów, mam ${kody.length}`);
+    for (const k of new Set(kody)) {
+      const ile = [...S2.matchAll(new RegExp(`'refuse\\.${k}':`, 'g'))].length;
+      assert.equal(ile, 2, `kod ${k} ma ${ile} tłumaczeń, a ma mieć 2 (pl i en)`);
+    }
+  });
+
+  test('komunikat mówi, CO ZROBIĆ, nie tylko co się nie udało', () => {
+    const m = S2.match(/'refuse\.whatToDo': '([^']+)'/);
+    assert.ok(m, 'brak porady po polsku');
+    assert.match(m[1], /tunel SSH/);
+    assert.match(m[1], /certFile/);
+    assert.match(m[1], /openssl/);
   });
 });

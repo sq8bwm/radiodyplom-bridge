@@ -527,6 +527,14 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 - `station_callsign` i `operator` to niezależne pola; fan-out je poprawnie rozdziela.
 - Fan-out na dwie stacje: oba QSO **punktowane** (reguła duplikatu obejmuje stację).
 - PIN jest per profil użytkownika; wysyłka w imieniu innej stacji wymaga jej PIN-u.
+- **Lista stacji przychodzi TYLKO w trakcie akcji** (rozstrzygnięte
+  2026-09-08). Poza akcją serwis oddaje pustą listę, a nasz komunikat brzmiał
+  „brak — konto nie ma przypisanej żadnej stacji", czyli jak awaria konta —
+  i niepokoił bez powodu przez kilka dni. Potwierdzone doświadczalnie: po
+  założeniu akcji próbnej komunikat zniknął, a stacje się pokazały. Od 0.1.27
+  panel rozróżnia trzy rzeczy: serwis nie podał (starsze API), pusto poza akcją
+  (spokojna podpowiedź) i pusto W TRAKCIE akcji (ostrzeżenie, bo wtedy nie ma
+  na co logować i QSO wrócą odrzucone).
 - Duplikaty są zapisywane i oznaczane jako niepunktowane, nie odrzucane.
 - Automatyczne dosyłanie po awarii łączności działa bez ingerencji.
 - Sekrety nie trafiają do paczek (sprawdzone przez rozpakowanie `app.asar`).

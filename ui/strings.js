@@ -240,7 +240,9 @@ const DICT = {
     'account.pinExpires': 'PIN wygasa',
     'account.apiDisabled': 'To konto ma wyłączone API — nic się nie zapisze.',
     'account.notReported': 'serwis nie podaje (starsza wersja API)',
-    'account.noStations': 'brak — konto nie ma przypisanej żadnej stacji',
+    'account.noStations': 'brak — konto nie ma przypisanej żadnej stacji, '
+      + 'a akcja trwa: QSO zostaną odrzucone',
+    'account.stationsDuringAction': 'serwis podaje listę stacji tylko w trakcie akcji',
     'account.noActions': 'brak — w tej chwili nie ma do czego zapisywać',
     'account.unknown': 'Jeszcze nie sprawdzono.',
     'account.offline': 'Brak łączności z serwisem — dane konta nieznane.',
@@ -612,7 +614,9 @@ const DICT = {
     'account.pinExpires': 'PIN expires',
     'account.apiDisabled': 'This account has the API disabled — nothing will be saved.',
     'account.notReported': 'not reported by the service (older API)',
-    'account.noStations': 'none — the account has no station assigned',
+    'account.noStations': 'none — the account has no station assigned and an '
+      + 'action is running: QSOs will be rejected',
+    'account.stationsDuringAction': 'the service lists stations only during an action',
     'account.noActions': 'none — there is nothing to save into right now',
     'account.unknown': 'Not checked yet.',
     'account.offline': 'No connection to the service — account details unknown.',

@@ -1154,10 +1154,18 @@ function renderAccount(s) {
   const wiersze = [];
   wiersze.push(`<div><b>${t('account.operator')}:</b> ${esc(s.radiodyplom.profile || '—')}</div>`);
 
-  // `null` znaczy „serwis nie podał" (starsze API), `[]` — „konto nie ma ani
-  // jednej stacji". Zlanie tych przypadków w jedno byłoby mylące.
+  // Trzy różne rzeczy, których nie wolno zlewać w jedno:
+  //  - `null` — serwis nie podał (starsze API),
+  //  - `[]` BEZ trwającej akcji — to NORMALNE: serwis podaje listę stacji
+  //    tylko w trakcie akcji. Dawny komunikat „konto nie ma przypisanej żadnej
+  //    stacji" brzmiał tu jak awaria konta i niepokoił bez powodu
+  //    (potwierdzone 2026-09-08: po założeniu akcji próbnej komunikat zniknął),
+  //  - `[]` W TRAKCIE akcji — to prawdziwy problem: nie ma na co logować.
+  const wAkcji = Array.isArray(acc.activeActions) && acc.activeActions.length > 0;
   if (acc.stations === null) {
     wiersze.push(`<div><b>${t('account.stations')}:</b> <span class="hint">${t('account.notReported')}</span></div>`);
+  } else if (acc.stations.length === 0 && !wAkcji) {
+    wiersze.push(`<div><b>${t('account.stations')}:</b> <span class="hint">${t('account.stationsDuringAction')}</span></div>`);
   } else if (acc.stations.length === 0) {
     wiersze.push(`<div class="lvl-warn"><b>${t('account.stations')}:</b> ${t('account.noStations')}</div>`);
   } else {

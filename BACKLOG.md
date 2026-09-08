@@ -17,9 +17,16 @@ przycisk „Zakończ", menu pod ikoną w zasobniku.
 - praca w tle po zamknięciu okna przez dłuższy czas.
 
 **Potwierdzone 2026-09-08 na prawdziwym Windowsie:** program uruchamia się,
-okno działa, PIN sprawdzony. Nasłuch w sieci ODRZUCONY, bo Windows nie ma
-`openssl` — czyli fail-closed zadziałał zgodnie z projektem. Powód nie docierał
-jednak do okna (znał go tylko log) i to zostało naprawione w 0.1.20.
+okno działa, PIN sprawdzony. Nasłuch w sieci był wtedy ODRZUCONY, bo Windows nie
+ma `openssl` — czyli fail-closed zadziałał zgodnie z projektem. Powód nie
+docierał jednak do okna (znał go tylko log) i to zostało naprawione w 0.1.20.
+
+**Potwierdzone 2026-09-08 na 0.1.21, ta sama maszyna (DESKTOP-P35FDV1):** nasłuch
+w sieci DZIAŁA na Windowsie bez instalowania czegokolwiek. W logu certyfikat
+wystawiony „bez openssl-a, wbudowanym koderem", z adresem maszyny w SAN;
+`https://0.0.0.0:12061`, kłódka w oknie, logowanie z przeglądarki przez adres
+w sieci lokalnej udane. Zostaje do sprawdzenia wejście z DRUGIEGO urządzenia
+(telefon) i porównanie odcisku.
 
 **Rozstrzygnięte w 0.1.21:** certyfikat wystawiamy BEZ `openssl` (`src/cert.js`,
 własny koder DER). Obawa o „nie mamy czym tego sprawdzić" okazała się nietrafiona

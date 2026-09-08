@@ -218,7 +218,8 @@ describe('dwie instancje obok siebie', () => {
     // pobraniu nie dałoby nic: portable nadal nie dałby się uruchomić obok
     // wersji instalowanej. Kolejność jest tu całą funkcją.
     const iSet = M.indexOf("app.setPath('userData'");
-    const iLock = M.indexOf('app.requestSingleInstanceLock()');
+    // Bez nawiasu zamykającego: od 0.1.23 blokada dostaje `additionalData`.
+    const iLock = M.indexOf('app.requestSingleInstanceLock(');
     assert.ok(iSet > 0, 'brak przestawienia katalogu danych');
     assert.ok(iLock > 0, 'brak blokady jednej instancji');
     assert.ok(iSet < iLock, 'setPath MUSI być przed requestSingleInstanceLock');
@@ -239,6 +240,50 @@ describe('dwie instancje obok siebie', () => {
 
   test('katalog tylko do odczytu nie przestawia niczego', () => {
     assert.match(M, /if \(daneObok\?\.katalog && !daneObok\.blad\)/);
+  });
+});
+
+describe('druga instancja mówi, co się stało', () => {
+  const M = readFileSync(new URL('../ui/main.js', import.meta.url), 'utf8');
+  const S = readFileSync(new URL('../ui/strings.js', import.meta.url), 'utf8');
+
+  test('pokazujemy plik KLIKNIĘTY, nie kopię z katalogu tymczasowego', () => {
+    // Przy AppImage i portable `process.execPath` to `/tmp/.mount_…` albo kopia
+    // w %TEMP% — ścieżka, która użytkownikowi nic nie mówi. Swoją znamy ze
+    // środowiska, a drugiej instancji dowiadujemy się z `additionalData`.
+    assert.match(M, /process\.env\.APPIMAGE \|\| process\.env\.PORTABLE_EXECUTABLE_FILE/);
+    assert.match(M, /app\.requestSingleInstanceLock\(\{/);
+    assert.match(M, /const skad = dodatkowe\?\.plik \|\| argv\?\.\[0\]/);
+  });
+
+  test('to samo kliknięcie tylko pokazuje okno, bez gadania', () => {
+    // Drugie kliknięcie tej samej ikony to normalne zachowanie i nie może
+    // wywoływać żadnego komunikatu.
+    assert.match(M, /if \(!skad \|\| skad === mojPlik \|\| skad === process\.execPath\) return;/);
+  });
+
+  test('INNY plik programu jest wyjaśniany oknem, nie tylko logiem', () => {
+    // Zgłoszone 2026-09-08: AppImage przy działającej paczce .deb „uaktywnia
+    // wersję zainstalowaną", co wygląda jak niedziałający plik.
+    const blok = M.slice(M.indexOf("app.on('second-instance'"));
+    assert.match(blok, /dialog\.showMessageBox/);
+    assert.match(blok, /secondInstance\.howTo/);
+    assert.match(blok, /log\.warn/);
+  });
+
+  test('rada mówi o katalogu radiodyplom-dane i portach', () => {
+    const m = S.match(/'secondInstance\.howTo': '([^']*(?:'\s*\+\s*'[^']*)*)'/);
+    assert.ok(m, 'brak rady dla drugiej instancji');
+    assert.match(m[1], /radiodyplom-dane/);
+    assert.match(m[1], /udp\.port/);
+  });
+
+  test('teksty są w obu językach', () => {
+    for (const k of ['secondInstance.title', 'secondInstance.running',
+      'secondInstance.launched', 'secondInstance.howTo', 'secondInstance.ok']) {
+      const ile = [...S.matchAll(new RegExp(`'${k.replace('.', '\\.')}':`, 'g'))].length;
+      assert.equal(ile, 2, `${k} ma ${ile} tłumaczeń, a ma mieć 2 (pl i en)`);
+    }
   });
 });
 

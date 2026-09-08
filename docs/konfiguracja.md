@@ -127,6 +127,12 @@ jedna z dwóch blokad opisanych niżej:
 Sprawdzone na uruchomionym programie: wersja instalowana na `12060/12061`
 i portable na `12070/12071` pracują jednocześnie, każda z własną kolejką.
 
+**Bez katalogu `radiodyplom-dane` druga wersja się nie uruchomi** — tylko pokaże
+okno tej, która już działa. Wygląda to tak, jakby kliknięty plik nie działał,
+więc od 0.1.23 program mówi wtedy wprost, że działa już inna wersja, pokazuje
+oba pliki i przypomina o tym katalogu. Powód jest w blokadzie jednej instancji
+Electrona (patrz niżej, „trzecia blokada").
+
 **O czym pamiętać:** deduplikacja jest osobna dla każdej instancji, więc gdyby
 logger wysyłał to samo QSO na oba porty, poleciałoby **dwa razy**. Kolejka też
 jest osobna — QSO czekające w jednej instancji nie zostanie wysłane przez drugą.

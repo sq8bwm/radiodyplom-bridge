@@ -180,6 +180,14 @@ const DICT = {
     'about.author': 'Autor',
     'about.license': 'Licencja',
     'about.install': 'Instalacja',
+    'secondInstance.title': 'Mostek już działa — pokazuję jego okno',
+    'secondInstance.running': 'Działa już ta wersja:',
+    'secondInstance.launched': 'Uruchomiono:',
+    'secondInstance.howTo': 'Obie wersje dzielą ten sam katalog konfiguracji, '
+      + 'a jednocześnie może działać tylko jedna. Żeby uruchomić dwie naraz, '
+      + 'utwórz katalog „radiodyplom-dane" obok pliku programu i ustaw w nim '
+      + 'inne porty (udp.port, api.port).',
+    'secondInstance.ok': 'Rozumiem',
     'startFail.title': 'Mostek nie wystartował — nic nie jest odbierane ani wysyłane.',
     'startFail.badge': 'rdzeń nie działa',
     'startFail.hint': 'Program działa dalej tylko jako okno. Popraw plik konfiguracji '
@@ -527,6 +535,14 @@ const DICT = {
     'about.author': 'Author',
     'about.license': 'License',
     'about.install': 'Installation',
+    'secondInstance.title': 'The bridge is already running — showing its window',
+    'secondInstance.running': 'Already running:',
+    'secondInstance.launched': 'You started:',
+    'secondInstance.howTo': 'Both versions share the same configuration directory '
+      + 'and only one can run at a time. To run two at once, create a '
+      + '"radiodyplom-dane" directory next to the program file and set different '
+      + 'ports in it (udp.port, api.port).',
+    'secondInstance.ok': 'OK',
     'startFail.title': 'The bridge did not start — nothing is received or sent.',
     'startFail.badge': 'core not running',
     'startFail.hint': 'Only the window is running. Fix the configuration file and '

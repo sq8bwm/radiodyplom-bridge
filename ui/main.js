@@ -6,7 +6,9 @@
 // Rdzeń jest tu OSADZONY (startDaemon), a nie uruchamiany osobno — dzięki temu
 // UI rozmawia z nim bezpośrednio, bez HTTP. Serwer HTTP zostaje włączony tylko
 // po to, by dało się też podejrzeć stan z przeglądarki albo skryptu.
-import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, shell } from 'electron';
+import {
+  app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, shell, dialog,
+} from 'electron';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { loadConfig, configPath } from '../src/config.js';
@@ -15,7 +17,7 @@ import { startDaemon } from '../src/daemon.js';
 import { log } from '../src/log.js';
 import { closeFileLog } from '../src/logfile.js';
 import { t, setLang } from './strings.js';
-import { katalogDanychObokPliku } from '../src/instalacja.js';
+import { katalogDanychObokPliku, rodzajInstalacji } from '../src/instalacja.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -53,11 +55,46 @@ if (daneObok?.katalog && !daneObok.blad) {
 // QSO odebrane w tym okienku wpadłoby do kolejki, której nikt już nie
 // obsługuje. Zaobserwowane 2026-09-04 przy dwóch instancjach na różnych
 // konfiguracjach (różne porty, więc blokady nie zdążyły zaprotestować).
-const mamyBlokadeInstancji = app.requestSingleInstanceLock();
+// Plik, który użytkownik NAPRAWDĘ kliknął. `process.execPath` przy AppImage
+// i portable wskazuje kopię w katalogu tymczasowym (`/tmp/.mount_…`,
+// `%TEMP%\…`), czyli ścieżkę, która człowiekowi nic nie mówi.
+const mojPlik = process.env.APPIMAGE || process.env.PORTABLE_EXECUTABLE_FILE
+  || process.execPath;
+
+// `additionalData` dojdzie do instancji, która już działa — inaczej znałaby
+// tylko `argv[0]` drugiej, czyli znów ścieżkę tymczasową.
+const mamyBlokadeInstancji = app.requestSingleInstanceLock({
+  plik: mojPlik,
+  rodzaj: rodzajInstalacji().rodzaj,
+});
 if (!mamyBlokadeInstancji) {
   app.quit();
 } else {
-  app.on('second-instance', () => showWindow());
+  app.on('second-instance', (_zdarzenie, argv, _katalog, dodatkowe) => {
+    showWindow();
+    // Drugie kliknięcie TEJ SAMEJ ikony ma tylko pokazać okno i nic nie mówić.
+    // Ale gdy ktoś uruchamia INNY PLIK (AppImage przy działającej paczce .deb,
+    // portable przy instalatorze), pokazanie cudzego okna jest mylące: wygląda,
+    // jakby nowy plik nie działał. Zgłoszone 2026-09-08 — „uaktywnia mi
+    // uruchomioną wersję zainstalowaną zamiast nowej instancji".
+    // `dodatkowe` mamy od 0.1.23; starsza druga instancja przyśle tylko argv.
+    const skad = dodatkowe?.plik || argv?.[0];
+    if (!skad || skad === mojPlik || skad === process.execPath) return;
+
+    const opis = (plik, rodzaj) => (rodzaj ? `${t(`install.${rodzaj}`)} — ${plik}` : plik);
+    const ja = opis(mojPlik, rodzajInstalacji().rodzaj);
+    const on = opis(skad, dodatkowe?.rodzaj);
+    log.warn(`Druga instancja: ${on} — działa już ${ja}; pokazuję okno działającej`);
+    dialog.showMessageBox(win ?? undefined, {
+      type: 'info',
+      title: t('secondInstance.title'),
+      message: t('secondInstance.title'),
+      detail: `${t('secondInstance.running')}\n${ja}\n\n`
+        + `${t('secondInstance.launched')}\n${on}\n\n${t('secondInstance.howTo')}`,
+      buttons: [t('secondInstance.ok')],
+      noLink: true,
+    }).catch(() => { /* brak okna nadrzędnego nie może wywalić programu */ });
+  });
 }
 
 function iconFor(state) {

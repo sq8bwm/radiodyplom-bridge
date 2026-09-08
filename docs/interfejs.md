@@ -286,8 +286,19 @@ Pięć zakładek:
   wtedy, gdy jest już na końcu logu; po przewinięciu w górę zostaje na miejscu,
   a pasek nad logiem mówi „przewinięte w górę" i pokazuje przycisk „Na koniec".
   Długie ładunki JSON są łamane, więc nie ma przewijania w bok.
-- **O programie** — wersja, autor, licencja i zdanie o braku gwarancji, plus
-  odnośniki do pełnego tekstu licencji, repozytorium i wydań.
+- **O programie** — wersja, autor, licencja, **rodzaj instalacji** i zdanie
+  o braku gwarancji, plus odnośniki do pełnego tekstu licencji, repozytorium
+  i wydań.
+
+**Wiersz „Instalacja"** mówi, skąd ten program został uruchomiony: *z
+instalatora*, *portable* (z nazwą klikniętego pliku), *AppImage*, *paczka
+.deb*, *usługa bez interfejsu* albo *ze źródeł*. Nie jest to ozdoba: na
+Windowsie instalator i portable **dzielą ten sam katalog danych**
+(`%APPDATA%\radiodyplom-bridge`), czyli tę samą konfigurację, ten sam PIN
+i tę samą blokadę jednej instancji — więc po restarcie nie było jak
+stwierdzić, który plik właściwie działa. Ten sam rodzaj (bez ścieżki) jedzie
+w zgłoszeniu błędu, gdzie „portable" bywa całym wyjaśnieniem dziwnego
+zachowania.
 
 Zakładka „O programie" **nie ma niczego wpisanego na sztywno** — wersję, autora,
 licencję i adres repozytorium bierze z `/api/status`, czyli z `package.json`.

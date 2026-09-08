@@ -18,6 +18,7 @@ import { writeFileSync, chmodSync, existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { platform, arch, release, hostname } from 'node:os';
 import { editableConfig } from './configedit.js';
+import { rodzajInstalacji } from './instalacja.js';
 import { recentLog } from './log.js';
 
 /** Ile ostatnich wpisów logu dołączamy. Dość, żeby zobaczyć start i awarię. */
@@ -107,6 +108,9 @@ export function buildReport({ cfg, status = null, pkg = {}, wpisow = WPISOW_LOGU
       system: `${platform()} ${arch()} (${release()})`,
       node: process.versions.node,
       electron: process.versions.electron || null,
+      // „portable" bywa całym wyjaśnieniem dziwnego zachowania, więc jedzie
+      // w zgłoszeniu. Bez ścieżki — ta zawiera nazwę katalogu użytkownika.
+      instalacja: rodzajInstalacji().rodzaj,
     },
     // Ta sama postać, którą dostaje okno: PIN-y zamaskowane, hasła brak.
     konfiguracja: editableConfig(cfg),

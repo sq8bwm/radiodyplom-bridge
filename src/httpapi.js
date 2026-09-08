@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { readRecords, parseDay } from './journal.js';
 import { aggregate, filterRecords, filterOptions } from './stats.js';
 import { summarizeTargets } from './fanout.js';
+import { rodzajInstalacji } from './instalacja.js';
 import {
   Sesje, Blokada, sprawdzHaslo, hasloUstawione, odczytajCiastko,
   ciastkoSesji, ciastkoWygaszone, trybApi, odciskCertyfikatu, adresyLokalne,
@@ -150,6 +151,10 @@ export class StatusApi {
         ? this.pkg.author
         : (this.pkg.author?.name || null),
       license: this.pkg.license || null,
+      // Skąd program wystartował. Na Windowsie instalator i portable dzielą
+      // ten sam katalog danych, więc bez tego nie było jak stwierdzić, który
+      // plik działa — ani w oknie, ani w zgłoszeniu błędu.
+      instalacja: rodzajInstalacji(),
       repository: this.pkg.repository?.url || this.pkg.repository || null,
       uptimeSec: Math.round((Date.now() - this.startedAt) / 1000),
 

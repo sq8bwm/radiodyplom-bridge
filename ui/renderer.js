@@ -328,6 +328,12 @@ function renderStatus(s) {
     ? ` · multicast: ${s.listener.multicastGroups.join(', ')}` : '';
   $('listenInfo').innerHTML = `<code>udp://${esc(s.listener.host)}:${s.listener.port}</code>${esc(mc)}`;
   $('localNote').hidden = !s.listener.localOnly;
+  // Port inny niż z dokumentacji: przy pierwszym uruchomieniu program mógł go
+  // zmienić, bo domyślny był zajęty. Bez tej informacji człowiek ustawia
+  // logger według README i nic nie dochodzi.
+  const inny = $('portNote');
+  inny.hidden = s.listener.domyslnyPort !== false;
+  if (!inny.hidden) inny.textContent = t('note.otherPort').replace('{n}', s.listener.port);
 
   // JAKIM ZNAKIEM poleci QSO. Ta informacja była wyłącznie w Konfiguracji,
   // w tabeli celów — czyli tam, gdzie zaglądasz, gdy coś zmieniasz, a nie gdy

@@ -18,6 +18,14 @@ import { EVENT_RING } from './worker.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOT = resolve(__dirname, '..');
 
+/**
+ * Port UDP z szablonu konfiguracji — ten, który podaje dokumentacja i który
+ * człowiek wpisuje w loggerze. Trzymany tu, żeby interfejs mógł powiedzieć
+ * „ta instancja ma INNY port", gdy zasiew musiał go zmienić. Test pilnuje
+ * zgodności z config.example.json.
+ */
+export const DOMYSLNY_PORT_UDP = 12060;
+
 const APP = 'radiodyplom-bridge';
 
 /** Katalog, w którym trzymamy config.json (i domyślnie dane). */

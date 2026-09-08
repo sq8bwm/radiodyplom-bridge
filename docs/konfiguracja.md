@@ -155,6 +155,33 @@ jest osobna — QSO czekające w jednej instancji nie zostanie wysłane przez dr
 Bez okienka to samo robi zmienna `RD_DATA_DIR` (dane) razem
 z `RD_CONFIG_DIR` (konfiguracja).
 
+### Porty przy pierwszym uruchomieniu
+
+Świeża konfiguracja powstaje z szablonu, czyli z portami **12060** (logger)
+i **12061** (interfejs). Gdyby na maszynie działała już inna instancja mostka,
+nowa padłaby od razu na blokadzie portu UDP — pierwsze uruchomienie po
+instalacji kończyłoby się czerwonym banerem awarii.
+
+Dlatego przy **zasiewie konfiguracji** program sprawdza, czy domyślne porty są
+wolne, a jeśli nie — bierze pierwszą wolną parę od 12070 (dziesiątkami: 12070,
+12080…) i wpisuje ją do `config.json`. Zakładka *Stan* mówi wtedy wprost, że
+port jest inny niż domyślny, bo logger trzeba ustawić właśnie na niego.
+
+Dwa świadome ograniczenia:
+
+- **Tylko przy zasiewie.** Później porty są decyzją użytkownika; cicha zmiana
+  przy każdym starcie zepsułaby działającą konfigurację loggera.
+- **Tylko wersje z okienkiem.** Usługa bez interfejsu dostaje `config.json`
+  z pakietu (`postinst`) i portów jej nie ruszamy: nikt nie patrzy wtedy
+  w okno, a usługa nasłuchująca po cichu gdzie indziej niż mówi dokumentacja
+  byłaby gorsza od usługi, która wprost odmawia startu i pisze powód
+  w `journalctl`.
+
+Sonda sprawdzająca port **nie może** używać `SO_REUSEADDR` — nasz mostek
+binduje z tą opcją (potrzebna do multicastu), więc sonda ustawiająca ją też
+zbindowałaby się obok i uznała zajęty port za wolny. Zmierzone: z `reuseAddr`
+wychodzi „wolny", bez niej `EADDRINUSE`.
+
 ### Zajęty port UDP
 
 Trzy różne sytuacje, często mylone:

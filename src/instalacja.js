@@ -119,11 +119,18 @@ const wolnyTcp = (port) => new Promise((gotowe) => {
   s.listen({ host: '127.0.0.1', port }, () => s.close(() => gotowe(true)));
 });
 
-/** To samo dla UDP. Osobno, bo numer portu TCP i UDP to dwie różne rzeczy. */
-const wolnyUdp = (port) => new Promise((gotowe) => {
+/**
+ * To samo dla UDP. Osobno, bo numer portu TCP i UDP to dwie różne rzeczy.
+ *
+ * BEZ `reuseAddr`. Nasz mostek binduje z `reuseAddr: true` (potrzebne do
+ * multicastu), a wtedy sonda też z `reuseAddr` bindowałaby się OBOK i uznała
+ * zajęty port za wolny — zmierzone: z `reuseAddr` „WOLNY", bez niego
+ * `EADDRINUSE`. Sonda bez tej opcji wykrywa więc również nasze instancje.
+ */
+const wolnyUdp = (port, host = '127.0.0.1') => new Promise((gotowe) => {
   const s = createSocket('udp4');
   s.once('error', () => gotowe(false));
-  s.bind({ address: '127.0.0.1', port }, () => s.close(() => gotowe(true)));
+  s.bind({ address: host, port }, () => s.close(() => gotowe(true)));
 });
 
 /**
@@ -171,4 +178,40 @@ export async function zalozKatalogDanych({ plik, przykladowy }) {
   }
   writeFileSync(plikCfg, `${JSON.stringify(cfg, null, 2)}\n`);
   return { katalog, porty, byloJuz: false };
+}
+
+/**
+ * Przy PIERWSZYM uruchomieniu poprawia porty w świeżo zasianej konfiguracji,
+ * jeśli domyślne są zajęte.
+ *
+ * Po co: konfiguracja z szablonu ma 12060/12061. Gdy na maszynie działa już
+ * inna instancja mostka (druga wersja programu, usługa systemd), nowa
+ * natychmiast padała na blokadzie portu UDP — czyli pierwsze uruchomienie po
+ * instalacji kończyło się czerwonym banerem, choć wystarczyło wziąć inny port.
+ *
+ * Robimy to WYŁĄCZNIE przy zasiewie: później porty są decyzją użytkownika
+ * i cichym zmienianiem ich zepsulibyśmy działającą konfigurację loggera.
+ *
+ * @returns {Promise<{udp:number,api:number}|null>} null = domyślne zostały
+ */
+export async function dostosujPortyPrzyZasiewie(plikCfg) {
+  let cfg;
+  try {
+    cfg = JSON.parse(readFileSync(plikCfg, 'utf8'));
+  } catch {
+    return null; // nieczytelna konfiguracja to nie nasza sprawa na tym etapie
+  }
+
+  const host = cfg.udp?.host || '127.0.0.1';
+  const udp = Number(cfg.udp?.port) || 12060;
+  const api = Number(cfg.api?.port) || udp + 1;
+  if (await wolnyUdp(udp, host) && await wolnyTcp(api)) return null;
+
+  const porty = await wolnaParaPortow({ od: udp + 10 });
+  if (!porty) return null;
+
+  cfg.udp.port = porty.udp;
+  cfg.api.port = porty.api;
+  writeFileSync(plikCfg, `${JSON.stringify(cfg, null, 2)}\n`);
+  return porty;
 }

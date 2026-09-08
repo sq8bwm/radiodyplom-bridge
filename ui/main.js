@@ -11,7 +11,9 @@ import {
 } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { loadConfig, configPath, examplePath } from '../src/config.js';
+import {
+  loadConfig, configPath, examplePath, ensureConfig,
+} from '../src/config.js';
 import { buildReport, saveReport } from '../src/report.js';
 import { startDaemon } from '../src/daemon.js';
 import { log } from '../src/log.js';
@@ -19,6 +21,7 @@ import { closeFileLog } from '../src/logfile.js';
 import { t, setLang } from './strings.js';
 import {
   katalogDanychObokPliku, rodzajInstalacji, zalozKatalogDanych, KATALOG_PRZENOSNY,
+  dostosujPortyPrzyZasiewie,
 } from '../src/instalacja.js';
 import { spawn } from 'node:child_process';
 
@@ -269,6 +272,15 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
     log.info(`Dane obok pliku programu: ${daneObok.katalog}`);
   }
 
+  // Zasiew ROBIMY SAMI, żeby wiedzieć, czy konfiguracja właśnie powstała —
+  // tylko wtedy wolno ruszać porty. Później są decyzją użytkownika.
+  if (ensureConfig()) {
+    const porty = await dostosujPortyPrzyZasiewie(configPath());
+    if (porty) {
+      log.warn(`Domyślne porty są zajęte — ta instancja dostała UDP ${porty.udp} `
+        + `i interfejs ${porty.api}. Logger musi wysyłać na ${porty.udp}.`);
+    }
+  }
   const cfg = loadConfig({ seed: true });
   setLang(cfg.language || 'pl');
   nativeTheme.themeSource = ['light', 'dark'].includes(cfg.theme) ? cfg.theme : 'system';

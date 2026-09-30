@@ -9,13 +9,22 @@
 ## Do czego to jest
 
 W akcji dyplomowej łączności muszą trafić na serwer akcji, żeby policzyły się do
-dyplomu — Twojego i tych, którzy Cię pracowali. Zwykle robi się to po sesji:
-eksport ADIF z loggera, wejście na stronę, wgranie pliku. O ile się pamięta.
+dyplomu — Twojego i tych, którzy Cię pracowali. Da się to robić wprost na
+[radiodyplom.pl](https://radiodyplom.pl), wpisując każde QSO w przeglądarce —
+tylko wtedy Twój własny logger stoi obok bezużyteczny, a dziennik powstaje
+w dwóch miejscach albo wszystko wpisujesz dwa razy.
 
-Ten program robi to **na bieżąco i bez Twojego udziału**. Stoi obok loggera,
-odbiera datagramy, które ten i tak wysyła po UDP, i każde nowe QSO od razu
-przekazuje do [radiodyplom.pl](https://radiodyplom.pl). Nie zmienia ustawień
-loggera, nie dotyka Twojego dziennika, nie wymaga pamiętania o niczym.
+Ten program zdejmuje ten wybór. Pracujesz w swoim loggerze, a QSO trafiają na
+serwer akcji **same**: mostek stoi obok, odbiera datagramy, które logger i tak
+wysyła po UDP, i przekazuje każdą nową łączność w kilka sekund. Nie zmienia
+ustawień loggera, nie dotyka Twojego dziennika, nie wymaga pamiętania o niczym.
+
+Dwie rzeczy dostajesz przy okazji, a inaczej nie ma ich wcale:
+
+- **jedna łączność pod kilkoma znakami stacji** — wpisując ręcznie, trzeba by ją
+  wprowadzać tyle razy, ile znaków;
+- **emisje cyfrowe bez przepisywania** — WSJT-X, JTDX i MSHV wysyłają każde QSO
+  same, a FT8 potrafi sypać szybciej, niż da się je przenieść ręcznie.
 
 **Dla kogo:** operator pracujący w akcji dyplomowej, który loguje w QLogu, N1MM+,
 WSJT-X albo pokrewnym programie i ma konto na radiodyplom.pl.

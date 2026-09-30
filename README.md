@@ -43,6 +43,9 @@ i aktywnych akcji; niczego tam nie zmienia poza dopisaniem QSO.
 - **Statystyki** — ile QSO w który dzień, na której akcji, spod której stacji,
   na jakim pasmie.
 - **Tryb próbny**, żeby najpierw sprawdzić mapowanie pól, a dopiero potem wysyłać.
+- **Da się to czytać.** Powiększanie okna skrótem Ctrl + i Ctrl −, trzy stopnie
+  wielkości tekstu pod ikoną w nagłówku, a ustawienie „większa czcionka" z systemu
+  jest szanowane. Okno działa też na telefonie.
 - **Działa też bez pulpitu** — na Raspberry Pi jako usługa, z oknem w przeglądarce.
 
 | Protokół | Loggery |
@@ -143,8 +146,10 @@ przekazywania to świadomy krok, bo wysłanego QSO nie da się odwysłać. Kto
 potrzebuje autostartu, znajdzie opis w [Windows i sieć](docs/windows-i-siec.md#autostart).
 
 Interfejs jest po **polsku i angielsku**, a motyw ma trzy stany —
-**jak w systemie, jasny albo ciemny**. Oba przełącza się ikoną w nagłówku:
-flagą i słońcem/księżycem.
+**jak w systemie, jasny albo ciemny**. Przełącza się je ikonami w nagłówku: flagą
+i słońcem/księżycem. Trzecia ikona, **`aA`**, zmienia wielkość tekstu (normalny →
+duży → bardzo duży), a **Ctrl +**, **Ctrl −** i **Ctrl 0** powiększają całe okno.
+Oba ustawienia są zapamiętywane.
 
 ---
 
@@ -176,7 +181,8 @@ http://localhost:12061/
 ```
 
 Wszystkie zakładki, w tym Konfiguracja ze sprawdzaniem konta — zamiast edycji
-JSON-a przez SSH. Domyślnie API nasłuchuje **wyłącznie na 127.0.0.1**, więc zdalnie przez tunel:
+JSON-a przez SSH. Układ dostosowuje się do szerokości ekranu, więc z telefonu
+korzysta się z tego wygodnie. Domyślnie API nasłuchuje **wyłącznie na 127.0.0.1**, więc zdalnie przez tunel:
 
 ```bash
 ssh -L 12061:localhost:12061 pi@malinka

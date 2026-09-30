@@ -31,6 +31,17 @@ const LIMIT_BAJTOW = 256 * 1024;
 /** Po tylu minutach ciszy zamykamy połączenie — żeby nie zostawały wiszące. */
 const CISZA_MS = 10 * 60 * 1000;
 
+/**
+ * Początek treści do logu: czytelnie i krótko, bez znaków sterujących.
+ *
+ * W logu ląduje tylko tyle, ile trzeba, żeby rozpoznać format — nie całe QSO,
+ * bo log bywa wklejany do zgłoszeń błędów.
+ */
+function skrot(tekst, ile = 120) {
+  const czysty = tekst.replace(/[\u0000-\u001f\u007f]/g, '·');
+  return czysty.length > ile ? `${czysty.slice(0, ile)}…` : czysty;
+}
+
 export class Logger32Listener {
   constructor({ host, port, pipeline }) {
     this.host = host;
@@ -102,6 +113,14 @@ export class Logger32Listener {
       bufor = '';
       if (reszta && /<[A-Za-z0-9_]+:\d+/.test(reszta)) {
         this.pipeline.handle(Buffer.from(reszta, 'utf8'), skad);
+      } else if (reszta) {
+        // CISZA JEST TU NAJGORSZA. Gdyby Logger32 (albo cokolwiek innego)
+        // przysłał dane w formacie, którego nie znamy, brak wpisu w logu
+        // wyglądałby identycznie jak „nic nie przyszło" — a to dwie zupełnie
+        // różne sprawy przy szukaniu przyczyny. Pokazujemy więc POCZĄTEK
+        // treści, bo to jedyna rzecz, która pozwoli dopisać dekoder.
+        log.warn(`Połączenie TCP z ${skad} przysłało dane, których nie rozpoznaję `
+          + 'jako ADIF — QSO NIE zostało przyjęte', { bajtow: reszta.length, poczatek: skrot(reszta) });
       }
       this.polaczenia.delete(socket);
     };

@@ -35,8 +35,15 @@ export class QsoPipeline {
     const decoder = pickDecoder(buf);
     if (!decoder) {
       this.stats.unknown++;
+      // Osiem bajtów w hex wystarczało, dopóki wszystkie formaty były binarne
+      // albo oczywiste. Przy ADIF-ie i XML-u czytelny początek treści mówi
+      // znacznie więcej — i to on decyduje, czy da się dopisać dekoder.
+      const tekstowy = buf.subarray(0, 120).toString('utf8');
+      const czytelny = /^[\t\r\n\x20-\x7e\u00a0-\uffff]*$/.test(tekstowy);
       log.warn(`Nieznany format danych z ${skad}`, {
-        bytes: buf.length, head: buf.subarray(0, 8).toString('hex'),
+        bytes: buf.length,
+        head: buf.subarray(0, 8).toString('hex'),
+        ...(czytelny ? { poczatek: tekstowy.replace(/[\u0000-\u001f]/g, '·') } : {}),
       });
       return;
     }

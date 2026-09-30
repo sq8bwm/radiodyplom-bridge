@@ -17,7 +17,7 @@ import * as logger32 from '../src/decoders/logger32.js';
 import { pickDecoder } from '../src/decoders/index.js';
 import { QsoPipeline } from '../src/qso-pipeline.js';
 import { Logger32Listener } from '../src/tcp.js';
-import { setLevel } from '../src/log.js';
+import { setLevel, recentLog } from '../src/log.js';
 
 setLevel('error');
 
@@ -177,6 +177,26 @@ describe('nasłuch TCP zachowuje się jak Logger32', () => {
     await wyslij(port, QSO);
     await chwila();
     assert.equal(odebrane.length, 1);
+  });
+
+  test('dane w NIEZNANYM formacie zostawiają ślad w logu', async () => {
+    // Cisza jest tu najgorszą odpowiedzią: „przyszło coś, czego nie rozumiem"
+    // i „nic nie przyszło" wyglądałyby identycznie, a to dwie różne przyczyny.
+    // Sprawdzone realnie 2026-09-30: zwykły tekst po TCP przepadał bez wpisu.
+    // Czytamy bufor logu, ten sam, który zasila zakładkę Log — bez podmieniania
+    // strumieni (log pisze wprost na stderr, nie przez console.warn).
+    setLevel('warn');
+    try {
+      const { port, odebrane } = await nasluch();
+      await wyslij(port, 'QSO: SP9ABC 20260930 1200 40m SSB\n');
+      await chwila();
+      assert.equal(odebrane.length, 0, 'to nie jest QSO');
+      const tekst = recentLog(20).map((w) => `${w.msg} ${JSON.stringify(w.extra ?? '')}`).join('\n');
+      assert.match(tekst, /nie rozpoznaję/);
+      assert.match(tekst, /SP9ABC/, 'w logu musi być POCZĄTEK treści, inaczej nie da się dopisać dekodera');
+    } finally {
+      setLevel('error');
+    }
   });
 
   test('statystyki są WSPÓLNE z nasłuchem UDP', async () => {

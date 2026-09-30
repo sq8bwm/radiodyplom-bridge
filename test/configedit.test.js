@@ -132,6 +132,24 @@ describe('applyConfig — zapis z interfejsu', () => {
     assert.deepEqual(r2.pendingRestart, ['udp.port'], 'stan trwały');
   });
 
+  // REGRESJA: klucze `tcp.*` były w RESTART_KEYS, ale nikt ich nie oznaczał
+  // przy porównaniu, więc włączenie nasłuchu Logger32 kwitowane było
+  // komunikatem „Zapisano i zastosowano" — a nasłuch powstaje dopiero przy
+  // starcie. Zgłoszone 2026-09-30 przy pierwszym prawdziwym uruchomieniu.
+  test('nasłuch TCP wymaga restartu', () => {
+    const cfg = cfgMod.loadConfig();
+    const d = fakeDaemon(cfg);
+
+    const r = mod.applyConfig(d, { tcp: { enabled: true, host: '127.0.0.1', port: 52005 } });
+    assert.deepEqual(r.restartRequired, ['tcp.enabled']);
+
+    const r2 = mod.applyConfig(d, { tcp: { enabled: true, host: '127.0.0.1', port: 52005 } });
+    assert.deepEqual(r2.restartRequired, [], 'zapis bez zmian nie może straszyć restartem');
+
+    const r3 = mod.applyConfig(d, { tcp: { enabled: true, host: '0.0.0.0', port: 52010 } });
+    assert.deepEqual(r3.restartRequired.sort(), ['tcp.host', 'tcp.port']);
+  });
+
   test('PIN, tryb próbny i cele działają od razu (bez restartu)', () => {
     const cfg = cfgMod.loadConfig();
     const r = mod.applyConfig(fakeDaemon(cfg), {

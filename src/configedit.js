@@ -281,6 +281,15 @@ export function applyConfig(daemon, patch) {
   }
   if (patch.tcp) {
     cfg.tcp = cfg.tcp || {};
+    // PORÓWNANIE PRZED ZAPISEM — inaczej nie ma czego porównywać i okno mówi
+    // „Zapisano i zastosowano", choć nasłuch TCP powstaje dopiero przy starcie.
+    // Sama obecność klucza w RESTART_KEYS nic nie daje, jeśli nikt go nie
+    // oznaczy (zgłoszone 2026-09-30 przy pierwszym włączaniu Logger32).
+    mark('tcp.enabled', cfg.tcp.enabled === true, patch.tcp.enabled === undefined
+      ? undefined : patch.tcp.enabled === true);
+    mark('tcp.host', cfg.tcp.host || '127.0.0.1', patch.tcp.host);
+    mark('tcp.port', Number(cfg.tcp.port) || 52005, patch.tcp.port === undefined
+      ? undefined : Number(patch.tcp.port));
     if (patch.tcp.enabled !== undefined) cfg.tcp.enabled = patch.tcp.enabled === true;
     if (patch.tcp.host !== undefined) cfg.tcp.host = String(patch.tcp.host);
     if (patch.tcp.port !== undefined) {

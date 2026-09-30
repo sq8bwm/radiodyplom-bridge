@@ -242,8 +242,11 @@ describe('wpięcie w program', () => {
     assert.match(R, /tcp\.hidden = !s\.tcp;/);
   });
 
-  test('zmiana ustawień TCP wymaga restartu', () => {
-    // Gniazdo powstaje raz, przy starcie — jak każde inne.
+  test('klucze TCP są na liście zmian wymagających restartu', () => {
+    // UWAGA: sama obecność na liście NIE wystarcza — trzeba jeszcze oznaczyć
+    // zmianę przy porównaniu. Przez brak tego drugiego okno mówiło „Zapisano
+    // i zastosowano", choć nasłuch powstaje dopiero przy starcie (2026-09-30).
+    // Zachowanie sprawdza test „nasłuch TCP wymaga restartu" w configedit.test.js.
     assert.match(C, /'tcp\.enabled', 'tcp\.host', 'tcp\.port',/);
   });
 

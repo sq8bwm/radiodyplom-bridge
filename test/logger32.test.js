@@ -16,6 +16,7 @@ import { koniecRekordu, parseAdif } from '../src/adif.js';
 import * as logger32 from '../src/decoders/logger32.js';
 import { pickDecoder } from '../src/decoders/index.js';
 import { QsoPipeline } from '../src/qso-pipeline.js';
+import { mapToRadiodyplom } from '../src/mapper.js';
 import { Logger32Listener } from '../src/tcp.js';
 import { setLevel, recentLog } from '../src/log.js';
 
@@ -23,6 +24,62 @@ setLevel('error');
 
 const QSO = '<call:6>SP9XYZ<qso_date:8>20260930<time_on:6>121500<band:3>40m'
   + '<mode:3>SSB<station_callsign:6>SQ8BWM<freq:5>7.140<rst_sent:2>59<rst_rcvd:2>59<eor>';
+
+// PRAWDZIWY rekord z Logger32, przechwycony 2026-09-30 na Windowsie — wklejony
+// bajt w bajt, z wielkimi literami w tagach i spacjami między polami.
+// Wszystko, co wiemy o formacie tego programu, pochodzi stąd.
+const PRAWDZIWY = '<BAND:3>80m <CALL:6>SQ8BWA <CONT:2>EU <CQZ:2>15 <DXCC:3>269 '
+  + '<FREQ:8>3.700000 <ITUZ:2>28 <MODE:3>SSB <OPERATOR:6>SQ8BWM <PFX:3>SQ8 <QSLMSG:0> '
+  + '<QSO_DATE:8>20260930 <TIME_ON:6>155158 <RST_RCVD:2>59 <RST_SENT:2>59 '
+  + '<TIME_OFF:6>155232 <APP_LOGGER32_QSO_NUMBER:1>1 <EOR>';
+
+describe('prawdziwy rekord z Logger32', () => {
+  test('znak stacji bierzemy z pola OPERATOR, bo Logger32 nie wysyła STATION_CALLSIGN', () => {
+    // To był powód, dla którego pierwsze prawdziwe QSO odpadło:
+    // „bez wymaganych pól – missing: station_callsign".
+    const r = logger32.decode(Buffer.from(PRAWDZIWY));
+    assert.equal(r.adif.station_callsign, 'SQ8BWM');
+    assert.equal(r.adif.call, 'SQ8BWA');
+    assert.equal(r.meta.stacjaZOperatora, true, 'ślad, że znak jest podstawiony');
+  });
+
+  test('własny znak stacji z rekordu ma pierwszeństwo nad OPERATOR-em', () => {
+    const zeStacja = PRAWDZIWY.replace('<EOR>', '<STATION_CALLSIGN:4>SN8N<EOR>');
+    const r = logger32.decode(Buffer.from(zeStacja));
+    assert.equal(r.adif.station_callsign, 'SN8N');
+    assert.equal(r.meta.stacjaZOperatora, undefined);
+  });
+
+  test('numer QSO z Logger32 trafia do klucza deduplikacji', () => {
+    const r = logger32.decode(Buffer.from(PRAWDZIWY));
+    assert.match(r.key, /^logger32:1:/);
+    // inny numer tej samej treści to inna łączność (np. po skasowaniu i wpisaniu na nowo)
+    const drugi = logger32.decode(Buffer.from(PRAWDZIWY.replace('QSO_NUMBER:1>1', 'QSO_NUMBER:1>2')));
+    assert.notEqual(r.key, drugi.key);
+  });
+
+  test('cały rekord przechodzi mapowanie na pola radiodyplom', () => {
+    const r = logger32.decode(Buffer.from(PRAWDZIWY));
+    const m = mapToRadiodyplom(r.adif, 'PIN');
+    assert.equal(m.ok, true, `brakowało: ${m.missing}`);
+    assert.equal(m.payload.callsign, 'SQ8BWA');
+    assert.equal(m.payload.station_callsign, 'SQ8BWM');
+    assert.equal(m.payload.band, '80m');
+    assert.equal(m.payload.mode, 'SSB');
+    assert.equal(m.payload.qso_date, '20260930');
+    assert.equal(m.payload.time_on, '155158');
+    assert.equal(m.payload.freq, '3.700000');
+  });
+
+  test('wielkie litery w tagach i spacje między polami nie przeszkadzają', () => {
+    const k = koniecRekordu(PRAWDZIWY);
+    assert.ok(k, '<EOR> wielkimi literami musi kończyć rekord');
+    assert.equal(PRAWDZIWY.slice(k.koniec), '');
+    // pole o zerowej długości (<QSLMSG:0>) nie może rozjechać parsera
+    assert.equal(parseAdif(PRAWDZIWY).qslmsg, '');
+    assert.equal(parseAdif(PRAWDZIWY).pfx, 'SQ8');
+  });
+});
 
 describe('rozpoznawanie ADIF-a obok innych formatów', () => {
   test('rekord Logger32 trafia do właściwego dekodera', () => {

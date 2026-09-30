@@ -12,6 +12,7 @@
 // datagramem UDP, gdyby ktoś podał go skryptem.
 import { parseAdif } from '../adif.js';
 import { qsoKey } from '../dedupkey.js';
+import { log } from '../log.js';
 
 export const name = 'Logger32';
 
@@ -31,6 +32,9 @@ export function detect(buf) {
 /**
  * @returns {{key:string, adif:object, meta:object} | {skip:string} | null}
  */
+/** Kogo już uprzedziliśmy o podstawieniu znaku — żeby nie powtarzać przy każdym QSO. */
+const uprzedzeni = new Set();
+
 export function decode(buf) {
   const tekst = buf.toString('utf8');
   const adif = parseAdif(tekst);
@@ -38,13 +42,31 @@ export function decode(buf) {
   // Sam nagłówek pliku ADIF (`<adif_ver:5>3.1.4<eoh>`) nie jest QSO.
   if (!adif.call) return null;
 
+  // LOGGER32 NIE WYSYŁA `station_callsign` — sprawdzone na żywym programie
+  // 2026-09-30. W jego rekordzie znak, pod którym pracujemy, siedzi w polu
+  // OPERATOR (tu: SQ8BWM), a radiodyplom sprawdza właśnie znak stacji.
+  // Bez tego podstawienia każde QSO z Logger32 odpadało z komunikatem
+  // „bez wymaganych pól".
+  let zOperatora = false;
+  if (!adif.station_callsign && adif.operator) {
+    adif.station_callsign = adif.operator;
+    zOperatora = true;
+    const znak = String(adif.operator).toUpperCase();
+    if (!uprzedzeni.has(znak)) {
+      uprzedzeni.add(znak);
+      // Rzecz zmienia przypisanie QSO do stacji, więc musi być widoczna —
+      // ale raz na znak, nie przy każdej łączności.
+      log.info(`Logger32 nie podaje znaku stacji; biorę go z pola OPERATOR: ${znak}. `
+        + 'Jeśli pracujesz pod innym znakiem, dopisz go w „Rozmnażanie QSO na wiele stacji".');
+    }
+  }
+
   return {
-    // Logger32 nie podaje żadnego identyfikatora rekordu, więc — jak przy
-    // WSJT-X — klucz opiera się wyłącznie na odcisku treści. Ponowne
-    // zalogowanie tej samej łączności da ten sam klucz, czyli duplikat
-    // zostanie rozpoznany.
-    key: qsoKey('logger32', null, adif),
+    // Logger32 numeruje QSO własnym polem APP_LOGGER32_QSO_NUMBER. Używamy go
+    // razem z odciskiem treści (jak przy QLogu), a gdy go nie ma — samej treści
+    // (jak przy WSJT-X).
+    key: qsoKey('logger32', adif.app_logger32_qso_number || null, adif),
     adif,
-    meta: { source: name },
+    meta: { source: name, ...(zOperatora ? { stacjaZOperatora: true } : {}) },
   };
 }

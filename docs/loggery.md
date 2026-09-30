@@ -57,6 +57,33 @@ w Logger32 adres maszyny z mostkiem. Uwaga — wtedy port jest otwarty na całą
 sieć lokalną, więc dopisać QSO do Twojej akcji może każdy, kto się do niego
 dobierze.
 
+### Co Logger32 naprawdę wysyła
+
+Przechwycone z żywego programu (2026-09-30, wersja 4.0.344):
+
+```
+<BAND:3>80m <CALL:6>SQ8BWA <CONT:2>EU <CQZ:2>15 <DXCC:3>269 <FREQ:8>3.700000
+<ITUZ:2>28 <MODE:3>SSB <OPERATOR:6>SQ8BWM <PFX:3>SQ8 <QSLMSG:0>
+<QSO_DATE:8>20260930 <TIME_ON:6>155158 <RST_RCVD:2>59 <RST_SENT:2>59
+<TIME_OFF:6>155232 <APP_LOGGER32_QSO_NUMBER:1>1 <EOR>
+```
+
+Dwie rzeczy z tego wynikają i obie są obsłużone:
+
+- **Nie ma pola `STATION_CALLSIGN`**, a radiodyplom sprawdza właśnie znak
+  stacji. Znak, pod którym pracujesz, siedzi w Logger32 w polu **`OPERATOR`** —
+  stamtąd go bierzemy, gdy `STATION_CALLSIGN` nie przyszło, i mówimy o tym raz
+  w logu. Jeśli pracujesz pod **innym** znakiem niż operator (np. pod znakiem
+  klubowym), dopisz go w *Rozmnażanie QSO na wiele stacji* — reguła nadpisuje
+  znak z loggera.
+- **Jest własny numer QSO** (`APP_LOGGER32_QSO_NUMBER`), więc klucz
+  deduplikacji opiera się o niego razem z odciskiem treści — tak samo jak przy
+  QLogu, a nie tylko o treść jak przy WSJT-X.
+
+Zwróć też uwagę, że tagi są WIELKIMI literami, pola rozdzielone spacjami,
+a `<QSLMSG:0>` ma zerową długość — wszystko to parser obsługuje, a test
+z tym rekordem (wklejonym bajt w bajt) tego pilnuje.
+
 Ograniczenia, których nie da się obejść po naszej stronie:
 
 - eksport po TCP obejmuje **tylko dodania**; edycje i skasowania w Logger32 nie

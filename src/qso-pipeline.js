@@ -88,8 +88,14 @@ export class QsoPipeline {
     const mapped = mapToRadiodyplom(result.adif, this.pin);
     if (!mapped.ok) {
       this.stats.invalid++;
+      // Wypisujemy TAKŻE pola, które przyszły. Bez tego wiadomo tylko, czego
+      // brakuje, a nie czym to zastąpić — a przy nowym loggerze to jedyna
+      // informacja, która pozwala dopisać obsługę (Logger32, 2026-09-30:
+      // brakowało `station_callsign` i nie było wiadomo, co jest zamiast).
       log.warn(`QSO z ${decoder.name} bez wymaganych pól – pomijam`, {
-        missing: mapped.missing, call: result.adif.call,
+        missing: mapped.missing,
+        call: result.adif.call,
+        przyszly: Object.keys(result.adif || {}).sort().join(', '),
       });
       return;
     }

@@ -602,8 +602,10 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   wyjściu (pierwsze QSO miało wpisane pojedyncze cyfry, nie był to błąd
   parsera). Test na prawdziwym rekordzie, wklejonym bajt w bajt, jest w
   `test/logger32.test.js`.
-  **Nie sprawdzone:** wysyłka z wyłączonym trybem próbnym, czyli QSO z Logger32
-  realnie zapisane w akcji.
+  **Domknięte tego samego dnia:** po aktywowaniu akcji próbnej QSO z Logger32
+  przeszło z WYŁĄCZONYM trybem próbnym i zostało zapisane w akcji. Cała droga
+  — od rekordu ADIF po TCP aż po wpis na serwerze — jest więc sprawdzona na
+  żywym programie, nie na symulatorze.
 - Duplikaty są zapisywane i oznaczane jako niepunktowane, nie odrzucane.
 - Automatyczne dosyłanie po awarii łączności działa bez ingerencji.
 - Sekrety nie trafiają do paczek (sprawdzone przez rozpakowanie `app.asar`).

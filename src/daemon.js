@@ -12,6 +12,8 @@ import { aggregate, filterRecords, filterOptions } from './stats.js';
 import { checkAndLog, repoFromUrl } from './updates.js';
 import { RadiodyplomClient } from './radiodyplom.js';
 import { LoggerListener } from './udp.js';
+import { Logger32Listener } from './tcp.js';
+import { QsoPipeline } from './qso-pipeline.js';
 import { Worker } from './worker.js';
 import { StatusApi } from './httpapi.js';
 import { requeueFailed } from './requeue.js';
@@ -64,10 +66,10 @@ export async function startDaemon(cfg, opts = {}) {
     store, client, queue: cfg.queue, rateLimit: cfg.rateLimit, journal,
   });
 
-  const listener = new LoggerListener({
-    host: cfg.udp.host,
-    port: cfg.udp.port,
-    multicastGroups: cfg.udp.multicastGroups,
+  // JEDEN potok dla obu nasłuchów (UDP i TCP), żeby liczniki w oknie były
+  // jedną sumą, a nie dwiema — i żeby Logger32 dostał dokładnie tę samą drogę
+  // co reszta: rozgałęzianie, kolejkę i deduplikację.
+  const pipeline = new QsoPipeline({
     operations: cfg.forward.operations,
     pin: cfg.radiodyplom.pin,
     targets: cfg.forward.targets,
@@ -89,13 +91,32 @@ export async function startDaemon(cfg, opts = {}) {
     },
   });
 
+  const listener = new LoggerListener({
+    host: cfg.udp.host,
+    port: cfg.udp.port,
+    multicastGroups: cfg.udp.multicastGroups,
+    pipeline,
+  });
+
   // Socket UDP bindujemy PRZED sprawdzeniem klucza. PING potrafi trwać kilka sekund,
   // a UDP nie ponawia — QSO wysłane w tym oknie przepadłoby bezpowrotnie.
   await listener.start();
+
+  // Nasłuch TCP jest DOMYŚLNIE WYŁĄCZONY: potrzebuje go tylko Logger32, a otwarty
+  // port bez powodu to niepotrzebna powierzchnia u wszystkich pozostałych.
+  let tcpListener = null;
+  if (cfg.tcp?.enabled) {
+    tcpListener = new Logger32Listener({
+      host: cfg.tcp.host || '127.0.0.1',
+      port: cfg.tcp.port || 52005,
+      pipeline,
+    });
+    await tcpListener.start();
+  }
   worker.start();
 
   const handle = {
-    cfg, store, client, worker, listener,
+    cfg, store, client, worker, listener, tcpListener,
     api: null,
     lastPing: null,
     profile: null,
@@ -231,7 +252,7 @@ export async function startDaemon(cfg, opts = {}) {
 
   // StatusApi buduje obiekt stanu; serwer HTTP jest opcjonalny (Electron go nie potrzebuje).
   handle.api = new StatusApi({
-    cfg, store, listener, worker,
+    cfg, store, listener, tcpListener, worker,
     pkg: readPkg(),
     getPing: () => handle.lastPing,
     getProfile: () => handle.profile,

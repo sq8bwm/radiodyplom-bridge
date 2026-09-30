@@ -285,6 +285,12 @@ const DICT = {
 
     'note.localhost': 'Nasłuch tylko na localhost. Jeśli logger działa na innym komputerze '
       + 'albo wysyła rozgłoszeniowo, ustaw adres 0.0.0.0 w zakładce Konfiguracja.',
+    'panel.tcp': 'Logger32 (nasłuch TCP)',
+    'label.tcpEnabled': 'Odbieraj QSO z Logger32 po TCP',
+    'note.tcp': 'Logger32 nie rozgłasza QSO po UDP jak inne loggery — wysyła je po TCP. '
+      + 'Włącz tu nasłuch, a w Logger32 zaznacz „enable QSO export by TCP" (wymaga wersji '
+      + '4.0.344 lub nowszej) i wpisz ten sam adres oraz port. Zmiana wymaga restartu.',
+    'state.tcpFor': '· Logger32',
     'note.otherPort': 'Ta instancja nasłuchuje na porcie {n}, nie na domyślnym '
       + '12060 — logger musi wysyłać właśnie tutaj. Port bywa zmieniany przy '
       + 'pierwszym uruchomieniu, gdy domyślny jest już zajęty.',
@@ -660,6 +666,13 @@ const DICT = {
 
     'note.localhost': 'Listening on localhost only. If the logger runs on another computer '
       + 'or broadcasts, set the address to 0.0.0.0 in Settings.',
+    'panel.tcp': 'Logger32 (TCP listener)',
+    'label.tcpEnabled': 'Receive QSOs from Logger32 over TCP',
+    'note.tcp': 'Logger32 does not broadcast QSOs over UDP like other loggers — it sends '
+      + 'them over TCP. Enable the listener here, tick "enable QSO export by TCP" in '
+      + 'Logger32 (needs 4.0.344 or newer) and enter the same address and port. '
+      + 'The change needs a restart.',
+    'state.tcpFor': '· Logger32',
     'note.otherPort': 'This instance listens on port {n}, not the default 12060 '
       + '— the logger must send here. The port may be changed on first run when '
       + 'the default one is already taken.',

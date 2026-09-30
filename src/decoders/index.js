@@ -4,13 +4,18 @@
 // Rejestr dekoderów + automatyczne rozpoznanie formatu po zawartości datagramu.
 // Rodziny są rozłączne w pierwszych bajtach:
 //   '{'            → JSON (QLog)
+//   '<nazwa:dł>'   → ADIF (Logger32 po TCP)
 //   '<'            → XML  (N1MM, DXLog, BBlogger, Log4OM)
 //   AD BC CB DA    → binarny QDataStream (WSJT-X, JTDX, MSHV)
 import * as qlog from './qlog.js';
 import * as n1mm from './n1mm.js';
 import * as wsjtx from './wsjtx.js';
+import * as logger32 from './logger32.js';
 
-export const DECODERS = [wsjtx, qlog, n1mm];
+// KOLEJNOŚĆ MA ZNACZENIE: ADIF i XML N1MM zaczynają się tym samym znakiem „<",
+// ale ADIF ma w tagu deklarowaną długość (`<call:6>`), więc jego rozpoznanie
+// jest węższe i musi być sprawdzane PIERWSZE.
+export const DECODERS = [wsjtx, qlog, logger32, n1mm];
 
 /** @returns {object|null} dekoder, który rozpoznaje ten datagram */
 export function pickDecoder(buf) {

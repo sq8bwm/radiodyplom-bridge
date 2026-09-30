@@ -372,6 +372,13 @@ function renderStatus(s) {
   const mc = s.listener.multicastGroups?.length
     ? ` · multicast: ${s.listener.multicastGroups.join(', ')}` : '';
   $('listenInfo').innerHTML = `<code>udp://${esc(s.listener.host)}:${s.listener.port}</code>${esc(mc)}`;
+  // Drugi kanał pokazujemy tylko, gdy ktoś go włączył — u większości go nie ma.
+  const tcp = $('tcpInfo');
+  tcp.hidden = !s.tcp;
+  if (s.tcp) {
+    tcp.innerHTML = `<code>tcp://${esc(s.tcp.host)}:${s.tcp.port}</code>`
+      + ` <span class="muted">${esc(t('state.tcpFor'))}</span>`;
+  }
   $('localNote').hidden = !s.listener.localOnly;
   // Port inny niż z dokumentacji: przy pierwszym uruchomieniu program mógł go
   // zmienić, bo domyślny był zajęty. Bez tej informacji człowiek ustawia
@@ -835,6 +842,9 @@ async function loadConfig() {
   // Wczytanie z dysku = formularz zgadza się ze stanem zapisanym.
   konfigCzysta();
   $('fMulticast').value = (cfg.udp.multicastGroups || []).join(', ');
+  $('fTcpEnabled').checked = cfg.tcp?.enabled === true;
+  $('fTcpHost').value = cfg.tcp?.host || '127.0.0.1';
+  $('fTcpPort').value = cfg.tcp?.port ?? 52005;
   $('fEvents').value = cfg.ui?.recentEvents ?? 20;
   renderTargets(cfg.forward.targets || []);
 }
@@ -1345,6 +1355,11 @@ async function saveFromForm() {
       host: $('fHost').value,
       port: Number($('fPort').value),
       multicastGroups: $('fMulticast').value.split(',').map((x) => x.trim()).filter(Boolean),
+      },
+      tcp: {
+        enabled: $('fTcpEnabled').checked,
+        host: $('fTcpHost').value,
+        port: Number($('fTcpPort').value),
     },
     ui: { recentEvents: Number($('fEvents').value) },
     forward: { targets },

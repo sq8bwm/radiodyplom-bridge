@@ -155,6 +155,20 @@ jest osobna — QSO czekające w jednej instancji nie zostanie wysłane przez dr
 Bez okienka to samo robi zmienna `RD_DATA_DIR` (dane) razem
 z `RD_CONFIG_DIR` (konfiguracja).
 
+### Nasłuch TCP dla Logger32
+
+| Pole | Znaczenie |
+|---|---|
+| `tcp.enabled` | domyślnie **`false`** — port otwieramy tylko temu, kto go potrzebuje |
+| `tcp.host` | `127.0.0.1` (ten komputer) albo `0.0.0.0` (Logger32 na innej maszynie) |
+| `tcp.port` | domyślnie **52005**, tyle samo co domyślny port w Logger32 |
+
+Zmiana każdego z tych pól **wymaga restartu** — gniazdo powstaje raz, przy
+starcie. Szczegóły i ograniczenia: [Loggery i dane](loggery.md#logger32--jedyny-po-tcp).
+
+Nasłuch TCP nie ma osobnej blokady portu jak UDP i nie potrzebuje jej: bind TCP
+jest wyłączny, więc druga instancja dostanie `EADDRINUSE` i powie o tym wprost.
+
 ### Porty przy pierwszym uruchomieniu
 
 Świeża konfiguracja powstaje z szablonu, czyli z portami **12060** (logger)

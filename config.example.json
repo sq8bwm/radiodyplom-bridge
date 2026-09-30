@@ -4,6 +4,12 @@
     "port": 12060,
     "multicastGroups": []
   },
+  "_tcp_komentarz": "Nasluch TCP dla Logger32 (funkcja 'enable QSO export by TCP'). Domyslnie wylaczony - pozostale loggery go nie uzywaja.",
+  "tcp": {
+    "enabled": false,
+    "host": "127.0.0.1",
+    "port": 52005
+  },
   "dataDir": "auto",
   "radiodyplom": {
     "apiUrl": "https://radiodyplom.pl/qso_upload.php",

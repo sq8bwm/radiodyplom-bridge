@@ -28,3 +28,31 @@ export function parseAdif(str) {
   }
   return out;
 }
+
+/**
+ * Znajduje koniec PIERWSZEGO kompletnego rekordu (albo nagłówka) w tekście.
+ *
+ * Potrzebne przy nasłuchu TCP: Logger32 wysyła ADIF strumieniem, który może
+ * przyjść w kawałkach albo z kilkoma rekordami naraz. Idziemy po tagach
+ * z deklarowaną długością, więc „<eor>" WEWNĄTRZ wartości (np. w komentarzu
+ * albo w nazwie QTH) nie utnie rekordu w złym miejscu — a to jest cała
+ * różnica między tym a naiwnym `split('<eor>')`.
+ *
+ * @returns {{koniec:number, naglowek:boolean}|null} null = rekord jeszcze niekompletny
+ */
+export function koniecRekordu(str) {
+  const tagRe = /<([A-Za-z0-9_]+)(?::(\d+))?(?::[A-Za-z])?>/g;
+  let m;
+  while ((m = tagRe.exec(str)) !== null) {
+    const name = m[1].toLowerCase();
+    if (name === 'eor' || name === 'eoh') {
+      return { koniec: tagRe.lastIndex, naglowek: name === 'eoh' };
+    }
+    const len = m[2] !== undefined ? parseInt(m[2], 10) : 0;
+    const valStart = tagRe.lastIndex;
+    // Wartość jeszcze nie doszła w całości — czekamy na kolejny kawałek.
+    if (valStart + len > str.length) return null;
+    tagRe.lastIndex = valStart + len;
+  }
+  return null;
+}

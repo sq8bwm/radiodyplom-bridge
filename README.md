@@ -62,6 +62,7 @@ i aktywnych akcji; niczego tam nie zmienia poza dopisaniem QSO.
 | JSON (Notifications) | **QLog** |
 | XML `<contactinfo>` | **N1MM+**, DXLog, BBlogger, Log4OM (tryb N1MM) |
 | binarny QDataStream | **WSJT-X**, JTDX ≥ 2.2.158, MSHV |
+| ADIF po TCP | **Logger32** ≥ 4.0.344 (nasłuch włącza się w Konfiguracji) |
 
 ---
 
@@ -124,6 +125,7 @@ zmieniać. PIN nigdy nie opuszcza programu w jawnej postaci, także przez API st
 | Logger | Gdzie |
 |---|---|
 | QLog | *Settings → Network → Notifications → **QSO Changes*** |
+| Logger32 | inaczej: patrz [Loggery i dane](docs/loggery.md#logger32--jedyny-po-tcp) |
 | N1MM+ / DXLog | rozgłoszenie na porcie 12060 |
 | WSJT-X / JTDX / MSHV | *Settings → Reporting → UDP Server* |
 

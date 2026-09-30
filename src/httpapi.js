@@ -82,11 +82,12 @@ const PLIKI_UI = new Map([
 const BEZ_LOGOWANIA = new Set(['/login.html', '/api/login', '/api/session']);
 
 export class StatusApi {
-  constructor({ cfg, store, listener, worker, pkg, getPing, getProfile, requeue, getConfig, saveConfig,
+  constructor({ cfg, store, listener, tcpListener, worker, pkg, getPing, getProfile, requeue, getConfig, saveConfig,
     getPendingRestart, getLogFile, getAccountChecks, checkConfig, getUpdate }) {
     this.cfg = cfg;
     this.store = store;
     this.listener = listener;
+    this.tcpListener = tcpListener || null;
     this.worker = worker;
     this.pkg = pkg || {};
     this.getPing = getPing;
@@ -190,6 +191,14 @@ export class StatusApi {
         received: st.received ?? 0,          // wszystkie datagramy
         notDecoded: nieodczytane,            // datagramy, z których nie wyszło QSO
       },
+
+      // Drugi kanał, wyłączony u większości: Logger32 łączy się po TCP.
+      tcp: this.tcpListener ? {
+        host: this.tcpListener.host,
+        port: this.tcpListener.port,
+        localOnly: this.tcpListener.host === '127.0.0.1',
+        polaczenia: this.tcpListener.polaczenia.size,
+      } : null,
 
       listener: {
         host: this.listener.host,

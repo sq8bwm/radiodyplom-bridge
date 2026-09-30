@@ -34,6 +34,8 @@ const SKALE = ['normal', 'duzy', 'bardzo-duzy'];
 
 /** Zmiany wymagające restartu (nie da się ich zastosować na żywo). */
 const RESTART_KEYS = ['udp.host', 'udp.port', 'udp.multicastGroups', 'api.port', 'api.enabled',
+  // Nasłuch TCP powstaje raz, przy starcie — jak każde inne gniazdo.
+  'tcp.enabled', 'tcp.host', 'tcp.port',
   'dataDir', 'queue.dir', 'queue.failedDir', 'queue.seenFile',
   // Adres nasłuchu i TLS ustalane są raz, przy starcie serwera — zmiana
   // w locie znaczyłaby przenoszenie otwartego gniazda i sesji.
@@ -94,6 +96,11 @@ export function editableConfig(cfg) {
     // i po restarcie okno wracało do poprzedniego motywu.
     theme: THEMES.includes(cfg.theme) ? cfg.theme : 'auto',
     fontScale: SKALE.includes(cfg.fontScale) ? cfg.fontScale : 'normal',
+    tcp: {
+      enabled: cfg.tcp?.enabled === true,
+      host: cfg.tcp?.host || '127.0.0.1',
+      port: Number(cfg.tcp?.port) || 52005,
+    },
     ui: { recentEvents: cfg.ui?.recentEvents ?? 20, zoom: cfg.ui?.zoom ?? 1 },
   };
 }
@@ -272,6 +279,17 @@ export function applyConfig(daemon, patch) {
     cfg.ui = cfg.ui || {};
     if (Number.isFinite(n)) cfg.ui.recentEvents = Math.max(5, Math.min(EVENT_RING, Math.round(n)));
   }
+  if (patch.tcp) {
+    cfg.tcp = cfg.tcp || {};
+    if (patch.tcp.enabled !== undefined) cfg.tcp.enabled = patch.tcp.enabled === true;
+    if (patch.tcp.host !== undefined) cfg.tcp.host = String(patch.tcp.host);
+    if (patch.tcp.port !== undefined) {
+      const n = Number(patch.tcp.port);
+      // Ten sam zakres co przy innych portach; 0 znaczyłoby „dowolny wolny",
+      // a Logger32 musi wiedzieć, dokąd się łączyć.
+      if (Number.isInteger(n) && n > 0 && n < 65536) cfg.tcp.port = n;
+    }
+  }
   if (patch.rateLimit) Object.assign(cfg.rateLimit, patch.rateLimit);
   if (patch.logLevel) cfg.logLevel = patch.logLevel;
   if (patch.language) cfg.language = String(patch.language);
@@ -387,6 +405,12 @@ export function writeConfigFile(cfg) {
     // Bez tego wybór ginął przy pierwszym zapisie z okna — rozwinięcie
     // `original` wygrywa, a tam tego pola jeszcze nie ma.
     fontScale: cfg.fontScale || 'normal',
+    tcp: {
+      ...(original.tcp || {}),
+      enabled: cfg.tcp?.enabled === true,
+      host: cfg.tcp?.host || '127.0.0.1',
+      port: Number(cfg.tcp?.port) || 52005,
+    },
     ui: {
       ...(original.ui || {}),
       recentEvents: cfg.ui?.recentEvents ?? 20,

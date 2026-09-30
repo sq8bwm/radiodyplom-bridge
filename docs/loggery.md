@@ -14,9 +14,12 @@ obsługuje mieszane źródła jednocześnie.
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
 | `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, BBlogger, Log4OM (tryb N1MM) |
 | `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 | WSJT-X, JTDX ≥ 2.2.158, MSHV |
+| `Logger32` | goły rekord ADIF, **po TCP** | Logger32 ≥ 4.0.344 |
 
-Rozpoznanie jest jednoznaczne, bo rodziny różnią się pierwszymi bajtami:
-`{` → JSON, `<` → XML, `AD BC CB DA` → binarny.
+Rozpoznanie jest jednoznaczne, bo rodziny różnią się początkiem: `{` → JSON,
+`<nazwa:długość>` → ADIF, `<` bez długości → XML, `AD BC CB DA` → binarny.
+Kolejność sprawdzania ma znaczenie: ADIF i XML zaczynają się tym samym znakiem,
+więc ADIF (węższy wzorzec, z deklarowaną długością) jest sprawdzany pierwszy.
 
 **Nieobsługiwane** (własne, odrębne protokoły): QARTest (9458), Swisslog (2333),
 Win-Test (9871), Ham Radio Deluxe, WriteLog, LogHX. Każdy wymaga własnego dekodera —
@@ -29,9 +32,47 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 - **QLog** — `Settings → Network → Notifications → QSO Changes`
 - **N1MM+ / DXLog** — broadcast na porcie 12060 (domyślny dla tej rodziny)
 - **WSJT-X / JTDX / MSHV** — `Settings → Reporting → UDP Server` + port
+- **Logger32** — patrz niżej, bo jako jedyny nie używa UDP
 
 WSJT-X wysyła „QSO Logged” dopiero po zatwierdzeniu okna **Log QSO** — to celowe
 zachowanie samego WSJT-X, nie ograniczenie daemona.
+
+
+## Logger32 — jedyny po TCP
+
+Logger32 **nie rozgłasza QSO po UDP**. Od wersji **4.0.344** ma funkcję
+„enable QSO export by TCP": jako klient TCP łączy się pod wskazany adres i port
+(domyślnie **52005**) i wysyła każde zalogowane QSO w ADIF-ie, po czym zamyka
+połączenie. Dlatego mostek ma dla niego **osobny nasłuch**, domyślnie wyłączony.
+
+Co ustawić:
+
+1. w mostku, zakładka *Konfiguracja* → **Logger32 (nasłuch TCP)** → zaznacz
+   „Odbieraj QSO z Logger32 po TCP"; zmiana wymaga restartu programu,
+2. w Logger32 wskaż adres i port tej maszyny i włącz eksport QSO po TCP
+   (opis w rozdziale 32 instrukcji Logger32).
+
+Logger32 na **innym komputerze**: ustaw w mostku adres `0.0.0.0` i wpisz
+w Logger32 adres maszyny z mostkiem. Uwaga — wtedy port jest otwarty na całą
+sieć lokalną, więc dopisać QSO do Twojej akcji może każdy, kto się do niego
+dobierze.
+
+Ograniczenia, których nie da się obejść po naszej stronie:
+
+- eksport po TCP obejmuje **tylko dodania**; edycje i skasowania w Logger32 nie
+  są wysyłane (tak samo jak przy pozostałych loggerach mostek i tak przekazuje
+  wyłącznie nowe QSO),
+- Logger32 nie podaje żadnego numeru rekordu, więc klucz deduplikacji powstaje
+  **wyłącznie z treści QSO** — dokładnie jak przy WSJT-X.
+
+**Sprawdzenie bez Logger32** (działa tylko na Windowsie):
+
+```bash
+npm run logger32-test -- --ile 2 --stacja SN8N --pasmo 20m --emisja FT8
+```
+
+Narzędzie udaje Logger32: łączy się, wysyła rekord ADIF i rozłącza. Przydaje się
+też przy zgłoszeniu błędu — łatwiej poprosić o jedno polecenie niż o opis.
 
 
 ## Co QLog wysyła poza nowym QSO

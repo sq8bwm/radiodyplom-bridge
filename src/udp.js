@@ -4,29 +4,29 @@
 // Generyczny nasłuch UDP: rozpoznaje format datagramu i przekazuje go
 // właściwemu dekoderowi. Obsługuje mieszane źródła na jednym porcie.
 import dgram from 'node:dgram';
-import { pickDecoder, DECODER_NAMES } from './decoders/index.js';
-import { mapToRadiodyplom } from './mapper.js';
-import { expandTargets } from './fanout.js';
+import { DECODER_NAMES } from './decoders/index.js';
+import { QsoPipeline } from './qso-pipeline.js';
 import { log } from './log.js';
 import { acquireLock, releaseLock, udpLockPath } from './lock.js';
 
 export class LoggerListener {
-  constructor({ host, port, multicastGroups, operations, pin, targets, onQSO }) {
+  constructor({ host, port, multicastGroups, operations, pin, targets, onQSO, pipeline }) {
     this.host = host;
     this.port = port;
     this.multicastGroups = multicastGroups || [];
-    this.operations = new Set(operations || ['insert']);
-    this.pin = pin;
-    this.targets = targets || [];
-    this.onQSO = onQSO;
+    // Potok może być WSPÓLNY z nasłuchem TCP — wtedy liczniki są jedną sumą,
+    // a nie dwiema osobnymi. Bez podanego tworzymy własny (tak działają testy
+    // i każde użycie sprzed dołożenia Logger32).
+    this.pipeline = pipeline || new QsoPipeline({ operations, pin, targets, onQSO });
     this.socket = null;
-    this.stats = { received: 0, accepted: 0, skipped: 0, invalid: 0, unknown: 0,
-      bySource: {}, skipReasons: {},
-      // Znak stacji z OSTATNIEGO odebranego QSO — czyli to, czym logujesz
-      // w loggerze. Potrzebny, żeby okno mogło powiedzieć, czy któryś włączony
-      // cel loguje na ten znak. Bez tego „poleci jako" byłoby listą ustawień,
-      // a nie odpowiedzią na pytanie „a czym logujesz teraz".
-      lastStation: null };
+  }
+
+  /** Liczniki są w potoku; zostawiamy `stats` tam, gdzie ich szukają okno i API. */
+  get stats() { return this.pipeline.stats; }
+
+  /** Zostaje dla zgodności: testy i stary kod wołają `_handle(buf, rinfo)`. */
+  _handle(buf, rinfo) {
+    this.pipeline.handle(buf, `${rinfo.address}:${rinfo.port}`);
   }
 
   start() {
@@ -72,84 +72,6 @@ export class LoggerListener {
         resolve();
       });
     });
-  }
-
-  _handle(buf, rinfo) {
-    this.stats.received++;
-
-    const decoder = pickDecoder(buf);
-    if (!decoder) {
-      this.stats.unknown++;
-      log.warn(`Nieznany format datagramu z ${rinfo.address}:${rinfo.port}`, {
-        bytes: buf.length, head: buf.subarray(0, 8).toString('hex'),
-      });
-      return;
-    }
-
-    let result;
-    try {
-      result = decoder.decode(buf, { operations: this.operations });
-    } catch (err) {
-      this.stats.invalid++;
-      log.warn(`Dekoder ${decoder.name} rzucił błąd`, err.message);
-      return;
-    }
-
-    if (!result) {
-      this.stats.invalid++;
-      log.debug(`Dekoder ${decoder.name}: datagram nieprzydatny`);
-      return;
-    }
-    if (result.skip) {
-      this.stats.skipped++;
-      // Powód zliczamy, a nie tylko logujemy. Na poziomie `debug` (bo WSJT-X
-      // sypie komunikatami stanu co sekundę i przy `info` zalałby log), więc
-      // przy domyślnych ustawieniach użytkownik NIE MIAŁ jak się dowiedzieć,
-      // czemu „odebrane z loggera" nie zgadza się ze „źródłami". Pytanie
-      // padło 2026-09-04 przy czterech pominiętych datagramach.
-      //
-      // Liczba różnych powodów jest z natury mała (operacje QLoga, typy
-      // komunikatów WSJT-X), ale limit i tak stawiamy — źródło nadające
-      // śmieci nie ma prawa rozdąć tego bez końca.
-      const powod = String(result.skip);
-      if (this.stats.skipReasons[powod] !== undefined) this.stats.skipReasons[powod] += 1;
-      else if (Object.keys(this.stats.skipReasons).length < 20) this.stats.skipReasons[powod] = 1;
-      log.debug(`Dekoder ${decoder.name}: pomijam – ${powod}`);
-      return;
-    }
-    if (result.error) {
-      this.stats.invalid++;
-      log.warn(`Dekoder ${decoder.name}: ${result.error}`);
-      return;
-    }
-
-    const mapped = mapToRadiodyplom(result.adif, this.pin);
-    if (!mapped.ok) {
-      this.stats.invalid++;
-      log.warn(`QSO z ${decoder.name} bez wymaganych pól – pomijam`, {
-        missing: mapped.missing, call: result.adif.call,
-      });
-      return;
-    }
-
-    this.stats.accepted++;
-    this.stats.bySource[decoder.name] = (this.stats.bySource[decoder.name] || 0) + 1;
-    this.stats.lastStation = mapped.payload.station_callsign || null;
-
-    // Jedno QSO z loggera może dać kilka wpisów – po jednym na znak stacji.
-    const copies = expandTargets(mapped.payload, this.targets, result.key);
-    for (const c of copies) {
-      this.onQSO({
-        key: c.key,
-        payload: c.payload,
-        meta: {
-          ...result.meta,
-          station: c.station,
-          fanout: copies.length > 1 ? `${copies.length} kopii` : undefined,
-          from: `${rinfo.address}:${rinfo.port}`,
-        },
-      });
-    }
   }
 
   stop() {

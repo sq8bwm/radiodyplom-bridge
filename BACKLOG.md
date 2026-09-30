@@ -359,6 +359,41 @@ rosną razem ze skalą i z ustawieniem systemowym.
 - **ograniczenie animacji** (`prefers-reduced-motion`) — nie mamy animacji poza
   przewijaniem, więc prawdopodobnie nic do zrobienia; do potwierdzenia.
 
+### Rozgłoszenie programu — zaczęte 2026-09-30
+
+Do 30.09 program był nieznany: **62 pobrania łącznie**, z czego wszystkie wyglądają
+na nasze własne testy, **0 pobrań** wydań 0.1.25–0.1.29, 0 odsłon repozytorium,
+0 gwiazdek. Marek: „chyba nikt nie używa naszej wspaniałej aplikacji".
+
+Zrobione tego dnia:
+
+- **Wpis na stronie Puławskiej Grupy Krótkofalowców** —
+  <https://krotkofalowcy.pulawy.pl/radiodyplom-bridge/> (wpis 4662, konto SQ8BWM,
+  kategorie Akcja dyplomowa i Klub, trzy zrzuty z 0.1.29). Źródło treści leży
+  w katalogu projektu strony: `wpis-radiodyplom-bridge.html`.
+- **Post na Facebooku** — wrzucony przez Piotra SP8X z naszym opisem
+  (`wpis-radiodyplom-bridge-facebook.txt`, wersja główna).
+- **README poprawione**: świeże zrzuty i przepisana sekcja „Do czego to jest".
+
+**Ważne ustalenie merytoryczne, które zmieniło cały przekaz:** alternatywą dla
+mostka NIE jest wgrywanie ADIF-a, tylko wpisywanie QSO wprost na radiodyplom.pl
+w przeglądarce. Prawdziwa wartość to swoboda pracy we własnym loggerze plus dwie
+rzeczy niemożliwe inaczej — kilka znaków stacji naraz i emisje cyfrowe.
+Dokumentacja twierdziła inaczej i to ona wprowadzała w błąd.
+
+**Punkt odniesienia (30.09, ok. godzinę po publikacji):** 555 odsłon artykułu,
+**1** pobranie nowych wydań. Proporcja odsłon do pobrań jest tu liczbą do
+obserwowania: jeśli po kilku dniach będzie 2000 odsłon i 5 pobrań, problem nie
+leży w widoczności, tylko w tym, co widać PO kliknięciu (wpis, README, strona
+wydań z sześcioma plikami do wyboru).
+
+**Odłożone:** mail do Tobiasza (autora radiodyplom.pl) z prośbą o kafelek
+w Managerze i stronę o mostku w serwisie — draft gotowy, ale API serwisu nie ma
+dziś innych klientów poza nami, więc kanał jest wąski. Decyzja: poczekać na
+wynik Facebooka. Gdyby wracać do tematu: wejściem ma być strona W SERWISIE
+(a generowanie PIN-u krokiem w jej środku, nie odwrotnie), a argumentem dla
+autora to, że jego wrześniowe rozszerzenie API dostaje wreszcie klienta.
+
 ### Statystyki — zrobione, co jeszcze warto dołożyć
 Zakładka i importer historii gotowe w 0.1.10 —
 [docs/statystyki.md](docs/statystyki.md). Historia z logów wczytana: 1114 kopii,

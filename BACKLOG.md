@@ -590,6 +590,20 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   panel rozróżnia trzy rzeczy: serwis nie podał (starsze API), pusto poza akcją
   (spokojna podpowiedź) i pusto W TRAKCIE akcji (ostrzeżenie, bo wtedy nie ma
   na co logować i QSO wrócą odrzucone).
+- **Logger32 — potwierdzony na żywym programie** (2026-09-30, Windows,
+  Logger32 4.0.344). Cała droga: rekord ADIF po TCP → rozpoznanie → znak stacji
+  z pola OPERATOR → mapowanie na pola radiodyplom → kolejka → tryb próbny.
+  Ustalenia, których nie dało się wyczytać z dokumentacji Logger32:
+  **nie wysyła `STATION_CALLSIGN`** (znak stacji to u niego `OPERATOR`, tak samo
+  rozumie to jego własna instrukcja), numeruje QSO polem
+  `APP_LOGGER32_QSO_NUMBER`, a po skonfigurowaniu eksportu trzeba jeszcze
+  kliknąć **„Click to Open socket"** — bez tego wszystko wygląda na ustawione
+  i nic nie leci. Raporty sprawdzone osobno: `59` na wejściu daje `59` na
+  wyjściu (pierwsze QSO miało wpisane pojedyncze cyfry, nie był to błąd
+  parsera). Test na prawdziwym rekordzie, wklejonym bajt w bajt, jest w
+  `test/logger32.test.js`.
+  **Nie sprawdzone:** wysyłka z wyłączonym trybem próbnym, czyli QSO z Logger32
+  realnie zapisane w akcji.
 - Duplikaty są zapisywane i oznaczane jako niepunktowane, nie odrzucane.
 - Automatyczne dosyłanie po awarii łączności działa bez ingerencji.
 - Sekrety nie trafiają do paczek (sprawdzone przez rozpakowanie `app.asar`).

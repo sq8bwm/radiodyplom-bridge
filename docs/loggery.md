@@ -45,12 +45,33 @@ Logger32 **nie rozgłasza QSO po UDP**. Od wersji **4.0.344** ma funkcję
 (domyślnie **52005**) i wysyła każde zalogowane QSO w ADIF-ie, po czym zamyka
 połączenie. Dlatego mostek ma dla niego **osobny nasłuch**, domyślnie wyłączony.
 
-Co ustawić:
+Co ustawić — **po stronie mostka**:
 
-1. w mostku, zakładka *Konfiguracja* → **Logger32 (nasłuch TCP)** → zaznacz
-   „Odbieraj QSO z Logger32 po TCP"; zmiana wymaga restartu programu,
-2. w Logger32 wskaż adres i port tej maszyny i włącz eksport QSO po TCP
-   (opis w rozdziale 32 instrukcji Logger32).
+1. zakładka *Konfiguracja* → **Logger32 (nasłuch TCP)** → zaznacz „Odbieraj QSO
+   z Logger32 po TCP" i **uruchom program ponownie** (gniazdo powstaje przy starcie).
+
+Po stronie **Logger32** (kolejność z instrukcji programu, §32.3, plus krok,
+o którym instrukcja nie mówi wprost):
+
+1. prawy klik w dowolne pole wpisu QSO → **Setup ➪ QSLing & QSO Export** →
+   zaznacz **„Enable export of QSO logging by TCP"**,
+2. prawy klik panel **TCP** na pasku stanu → **„Show TCP client event viewer"**,
+3. w tym oknie menu **Config** → adres IP i port maszyny z mostkiem (domyślnie
+   `52005`),
+4. **prawy klik panel TCP na dole → „Click to Open socket"** — dopóki tego nie
+   zrobisz, wszystko wygląda na ustawione, a **nic nie leci**. Po otwarciu
+   gniazda napis **TCP robi się zielony** i to jest jedyny widoczny znak, że
+   połączenie jest czynne.
+
+Sprawdzenie: przycisk **„Test the connection"** w event viewerze wysyła tekst
+**„Hello World!"**, a nie ADIF — mostek zapisze wtedy w logu ostrzeżenie
+„nie rozpoznaję jako ADIF". Wbrew pozorom to **dobra wiadomość**: znaczy, że
+dane docierają. Prawdziwe QSO daje wpis „Nowe QSO [Logger32]".
+
+> **Nie pomyl z „parallel logging"** (§32.4 instrukcji Logger32). To osobna
+> funkcja, do spinania dwóch Logger32 między sobą; ma własny *TCP server event
+> viewer* i własny port. Jeśli Logger32 i mostek stoją na tej samej maszynie,
+> serwer Logger32 nasłuchujący na 52005 **zajmie port** mostkowi.
 
 Logger32 na **innym komputerze**: ustaw w mostku adres `0.0.0.0` i wpisz
 w Logger32 adres maszyny z mostkiem. Uwaga — wtedy port jest otwarty na całą

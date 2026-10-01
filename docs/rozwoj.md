@@ -270,9 +270,16 @@ graficzne nie skojarzy działającego okna z pozycją w menu. Pozostałe pola
 `RD_CONFIG_DIR` i `RD_DATA_DIR` nadpisują jedno i drugie. Przy budowaniu nic
 nie jest zapisywane poza drzewem źródeł.
 
-**Testy nadają się na `check()`:** `npm test`, 614 testów, **bez dostępu do
-sieci** — sprawdzone w przestrzeni nazw bez interfejsów poza loopbackiem.
-Potrzebują za to loopbacka, bo część z nich naprawdę bindują porty.
+**Testy nadają się na `check()`:** `npm test` **bez dostępu do sieci**
+i **bez `node_modules`** — jedno i drugie sprawdzone: testy w przestrzeni nazw
+bez interfejsów poza loopbackiem i budowa paczki w kontenerze Arch. Potrzebują
+za to loopbacka, bo część z nich naprawdę binduje porty.
+
+Bez `node_modules` **sześć testów wpisu w menu jest pomijanych z podaną
+przyczyną** — jako jedyne potrzebują `js-yaml`, żeby odczytać
+`electron-builder.yml`. Pomijane, nie wywalone: do 2026-10-01 był tam twardy
+import, przez który padał cały plik, a z nim `check()` i cała budowa pakietu.
+Pilnuje tego teraz osobny test (`test/imports.test.js`).
 
 > **Jedna pułapka:** dwa testy sprawdzają, że brak prawa zapisu kończy się
 > błędem, a nie cichym pominięciem (katalog `0500`). Root ignoruje bity

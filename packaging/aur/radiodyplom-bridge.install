@@ -1,0 +1,20 @@
+post_install() {
+  cat <<'KONIEC_TEKSTU'
+
+  RadioDyplom Bridge zainstalowany.
+
+    radiodyplom-bridge              okno (Electron systemowy)
+    radiodyplom-bridge-headless     bez okna, do terminala
+
+  Tryb usługi (Raspberry Pi, serwer):
+    sudoedit /etc/radiodyplom-bridge/config.json     # wpisz PIN z radiodyplom.pl
+    sudo systemctl enable --now radiodyplom-bridge
+
+  Opis krok po kroku: /usr/share/doc/radiodyplom-bridge/malinka.md
+
+KONIEC_TEKSTU
+}
+
+post_upgrade() {
+  :
+}

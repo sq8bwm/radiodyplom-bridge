@@ -1,0 +1,83 @@
+# Maintainer: SQ8BWM <https://github.com/sq8bwm>
+#
+# Paczka budowana ZE ŹRÓDEŁ, w odróżnieniu od radiodyplom-bridge-bin, która
+# pakuje gotowy AppImage. Różnica jest praktyczna: tutaj okno chodzi na
+# systemowym Electronie, więc poprawki bezpieczeństwa Chromium przychodzą
+# z pacmanem, paczka waży setki kilobajtów zamiast 120 MB i nie potrzebuje
+# --no-sandbox.
+pkgname=radiodyplom-bridge
+pkgver=0.1.33
+pkgrel=1
+pkgdesc='Mostek QSO: przekazuje łączności z loggera krótkofalarskiego na radiodyplom.pl'
+arch=('any')
+url='https://github.com/sq8bwm/radiodyplom-bridge'
+license=('GPL-3.0-or-later')
+# Rdzeń NIE MA zależności runtime — to czysty JavaScript. Electron jest
+# potrzebny wyłącznie do okna, node wyłącznie do trybu bez okna.
+depends=('electron44' 'nodejs')
+optdepends=('openssl: certyfikat własny dla interfejsu w sieci (program radzi sobie i bez niego)')
+conflicts=('radiodyplom-bridge-bin')
+backup=('etc/radiodyplom-bridge/config.json')
+install="${pkgname}.install"
+source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz"
+        'radiodyplom-bridge.sh'
+        'radiodyplom-bridge-headless.sh'
+        'radiodyplom-bridge.desktop'
+        'radiodyplom-bridge.sysusers'
+        'radiodyplom-bridge.tmpfiles')
+sha256sums=('0f4ffabedb6b176e8e92d3d8707a2c50240c66e4605b0a22922e61fe18272c57'
+            'SKIP'
+            'SKIP'
+            'SKIP'
+            'SKIP'
+            'SKIP')
+
+check() {
+  cd "${pkgname}-${pkgver}"
+  # Pełny zestaw testów: bez sieci i bez node_modules. Potrzebny jest tylko
+  # działający loopback, bo część z nich naprawdę binduje porty.
+  #
+  # Sześć testów wpisu w menu zostanie POMINIĘTYCH z podaną przyczyną — jako
+  # jedyne czytają electron-builder.yml i potrzebują do tego js-yaml, którego
+  # tu nie ma. To nie jest usterka pakietu.
+  #
+  # UWAGA: dwa testy sprawdzają, że brak prawa zapisu kończy się błędem.
+  # Root ignoruje bity uprawnień, więc pod rootem by padły — makepkg i tak
+  # odmawia pracy jako root, więc w praktyce to nie przeszkadza.
+  node --test test/*.test.js
+}
+
+package() {
+  local lib="${pkgdir}/usr/lib/${pkgname}"
+  cd "${pkgname}-${pkgver}"
+
+  # Kod: tylko to, co program naprawdę czyta. config.json NIE WCHODZI nigdy
+  # (zawiera PIN); do systemu idzie wyłącznie wzorzec.
+  install -dm755 "${lib}"
+  cp -a src ui "${lib}/"
+  install -Dm644 package.json "${lib}/package.json"
+  install -Dm644 config.example.json "${lib}/config.example.json"
+
+  install -Dm755 "${srcdir}/radiodyplom-bridge.sh" "${pkgdir}/usr/bin/${pkgname}"
+  install -Dm755 "${srcdir}/radiodyplom-bridge-headless.sh" \
+    "${pkgdir}/usr/bin/${pkgname}-headless"
+
+  install -Dm644 "${srcdir}/radiodyplom-bridge.desktop" \
+    "${pkgdir}/usr/share/applications/${pkgname}.desktop"
+  install -Dm644 build/icon.png \
+    "${pkgdir}/usr/share/icons/hicolor/512x512/apps/${pkgname}.png"
+
+  # Tryb bez okna jako usługa — opis w docs/malinka.md.
+  install -Dm644 dist/radiodyplom-bridge.service \
+    "${pkgdir}/usr/lib/systemd/system/${pkgname}.service"
+  install -Dm644 "${srcdir}/radiodyplom-bridge.sysusers" \
+    "${pkgdir}/usr/lib/sysusers.d/${pkgname}.conf"
+  install -Dm644 "${srcdir}/radiodyplom-bridge.tmpfiles" \
+    "${pkgdir}/usr/lib/tmpfiles.d/${pkgname}.conf"
+  # Konfiguracja usługi: jednostka ma RD_CONFIG_DIR=/etc/radiodyplom-bridge.
+  install -Dm640 config.example.json "${pkgdir}/etc/${pkgname}/config.json"
+
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+  install -Dm644 docs/malinka.md "${pkgdir}/usr/share/doc/${pkgname}/malinka.md"
+}

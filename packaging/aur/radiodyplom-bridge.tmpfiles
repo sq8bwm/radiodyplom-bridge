@@ -1,0 +1,5 @@
+# Konfiguracja usługi musi być czytelna dla konta, na którym usługa chodzi.
+# Grupy nie da się nadać przy budowaniu pakietu (konto powstaje dopiero przy
+# instalacji, z sysusers.d), więc właściciela ustawia tmpfiles — jego hook
+# wykonuje się PO założeniu kont.
+z /etc/radiodyplom-bridge/config.json 0640 root radiodyplom

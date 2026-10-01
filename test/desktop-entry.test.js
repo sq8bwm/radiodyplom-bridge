@@ -17,11 +17,28 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import yaml from 'js-yaml';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const cfg = yaml.load(readFileSync(join(ROOT, 'electron-builder.yml'), 'utf8'));
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+
+// `js-yaml` to ZALEŻNOŚĆ DEWELOPERSKA i jedyne miejsce w całym zestawie testów,
+// które czegokolwiek spoza node'a potrzebuje. Przy pakowaniu ze źródeł
+// (AUR, dowolna dystrybucja) `node_modules` nie ma, więc twardy import wywalał
+// CAŁY plik — a wraz z nim budowę paczki w `check()`. Złapane 2026-10-01
+// w kontenerze Arch. Dlatego import jest miękki: bez modułu te sześć testów
+// jest POMIJANYCH z podaną przyczyną, zamiast udawać awarię pakietu.
+let cfg = null;
+let brakYaml = null;
+try {
+  const { default: yaml } = await import('js-yaml');
+  cfg = yaml.load(readFileSync(join(ROOT, 'electron-builder.yml'), 'utf8'));
+} catch {
+  brakYaml = 'brak js-yaml (zależność deweloperska) — uruchom `npm install`';
+}
+// Obiekt budowany warunkowo: `{ skip: null }` Node pomija tak samo jak
+// `{ skip: true }`, więc przekazanie pustej przyczyny wyłączyłoby te testy
+// ZAWSZE — po cichu i u wszystkich.
+const bezYamla = brakYaml ? { skip: brakYaml } : {};
 
 // Kategorie główne wg specyfikacji freedesktop — tylko one wpinają wpis do menu.
 const MAIN = new Set([
@@ -29,7 +46,7 @@ const MAIN = new Set([
   'Graphics', 'Network', 'Office', 'Science', 'Settings', 'System', 'Utility',
 ]);
 
-describe('wpis .desktop dla Linuksa', () => {
+describe('wpis .desktop dla Linuksa', bezYamla, () => {
   test('kategorie zawierają kategorię główną', () => {
     const cats = String(cfg.linux.category).split(';').filter(Boolean);
     const main = cats.filter((c) => MAIN.has(c));
@@ -81,7 +98,7 @@ describe('wpis .desktop dla Linuksa', () => {
   });
 });
 
-describe('AppImage bez bramki licencyjnej', () => {
+describe('AppImage bez bramki licencyjnej', bezYamla, () => {
   test('appImage.license NIE jest ustawione', () => {
     // Ta opcja nie dokłada tekstu licencji — robi z niej okno Agree/Disagree,
     // które przy „Disagree" NIE uruchamia programu. Dla GPL to nieprawda

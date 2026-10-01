@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=RadioDyplom Bridge
+GenericName=Mostek QSO do radiodyplom.pl
+Comment=Przekazuje zalogowane QSO z loggera (QLog, N1MM, WSJT-X) na radiodyplom.pl.
+Exec=radiodyplom-bridge %U
+Icon=radiodyplom-bridge
+Terminal=false
+StartupNotify=true
+# StartupWMClass MUSI zgadzać się z WM_CLASS okna, inaczej środowisko graficzne
+# nie skojarzy działającego programu z pozycją w menu.
+StartupWMClass=radiodyplom-bridge
+# HamRadio to wg freedesktop kategoria DODATKOWA — bez głównej (Network) wpis
+# nie trafia do żadnej gałęzi menu.
+Categories=Network;HamRadio;
+Keywords=krótkofalarstwo;krotkofalarstwo;hamradio;ham;radio;QSO;log;logger;QLog;N1MM;WSJT-X;JTDX;MSHV;ADIF;dyplom;radiodyplom;

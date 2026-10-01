@@ -1,0 +1,3 @@
+# Konto dla usługi bez okna. Jednostka systemd działa jako ten użytkownik,
+# a katalog stanu zakłada jej StateDirectory.
+u radiodyplom - "RadioDyplom Bridge" /var/lib/radiodyplom-bridge

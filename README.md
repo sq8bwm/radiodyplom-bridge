@@ -85,6 +85,21 @@ Wersje z interfejsem są **tylko 64-bitowe na procesory Intel/AMD** — stąd `x
 Na Linuksie `.deb` dodaje pozycję do menu (**Internet / Sieć**). AppImage niczego
 nie instaluje — uruchamiasz plik i tyle, więc w menu się nie pojawi.
 
+### Arch Linux
+
+```bash
+yay -S radiodyplom-bridge-bin
+```
+
+Paczka jest w [AUR](https://aur.archlinux.org/packages/radiodyplom-bridge-bin)
+i **nie budujemy jej my** — przygotował ją i utrzymuje opiekun ze społeczności
+(dzięki!). Pakuje nasz AppImage i sprawdza jego sumę kontrolną, więc dostajesz
+dokładnie to samo, co z wydania tutaj.
+
+Praktyczny wniosek, komu co zgłaszać: **problem z samym pakowaniem** (instalacja,
+zależności, wpis w menu) → komentarze pod paczką w AUR; **problem z programem**
+(QSO nie dochodzi, błąd w oknie) → [zgłoszenia tutaj](https://github.com/sq8bwm/radiodyplom-bridge/issues).
+
 Wersje **portable** i **AppImage** trzymają dane w profilu użytkownika, czyli
 tam samo co wersje instalowane. Jeśli mają być naprawdę przenośne — albo mają
 działać **obok** wersji zainstalowanej — utwórz obok pliku katalog

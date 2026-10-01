@@ -768,3 +768,14 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   Każdy dzisiejszy błąd ma swój test regresyjny. Skuteczność sprawdzona mutacjami:
   cofnięcie trzech poprawek (pasmo wielkimi literami, `savedTo:[]` jako sukces,
   klucz kopii bez znaku stacji) za każdym razem wywala właściwy test.
+- **Zapis konfiguracji stosował się dopiero po restarcie** (zgłoszone i naprawione
+  2026-10-01, 0.1.33). Przy wydzielaniu `QsoPipeline` dla Logger32 (0.1.32) lista
+  celów, główny PIN i operacje przeniosły się do potoku, a `applyConfig` nadal
+  przypisywał je do nasłuchu UDP — czyli do własności, których już tam nie było.
+  Skutek był gorszy niż brak działania: plik na dysku się zmieniał, okno mówiło
+  „Zapisano i zastosowano", `restartRequired` było puste, a QSO leciały wedle
+  ustawień sprzed zapisu. Wyszło przy teście Logger32 przez sieć: po wyłączeniu
+  wszystkich celów kopia dalej poszła pod SN8N, zamiast pod własny znak, i serwis
+  ją odrzucił. Testy tego nie łapały, bo atrapa daemona miała `listener: {}` —
+  zwykły obiekt przyjmuje KAŻDE przypisanie. Nowe testy używają prawdziwego
+  nasłuchu i potoku i sprawdzają skutek: gdzie naprawdę trafia QSO po zapisie.

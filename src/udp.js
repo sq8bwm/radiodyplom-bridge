@@ -24,6 +24,26 @@ export class LoggerListener {
   /** Liczniki są w potoku; zostawiamy `stats` tam, gdzie ich szukają okno i API. */
   get stats() { return this.pipeline.stats; }
 
+  // Lista celów, PIN i operacje też mieszkają w POTOKU — tym samym, który
+  // obsługuje nasłuch TCP. Bez tych akcesorów `applyConfig` przypisywał je do
+  // własności nasłuchu, których od wydzielenia potoku (0.1.32) już nie ma:
+  // plik na dysku się zmieniał, okno mówiło „zastosowano", a QSO leciały dalej
+  // wedle ustawień sprzed zapisu — aż do restartu. Zgłoszone 2026-10-01:
+  // wyłączone cele wciąż dostawały kopie.
+  get targets() { return this.pipeline.targets; }
+
+  set targets(v) { this.pipeline.targets = v || []; }
+
+  get pin() { return this.pipeline.pin; }
+
+  set pin(v) { this.pipeline.pin = v; }
+
+  get operations() { return this.pipeline.operations; }
+
+  set operations(v) {
+    this.pipeline.operations = v instanceof Set ? v : new Set(v || ['insert']);
+  }
+
   /** Zostaje dla zgodności: testy i stary kod wołają `_handle(buf, rinfo)`. */
   _handle(buf, rinfo) {
     this.pipeline.handle(buf, `${rinfo.address}:${rinfo.port}`);

@@ -387,3 +387,82 @@ describe('PIN celu — cztery stany', () => {
     assert.equal(saved().forward.targets[0].pin, undefined);
   });
 });
+
+describe('zapis stosuje się na ŻYWO, nie dopiero po restarcie', () => {
+  // Ten blok używa PRAWDZIWEGO nasłuchu i potoku, a nie atrapy `listener: {}`.
+  // Atrapa przyjmowała każde przypisanie i dlatego przepuściła błąd z 0.1.32:
+  // `applyConfig` ustawiał cele na nasłuchu, a rozsyłał je potok, który tych
+  // ustawień nigdy nie zobaczył. Sprawdzamy więc SKUTEK — gdzie polecą QSO —
+  // a nie to, czy przypisanie się wykonało.
+  const rekordLogger32 = (znak = 'SQ8BWA') => Buffer.from(
+    `<CALL:${znak.length}>${znak}<QSO_DATE:8>20261001<TIME_ON:6>114527`
+    + '<BAND:3>80m<MODE:3>SSB<OPERATOR:6>SQ8BWM<RST_SENT:2>59<RST_RCVD:2>59<EOR>',
+    'utf8',
+  );
+
+  async function zestaw() {
+    const { QsoPipeline } = await import('../src/qso-pipeline.js');
+    const { LoggerListener } = await import('../src/udp.js');
+    const wyslane = [];
+    const pipeline = new QsoPipeline({
+      operations: ['insert'],
+      pin: 'AAAA-1111',
+      targets: [{ station_callsign: 'SN8N', enabled: true }],
+      onQSO: (item) => wyslane.push(item),
+    });
+    const listener = new LoggerListener({ host: '127.0.0.1', port: 12060, pipeline });
+    const cfg = cfgMod.loadConfig();
+    return {
+      wyslane,
+      pipeline,
+      daemon: { cfg, client: {}, listener, worker: {}, pendingRestart: new Set() },
+    };
+  }
+
+  test('wyłączenie wszystkich celów działa od razu — QSO idzie pod własny znak', async () => {
+    const { daemon, wyslane } = await zestaw();
+
+    mod.applyConfig(daemon, {
+      forward: { targets: [{ station_callsign: 'SN8N', enabled: false }] },
+    });
+
+    daemon.listener._handle(rekordLogger32(), { address: '192.168.8.163', port: 55087 });
+
+    assert.equal(wyslane.length, 1, 'QSO miało zostać przyjęte');
+    // Sedno zgłoszenia z 2026-10-01: po wyłączeniu celu kopia dalej szła pod SN8N.
+    assert.equal(wyslane[0].payload.station_callsign, 'SQ8BWM');
+    assert.notEqual(wyslane[0].payload.station_callsign, 'SN8N');
+  });
+
+  test('dodany cel dostaje kopie bez restartu', async () => {
+    const { daemon, wyslane } = await zestaw();
+
+    mod.applyConfig(daemon, {
+      forward: {
+        targets: [
+          { station_callsign: 'SN8N', enabled: true },
+          { station_callsign: 'SN0LPU', enabled: true },
+        ],
+      },
+    });
+
+    daemon.listener._handle(rekordLogger32(), { address: '127.0.0.1', port: 1 });
+
+    assert.deepEqual(wyslane.map((x) => x.payload.station_callsign).sort(), ['SN0LPU', 'SN8N']);
+  });
+
+  test('zmiana głównego PIN-u trafia do wysyłanych QSO bez restartu', async () => {
+    const { daemon, wyslane } = await zestaw();
+
+    // Cel BEZ własnego PIN-u — inaczej sprawdzalibyśmy pierwszeństwo PIN-u celu
+    // (słuszne i osobno przetestowane), a nie to, czy nowy PIN główny żyje.
+    mod.applyConfig(daemon, {
+      radiodyplom: { pin: 'CCCC-3333' },
+      forward: { targets: [{ station_callsign: 'SN8N', enabled: true }] },
+    });
+    daemon.listener._handle(rekordLogger32(), { address: '127.0.0.1', port: 1 });
+
+    assert.equal(wyslane.length, 1);
+    assert.equal(wyslane[0].payload.api_key, 'CCCC-3333');
+  });
+});

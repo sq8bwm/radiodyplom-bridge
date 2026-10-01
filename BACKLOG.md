@@ -804,3 +804,15 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   łagodzimy awarii nasłuchu TCP do ostrzeżenia: dla kogoś z Logger32 to jedyne
   źródło QSO, a program, który „działa" i po cichu nie przyjmuje łączności,
   byłby gorszy od takiego, który wprost mówi, że nie wstał.
+- **Paczka dla Arch Linuksa** (0.1.34). Społeczność wydała `radiodyplom-bridge-bin`
+  (pakuje nasz AppImage) kilka godzin po wpisie na Facebooku — suma kontrolna
+  w jej PKGBUILD zgadza się co do znaku z naszym wydaniem. Obok niej mamy własną,
+  budowaną ze źródeł, na SYSTEMOWYM Electronie: 489 kB zamiast 120 MB, poprawki
+  Chromium z pacmanem, bez `--no-sandbox`, z trybem bez okna i jednostką systemd.
+  Budowa w kontenerze Arch wyłapała trzy błędy niewidoczne u nas: twardy import
+  `js-yaml` w teście wywalał `check()` i całą budowę pakietu; konfiguracja usługi
+  w `/etc` była nieczytelna dla konta, na którym usługa chodzi; a uruchamianie
+  Electrona plikiem zamiast katalogiem dawało oknu `WM_CLASS` równe `electron`,
+  przez co wpis w menu nie skojarzyłby się z oknem. Wniosek ogólniejszy:
+  **pakowanie w obcej dystrybucji jest testem, którego nie zastąpi czytanie
+  własnego kodu.**

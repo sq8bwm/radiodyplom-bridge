@@ -425,6 +425,8 @@
       <div id="listenInfo"></div>
       <div id="tcpInfo" hidden></div>
       <div class="note" id="localNote" data-i18n="note.localhost" hidden></div>
+      <div class="note" id="localNoteTcp" data-i18n="note.localhostTcp" hidden></div>
+      <div class="note lvl-warn" id="noListenNote" data-i18n="note.noListener" hidden></div>
       <div class="note" id="portNote" hidden></div>
     </div>
     <div class="panel">
@@ -490,6 +492,9 @@
 
     <div class="panel">
       <h2 data-i18n="panel.udp"></h2>
+      <label class="chk"><input type="checkbox" id="fUdpEnabled">
+        <span data-i18n="label.udpEnabled"></span></label>
+      <div class="note" data-i18n="note.udpEnabled"></div>
       <div class="two">
         <div><label data-i18n="label.address"></label>
           <select id="fHost">

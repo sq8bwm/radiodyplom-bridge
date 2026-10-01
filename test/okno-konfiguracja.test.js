@@ -145,3 +145,49 @@ describe('adres interfejsu w panelu Stan', () => {
     assert.match(R, /\(a\.adresy \|\| \[\]\)/);
   });
 });
+
+describe('wyłączanie nasłuchu UDP w oknie', () => {
+  // Zgłoszone 2026-10-01: przełącznik ma działać tak samo jak ten przy TCP.
+  test('przełącznik jest w panelu UDP i trafia do zapisu', () => {
+    assert.match(H, /id="fUdpEnabled"/);
+    assert.match(R, /\$\('fUdpEnabled'\)\.checked = cfg\.udp\?\.enabled !== false;/,
+      'formularz musi pokazywać stan z konfiguracji');
+    assert.match(R, /enabled: \$\('fUdpEnabled'\)\.checked,/,
+      'zapis musi odsyłać stan przełącznika');
+  });
+
+  test('teksty przełącznika są w obu językach', () => {
+    for (const k of ['label.udpEnabled', 'note.udpEnabled', 'state.udpOff']) {
+      const ile = [...S.matchAll(new RegExp(`'${k.replace('.', '\\.')}':`, 'g'))].length;
+      assert.equal(ile, 2, `${k} ma ${ile} tłumaczeń, a ma mieć 2 (pl i en)`);
+    }
+  });
+});
+
+describe('nota o localhoście mówi o SWOIM kanale', () => {
+  // ZGŁOSZONE 2026-10-01: przy UDP na 127.0.0.1 i TCP na 0.0.0.0 okno pisało
+  // „Nasłuch tylko na localhost", co było nieprawdą o całym programie.
+  test('nota UDP mówi wprost o UDP', () => {
+    assert.match(S, /'note\.localhost': 'Nasłuch UDP tylko na localhost/);
+    assert.match(S, /'note\.localhost': 'UDP listener bound to localhost only/);
+  });
+
+  test('TCP ma własną notę, zależną od własnego adresu', () => {
+    assert.match(H, /id="localNoteTcp"/);
+    assert.match(R, /\$\('localNoteTcp'\)\.hidden = !s\.tcp\?\.localOnly;/);
+    const ile = [...S.matchAll(/'note\.localhostTcp':/g)].length;
+    assert.equal(ile, 2, 'nota TCP ma być w obu językach');
+  });
+
+  test('nota UDP znika, gdy nasłuch UDP jest wyłączony', () => {
+    assert.match(R, /\$\('localNote'\)\.hidden = !udpWlaczony \|\| !s\.listener\.localOnly;/);
+  });
+
+  test('gdy nie słucha ŻADEN kanał, okno to mówi', () => {
+    // Cisza wyglądałaby jak zepsuty logger, a to zupełnie inna sprawa.
+    assert.match(H, /id="noListenNote"/);
+    assert.match(R, /\$\('noListenNote'\)\.hidden = udpWlaczony \|\| !!s\.tcp;/);
+    const ile = [...S.matchAll(/'note\.noListener':/g)].length;
+    assert.equal(ile, 2, 'ostrzeżenie ma być w obu językach');
+  });
+});

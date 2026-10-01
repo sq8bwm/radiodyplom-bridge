@@ -779,3 +779,16 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   ją odrzucił. Testy tego nie łapały, bo atrapa daemona miała `listener: {}` —
   zwykły obiekt przyjmuje KAŻDE przypisanie. Nowe testy używają prawdziwego
   nasłuchu i potoku i sprawdzają skutek: gdzie naprawdę trafia QSO po zapisie.
+- **Nasłuch UDP można wyłączyć** (`udp.enabled`, 0.1.33, prośba z 2026-10-01:
+  „jeśli ktoś ma Logger32, to może nie potrzebować UDP"). Przełącznik działa tak
+  samo jak ten przy TCP: wymaga restartu, bo gniazdo powstaje przy starcie. Brak
+  klucza znaczy „włączony", więc starsze konfiguracje nie zmieniają zachowania.
+  Obiekt nasłuchu powstaje nawet przy wyłączonym porcie, bo trzyma liczniki
+  wspólne dla obu transportów — inaczej panele Źródła i Statystyki zgasłyby też
+  dla QSO z Logger32. Oba nasłuchy wyłączone naraz są dozwolone, ale program
+  mówi o tym wprost w logu i w zakładce Stan.
+- **Nota „Nasłuch tylko na localhost" mówiła nieprawdę** (zgłoszone 2026-10-01).
+  Zdanie dotyczyło całego programu, a opisywało wyłącznie adres UDP — przy UDP na
+  `127.0.0.1` i TCP na `0.0.0.0` okno twierdziło, że nic nie wychodzi poza ten
+  komputer, choć Logger32 logował przez sieć. Każdy kanał ma teraz własną notę,
+  zależną od własnego adresu.

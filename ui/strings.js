@@ -283,8 +283,18 @@ const DICT = {
     'opt.localhost': '127.0.0.1 — tylko ten komputer',
     'opt.anyhost': '0.0.0.0 — cała sieć lokalna (i rozgłoszeniowe)',
 
-    'note.localhost': 'Nasłuch tylko na localhost. Jeśli logger działa na innym komputerze '
-      + 'albo wysyła rozgłoszeniowo, ustaw adres 0.0.0.0 w zakładce Konfiguracja.',
+    // Dopisek „UDP" nie jest ozdobą: przy włączonym Logger32 na 0.0.0.0 zdanie
+    // bez niego mówiło nieprawdę o całym programie (zgłoszone 2026-10-01).
+    'note.localhost': 'Nasłuch UDP tylko na localhost. Jeśli logger działa na innym '
+      + 'komputerze albo wysyła rozgłoszeniowo, ustaw adres 0.0.0.0 w zakładce Konfiguracja.',
+    'note.localhostTcp': 'Nasłuch TCP tylko na localhost — Logger32 musi działać na tym '
+      + 'samym komputerze. Dla Logger32 na innej maszynie ustaw adres 0.0.0.0.',
+    'note.noListener': 'Żaden nasłuch nie jest włączony — mostek nie przyjmie QSO z żadnego '
+      + 'loggera. Włącz nasłuch UDP albo TCP w zakładce Konfiguracja.',
+    'state.udpOff': 'wyłączony',
+    'label.udpEnabled': 'Odbieraj QSO po UDP (QLog, N1MM+, WSJT-X i podobne)',
+    'note.udpEnabled': 'Wyłącz, jeśli QSO podaje Ci wyłącznie Logger32 po TCP — wtedy port '
+      + 'UDP w ogóle się nie otworzy. Zmiana wymaga restartu.',
     'panel.tcp': 'Logger32 (nasłuch TCP)',
     'label.tcpEnabled': 'Odbieraj QSO z Logger32 po TCP',
     'note.tcp': 'Logger32 nie rozgłasza QSO po UDP jak inne loggery — wysyła je po TCP. '
@@ -664,8 +674,16 @@ const DICT = {
     'opt.localhost': '127.0.0.1 — this computer only',
     'opt.anyhost': '0.0.0.0 — whole local network (incl. broadcast)',
 
-    'note.localhost': 'Listening on localhost only. If the logger runs on another computer '
-      + 'or broadcasts, set the address to 0.0.0.0 in Settings.',
+    'note.localhost': 'UDP listener bound to localhost only. If the logger runs on another '
+      + 'computer or broadcasts, set the address to 0.0.0.0 in Settings.',
+    'note.localhostTcp': 'TCP listener bound to localhost only — Logger32 must run on this '
+      + 'computer. For Logger32 on another machine set the address to 0.0.0.0.',
+    'note.noListener': 'No listener is enabled — the bridge will not accept QSOs from any '
+      + 'logger. Enable the UDP or the TCP listener in Settings.',
+    'state.udpOff': 'disabled',
+    'label.udpEnabled': 'Receive QSOs over UDP (QLog, N1MM+, WSJT-X and similar)',
+    'note.udpEnabled': 'Turn off if Logger32 over TCP is your only source — the UDP port '
+      + 'will then not be opened at all. The change needs a restart.',
     'panel.tcp': 'Logger32 (TCP listener)',
     'label.tcpEnabled': 'Receive QSOs from Logger32 over TCP',
     'note.tcp': 'Logger32 does not broadcast QSOs over UDP like other loggers — it sends '

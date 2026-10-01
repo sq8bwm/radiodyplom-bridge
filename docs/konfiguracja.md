@@ -17,6 +17,7 @@ W `config.json` wstaw PIN API z Managera radiodyplom
 |---|---|
 | `radiodyplom.pin` | PIN/klucz API konta w radiodyplom |
 | `radiodyplom.dryRun` | `true` = nic nie wysyła, tylko loguje (do testów) |
+| `udp.enabled` | `false` wyłącza nasłuch UDP (domyślnie włączony; brak klucza = włączony) |
 | `udp.port` | port nasłuchu (musi zgadzać się z loggerem) |
 | `forward.operations` | które operacje QLog przekazywać (domyślnie `["insert"]`) |
 | `forward.targets[].operator` | pole OPERATOR tej kopii (sprawdzane tylko jako znak; >15 znaków ucinane) |
@@ -154,6 +155,17 @@ jest osobna — QSO czekające w jednej instancji nie zostanie wysłane przez dr
 
 Bez okienka to samo robi zmienna `RD_DATA_DIR` (dane) razem
 z `RD_CONFIG_DIR` (konfiguracja).
+
+### Wyłączenie nasłuchu UDP
+
+`udp.enabled: false` zamyka drogę po UDP: port się w ogóle nie otwiera, a QLog,
+N1MM+ i WSJT-X nie zostaną odebrane. Ma to sens w jednym przypadku — gdy QSO
+podaje wyłącznie **Logger32 po TCP**. Zmiana wymaga restartu; brak klucza znaczy
+„włączony", więc konfiguracje sprzed 0.1.33 działają bez zmian.
+
+Oba nasłuchy wyłączone naraz są dozwolone, ale wtedy mostek nie przyjmie żadnego
+QSO — program mówi o tym w logu i w zakładce Stan, bo cisza wyglądałaby jak
+zepsuty logger.
 
 ### Nasłuch TCP dla Logger32
 

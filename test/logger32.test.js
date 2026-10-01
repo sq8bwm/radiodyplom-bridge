@@ -333,3 +333,39 @@ describe('wpięcie w program', () => {
     assert.match(m[1], /4\.0\.344/);
   });
 });
+
+describe('nasłuch UDP wyłączony — zostaje sam Logger32', () => {
+  const D = readFileSync('src/daemon.js', 'utf8');
+
+  test('gniazdo UDP powstaje tylko przy włączonym nasłuchu', () => {
+    assert.match(D, /const udpWlaczony = cfg\.udp\.enabled !== false;/);
+    assert.match(D, /if \(udpWlaczony\) \{[\s\S]{0,400}await listener\.start\(\);/,
+      'start nasłuchu musi być pod warunkiem');
+  });
+
+  test('obiekt nasłuchu istnieje mimo to — okno czyta z niego liczniki', () => {
+    // Gdyby daemon go nie tworzył, panele Źródła i Statystyki straciłyby dane
+    // także dla QSO przychodzących po TCP, bo liczniki są wspólne.
+    const przedStartem = D.indexOf('const udpWlaczony');
+    assert.ok(D.indexOf('new LoggerListener') < przedStartem,
+      'nasłuch ma powstawać zanim zdecydujemy o starcie gniazda');
+  });
+
+  test('zatrzymanie niewystartowanego nasłuchu nie wywala programu', async () => {
+    // Zamknięcie okna woła stop() bezwarunkowo. Wyjątek w tym miejscu zostawiłby
+    // wiszący proces — przy wyłączonym UDP nie ma ani socketu, ani blokady portu.
+    const { LoggerListener } = await import('../src/udp.js');
+    const { QsoPipeline } = await import('../src/qso-pipeline.js');
+    const l = new LoggerListener({
+      host: '127.0.0.1',
+      port: 12060,
+      pipeline: new QsoPipeline({ operations: ['insert'], pin: 'X', targets: [], onQSO: () => {} }),
+    });
+    assert.doesNotThrow(() => l.stop());
+  });
+
+  test('oba nasłuchy wyłączone — program to mówi, zamiast milczeć', () => {
+    assert.match(D, /if \(!udpWlaczony && !tcpListener\) \{/);
+    assert.match(D, /ŻADEN nasłuch nie jest włączony/);
+  });
+});

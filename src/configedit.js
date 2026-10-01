@@ -33,7 +33,8 @@ const THEMES = ['auto', 'light', 'dark'];
 const SKALE = ['normal', 'duzy', 'bardzo-duzy'];
 
 /** Zmiany wymagające restartu (nie da się ich zastosować na żywo). */
-const RESTART_KEYS = ['udp.host', 'udp.port', 'udp.multicastGroups', 'api.port', 'api.enabled',
+const RESTART_KEYS = ['udp.enabled', 'udp.host', 'udp.port', 'udp.multicastGroups',
+  'api.port', 'api.enabled',
   // Nasłuch TCP powstaje raz, przy starcie — jak każde inne gniazdo.
   'tcp.enabled', 'tcp.host', 'tcp.port',
   'dataDir', 'queue.dir', 'queue.failedDir', 'queue.seenFile',
@@ -45,6 +46,9 @@ const RESTART_KEYS = ['udp.host', 'udp.port', 'udp.multicastGroups', 'api.port',
 export function editableConfig(cfg) {
   return {
     udp: {
+      // Brak klucza = włączony. Konfiguracje sprzed 0.1.33 nie mają tego pola
+      // i mają działać bez zmian.
+      enabled: cfg.udp?.enabled !== false,
       host: cfg.udp.host,
       port: cfg.udp.port,
       multicastGroups: cfg.udp.multicastGroups || [],
@@ -204,9 +208,12 @@ export function applyConfig(daemon, patch) {
 
   // --- wymagające restartu ---
   if (patch.udp) {
+    mark('udp.enabled', cfg.udp.enabled !== false, patch.udp.enabled === undefined
+      ? undefined : patch.udp.enabled !== false);
     mark('udp.host', cfg.udp.host, patch.udp.host);
     mark('udp.port', cfg.udp.port, patch.udp.port);
     mark('udp.multicastGroups', cfg.udp.multicastGroups, patch.udp.multicastGroups);
+    if (patch.udp.enabled !== undefined) cfg.udp.enabled = patch.udp.enabled !== false;
     if (patch.udp.host) cfg.udp.host = String(patch.udp.host);
     if (patch.udp.port) cfg.udp.port = Number(patch.udp.port);
     if (Array.isArray(patch.udp.multicastGroups)) cfg.udp.multicastGroups = patch.udp.multicastGroups;
@@ -322,9 +329,13 @@ export function applyConfig(daemon, patch) {
   daemon.client.dryRun = !!cfg.radiodyplom.dryRun;
   daemon.client.pin = cfg.radiodyplom.pin;
   daemon.client.timeoutMs = cfg.radiodyplom.timeoutMs;
-  daemon.listener.pin = cfg.radiodyplom.pin;
-  daemon.listener.targets = cfg.forward.targets || [];
-  daemon.listener.operations = new Set(cfg.forward.operations || ['insert']);
+  // Wprost na POTOKU, bo to on rozsyła QSO — i jest jeden dla UDP i TCP.
+  // Przez nasłuch UDP szłoby to tylko wtedy, gdy nasłuch w ogóle istnieje,
+  // a od 0.1.33 da się go wyłączyć (wtedy zostaje sam Logger32 po TCP).
+  const potok = daemon.pipeline || daemon.listener;
+  potok.pin = cfg.radiodyplom.pin;
+  potok.targets = cfg.forward.targets || [];
+  potok.operations = new Set(cfg.forward.operations || ['insert']);
   daemon.worker.maxPerMinute = cfg.rateLimit.maxPerMinute;
   daemon.worker.minSpacingMs = cfg.rateLimit.minSpacingMs;
   setLevel(cfg.logLevel || 'info');
@@ -371,6 +382,7 @@ export function writeConfigFile(cfg) {
     ...original,
     udp: {
       ...(original.udp || {}),
+      enabled: cfg.udp.enabled !== false,
       host: cfg.udp.host,
       port: cfg.udp.port,
       multicastGroups: cfg.udp.multicastGroups || [],

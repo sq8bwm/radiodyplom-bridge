@@ -201,6 +201,10 @@ export class StatusApi {
       } : null,
 
       listener: {
+        // Nasłuch UDP można wyłączyć; obiekt istnieje mimo to, bo trzyma
+        // liczniki wspólne dla obu transportów. Okno musi odróżnić „słucham
+        // na tym adresie" od „nie słucham wcale".
+        enabled: this.cfg?.udp?.enabled !== false,
         host: this.listener.host,
         port: this.listener.port,
         multicastGroups: this.listener.multicastGroups,

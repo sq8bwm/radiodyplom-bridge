@@ -73,6 +73,14 @@ dane docierają. Prawdziwe QSO daje wpis „Nowe QSO [Logger32]".
 > viewer* i własny port. Jeśli Logger32 i mostek stoją na tej samej maszynie,
 > serwer Logger32 nasłuchujący na 52005 **zajmie port** mostkowi.
 
+Sprawdzone przez sieć 2026-10-01: Logger32 na Windowsie, mostek na Linuksie
+w tej samej sieci, `tcp.host: 0.0.0.0` — QSO przeszło i zostało zapisane
+w akcji. To ten sam układ, co [mostek na Raspberry Pi](malinka.md).
+
+Komu QSO podaje **wyłącznie Logger32**, ten może wyłączyć nasłuch UDP
+(`udp.enabled: false`, przełącznik w zakładce Konfiguracja) — wtedy port UDP
+w ogóle się nie otworzy.
+
 Logger32 na **innym komputerze**: ustaw w mostku adres `0.0.0.0` i wpisz
 w Logger32 adres maszyny z mostkiem. Uwaga — wtedy port jest otwarty na całą
 sieć lokalną, więc dopisać QSO do Twojej akcji może każdy, kto się do niego

@@ -98,9 +98,19 @@ export async function startDaemon(cfg, opts = {}) {
     pipeline,
   });
 
-  // Socket UDP bindujemy PRZED sprawdzeniem klucza. PING potrafi trwać kilka sekund,
-  // a UDP nie ponawia — QSO wysłane w tym oknie przepadłoby bezpowrotnie.
-  await listener.start();
+  // Nasłuch UDP da się wyłączyć (od 0.1.33): komu QSO podaje wyłącznie Logger32
+  // po TCP, temu otwarty port UDP jest niepotrzebny. Obiekt nasłuchu powstaje
+  // mimo to, bo trzyma liczniki potoku, których szuka okno i API — nie startuje
+  // tylko gniazdo.
+  const udpWlaczony = cfg.udp.enabled !== false;
+  if (udpWlaczony) {
+    // Socket UDP bindujemy PRZED sprawdzeniem klucza. PING potrafi trwać kilka sekund,
+    // a UDP nie ponawia — QSO wysłane w tym oknie przepadłoby bezpowrotnie.
+    await listener.start();
+  } else {
+    log.info('Nasłuch UDP wyłączony w konfiguracji — QLog, N1MM i WSJT-X nie zostaną '
+      + 'odebrane. Włącz go w zakładce Konfiguracja, jeśli ich używasz.');
+  }
 
   // Nasłuch TCP jest DOMYŚLNIE WYŁĄCZONY: potrzebuje go tylko Logger32, a otwarty
   // port bez powodu to niepotrzebna powierzchnia u wszystkich pozostałych.
@@ -113,10 +123,18 @@ export async function startDaemon(cfg, opts = {}) {
     });
     await tcpListener.start();
   }
+
+  // Oba wyłączone znaczy: program nie przyjmie ŻADNEGO QSO. Da się tak ustawić
+  // i czasem ma to sens (sama kolejka do dosłania), ale cisza w takiej sytuacji
+  // wyglądałaby identycznie jak zepsuty logger — a to zupełnie inna sprawa.
+  if (!udpWlaczony && !tcpListener) {
+    log.warn('ŻADEN nasłuch nie jest włączony — mostek nie przyjmie QSO z żadnego '
+      + 'loggera. Włącz nasłuch UDP albo TCP (Logger32) w zakładce Konfiguracja.');
+  }
   worker.start();
 
   const handle = {
-    cfg, store, client, worker, listener, tcpListener,
+    cfg, store, client, worker, listener, tcpListener, pipeline,
     api: null,
     lastPing: null,
     profile: null,

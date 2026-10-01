@@ -226,6 +226,62 @@ Wyłączony domyślnie, bo wymaga adresu opiekuna pakietu, który w rozdawanym
 pakiecie jest publiczny. Instrukcja włączenia jest w `electron-builder.yml`.
 
 
+## Dla pakujących w dystrybucjach
+
+Spisane po zgłoszeniu z 2026-10-01, że ktoś chce zrobić paczkę do **AUR**.
+Wszystko, co trzeba wiedzieć, w jednym miejscu — żeby nie trzeba było tego
+odtwarzać z `electron-builder.yml`.
+
+**Źródło i licencja.** GPL-3.0-or-later, pełny tekst w `LICENSE`. Wydania są
+tagowane `vX.Y.Z`, numer bierze się wyłącznie z `version` w `package.json`.
+Sumy kontrolne paczek binarnych są w `SHA256SUMS` przy każdym wydaniu.
+
+**Nie ma kroku budowania.** To czysty JavaScript (ESM), bez transpilacji,
+bundlowania i generowanych plików. Spakowanie to skopiowanie czterech rzeczy:
+`src/`, `ui/`, `package.json` i `config.example.json`. `config.json` **nigdy**
+nie wchodzi do paczki — zawiera PIN-y.
+
+**Zależności runtime: żadne.** `dependencies` jest puste i to jest decyzja
+projektowa, nie przypadek. Wymagany jest `node >= 18`. Z `devDependencies`
+potrzebny jest wyłącznie `electron` i tylko do okna — `electron-builder`
+i `js-yaml` służą do budowania paczek, których dystrybucja i tak nie użyje.
+
+**Dwa sensowne warianty pakietu:**
+
+| wariant | uruchomienie | czego wymaga |
+|---|---|---|
+| z oknem | `electron ui/main.js` | systemowy `electron` (testowane z 44.x), środowisko graficzne |
+| bez okna | `node src/index.js` | sam `node` — ani Electrona, ani X/Wayland |
+
+Wariant bez okna jest dokładnie tym, co wkładamy do pakietu
+`radiodyplom-bridge-headless`. Jego rozkład plików może posłużyć za wzór
+(`src/tools/build-headless-deb.js`): kod w `/usr/lib/radiodyplom-bridge`,
+skrypt opakowujący w `/usr/bin`, jednostka systemd z `dist/radiodyplom-bridge.service`,
+konfiguracja w `/etc/radiodyplom-bridge`.
+
+**Wpis w menu.** Ikona: `build/icon.png`. Kategorie muszą brzmieć
+`Network;HamRadio;` — sama `HamRadio` jest wg freedesktop kategorią dodatkową
+i wpis bez kategorii głównej nie trafia do żadnej gałęzi menu. `StartupWMClass`
+ma być `radiodyplom-bridge`, bo taki jest `WM_CLASS` okna; inaczej środowisko
+graficzne nie skojarzy działającego okna z pozycją w menu. Pozostałe pola
+(`GenericName`, `Keywords`) są w `electron-builder.yml`.
+
+**Katalogi danych.** Domyślnie XDG (`~/.config` i `~/.local/share`), a
+`RD_CONFIG_DIR` i `RD_DATA_DIR` nadpisują jedno i drugie. Przy budowaniu nic
+nie jest zapisywane poza drzewem źródeł.
+
+**Testy nadają się na `check()`:** `npm test`, 614 testów, **bez dostępu do
+sieci** — sprawdzone w przestrzeni nazw bez interfejsów poza loopbackiem.
+Potrzebują za to loopbacka, bo część z nich naprawdę bindują porty.
+
+> **Jedna pułapka:** dwa testy sprawdzają, że brak prawa zapisu kończy się
+> błędem, a nie cichym pominięciem (katalog `0500`). Root ignoruje bity
+> uprawnień, więc **budowa z prawami roota wywali te dwa testy** — nie jest to
+> usterka kodu. Budować i testować jako zwykły użytkownik.
+
+Pytania i poprawki: pull requesty mile widziane, patrz niżej.
+
+
 ## Praca nad kodem z zewnątrz
 
 Repozytorium jest publiczne, więc **pull requesty są mile widziane** — zwłaszcza

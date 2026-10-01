@@ -232,6 +232,7 @@ Node.js ≥ 18, zero zależności runtime.
 | [Interfejs w sieci](docs/interfejs-w-sieci.md) | okno z telefonu: hasło, HTTPS, tryb tylko do odczytu |
 | [Raspberry Pi / bez okna](docs/malinka.md) | mostek jako usługa na małym komputerze |
 | [Rozwój](docs/rozwoj.md) | wymagania, testy, budowanie paczek |
+| [Dla pakujących w dystrybucjach](docs/rozwoj.md#dla-pakujących-w-dystrybucjach) | licencja, brak kroku budowania, zero zależności, wpis w menu, testy w `check()` |
 
 **Zgłaszasz błąd?** Nie wysyłaj `config.json` — jest tam jawny PIN. W oknie,
 zakładka *O programie*, jest przycisk **Zapisz zgłoszenie do wysłania**: ten

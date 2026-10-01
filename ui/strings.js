@@ -193,7 +193,7 @@ const DICT = {
     'secondInstance.keep': 'Pracuj dalej na działającej',
     'secondInstance.create': 'Załóż katalog i uruchom obok',
     'secondInstance.createdTitle': 'Katalog na dane utworzony',
-    'secondInstance.ports': 'Ustawione porty: UDP {udp} (logger), interfejs {api}.',
+    'secondInstance.ports': 'Ustawione porty: UDP {udp} (logger), interfejs {api}, TCP {tcp} (Logger32).',
     'secondInstance.createdHint': 'Ta instancja ma własną konfigurację, więc jest '
       + 'w trybie próbnym i bez PIN-u — wpisz go w jej zakładce Konfiguracja. '
       + 'Logger, który ma do niej trafiać, musi wysyłać na jej port UDP.',
@@ -584,7 +584,7 @@ const DICT = {
     'secondInstance.keep': 'Keep the running one',
     'secondInstance.create': 'Create the directory and run alongside',
     'secondInstance.createdTitle': 'Data directory created',
-    'secondInstance.ports': 'Ports set: UDP {udp} (logger), interface {api}.',
+    'secondInstance.ports': 'Ports set: UDP {udp} (logger), interface {api}, TCP {tcp} (Logger32).',
     'secondInstance.createdHint': 'This instance has its own configuration, so it '
       + 'starts in dry-run mode with no PIN — enter it on its Configuration tab. '
       + 'The logger that should reach it must send to its UDP port.',

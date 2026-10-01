@@ -17,6 +17,7 @@ import { join } from 'node:path';
 import {
   rodzajInstalacji, katalogDanychObokPliku, KATALOG_PRZENOSNY,
   wolnaParaPortow, zalozKatalogDanych, dostosujPortyPrzyZasiewie,
+  wolnyPortLogger32, DOMYSLNY_PORT_TCP,
 } from '../src/instalacja.js';
 import { examplePath, DOMYSLNY_PORT_UDP } from '../src/config.js';
 
@@ -430,10 +431,12 @@ describe('porty przy pierwszym uruchomieniu', () => {
   };
   after(() => tymczasowe.forEach((d) => rmSync(d, { recursive: true, force: true })));
 
-  const zasiej = (porty) => {
+  const zasiej = (porty, zmiany = {}) => {
     const dir = kosz();
     const cfg = JSON.parse(readFileSync(examplePath(), 'utf8'));
     if (porty) { cfg.udp.port = porty.udp; cfg.api.port = porty.api; }
+    if (zmiany.udpWylaczony) cfg.udp.enabled = false;
+    if (zmiany.tcp) cfg.tcp = { ...(cfg.tcp || {}), ...zmiany.tcp };
     const plik = join(dir, 'config.json');
     writeFileSync(plik, JSON.stringify(cfg, null, 2));
     return plik;
@@ -507,5 +510,152 @@ describe('porty przy pierwszym uruchomieniu', () => {
     assert.match(R, /inny\.hidden = !udpWlaczony \|\| s\.listener\.domyslnyPort !== false/);
     const ile = [...S.matchAll(/'note\.otherPort':/g)].length;
     assert.equal(ile, 2, `note.otherPort ma ${ile} tłumaczeń, a ma mieć 2 (pl i en)`);
+  });
+});
+
+describe('port TCP dla Logger32 w zasiewie', () => {
+  // Pytanie z 2026-10-01: „jak to się ma do TCP i do wyłączonego UDP?".
+  // Odpowiedź przed tą zmianą: nijak — słowo „tcp" nie padało w instalacja.js
+  // ani razu. A bind TCP jest wyłączny, więc druga instancja z włączonym
+  // Logger32 na zajętym porcie NIE WSTAWAŁA WCALE: wyjątek ze startu nasłuchu
+  // przerywa start całego rdzenia, razem z UDP.
+  const tymczasowe = [];
+  const kosz = () => {
+    const d = mkdtempSync(join(tmpdir(), 'rd-tcp-'));
+    tymczasowe.push(d);
+    return d;
+  };
+  after(() => tymczasowe.forEach((d) => rmSync(d, { recursive: true, force: true })));
+
+  const zasiejZ = (zmiany) => {
+    const cfg = JSON.parse(readFileSync(examplePath(), 'utf8'));
+    Object.assign(cfg, zmiany);
+    const plik = join(kosz(), 'config.json');
+    writeFileSync(plik, JSON.stringify(cfg, null, 2));
+    return plik;
+  };
+
+  /** Zajmuje port TCP tak, jak zajmuje go nasz nasłuch Logger32. */
+  const zajmijTcp = async (port) => {
+    const { createServer } = await import('node:net');
+    const s = createServer();
+    await new Promise((r) => s.listen({ host: '127.0.0.1', port }, r));
+    return () => new Promise((r) => s.close(r));
+  };
+
+  test('wolna para portów podaje też port dla Logger32', async () => {
+    const p = await wolnaParaPortow();
+    assert.ok(p.tcp, 'brak portu TCP w wyniku');
+    assert.ok(p.tcp > DOMYSLNY_PORT_TCP,
+      `port TCP ma być poza domyślnym ${DOMYSLNY_PORT_TCP}, jest ${p.tcp}`);
+  });
+
+  test('zajęty port TCP jest pomijany', async () => {
+    const zwolnij = await zajmijTcp(DOMYSLNY_PORT_TCP + 10);
+    try {
+      const p = await wolnyPortLogger32();
+      assert.notEqual(p, DOMYSLNY_PORT_TCP + 10);
+    } finally {
+      await zwolnij();
+    }
+  });
+
+  // Własne numery portów, a NIE domyślne: na maszynie deweloperskiej mostek
+  // zwykle działa i trzyma 12060, 12061 oraz 52005 — test, który je zajmuje,
+  // padał z EADDRINUSE zamiast sprawdzić cokolwiek (złapane 2026-10-01).
+  const PORT_TCP = 52105;
+  const PORT_UDP = 12160;
+  const PORT_API = 12161;
+
+  test('zajęty port TCP przy WŁĄCZONYM nasłuchu — konfiguracja dostaje inny', async () => {
+    const zwolnij = await zajmijTcp(PORT_TCP);
+    try {
+      const plik = zasiejZ({
+        udp: { enabled: true, host: '127.0.0.1', port: PORT_UDP, multicastGroups: [] },
+        api: { enabled: true, port: PORT_API },
+        tcp: { enabled: true, host: '127.0.0.1', port: PORT_TCP },
+      });
+      const porty = await dostosujPortyPrzyZasiewie(plik);
+
+      assert.ok(porty, 'port TCP miał zostać przestawiony');
+      assert.ok(porty.zmienione.includes('tcp'));
+      assert.notEqual(porty.tcp, PORT_TCP);
+      const cfg = JSON.parse(readFileSync(plik, 'utf8'));
+      assert.equal(cfg.tcp.port, porty.tcp, 'nowy port musi trafić do pliku');
+      // Porty UDP i interfejsu zostają — zmieniamy tylko to, co zajęte.
+      assert.equal(cfg.udp.port, PORT_UDP);
+      assert.equal(porty.zmienione.includes('udp'), false);
+    } finally {
+      await zwolnij();
+    }
+  });
+
+  test('zajęty port TCP przy WYŁĄCZONYM nasłuchu TCP nie zmienia niczego', async () => {
+    // Szablon ma tcp.enabled: false, więc to jest przypadek domyślny.
+    const zwolnij = await zajmijTcp(PORT_TCP);
+    try {
+      const plik = zasiejZ({
+        udp: { enabled: true, host: '127.0.0.1', port: PORT_UDP, multicastGroups: [] },
+        api: { enabled: true, port: PORT_API },
+        tcp: { enabled: false, host: '127.0.0.1', port: PORT_TCP },
+      });
+      const przed = readFileSync(plik, 'utf8');
+      assert.equal(await dostosujPortyPrzyZasiewie(plik), null);
+      assert.equal(readFileSync(plik, 'utf8'), przed, 'plik miał zostać nietknięty');
+    } finally {
+      await zwolnij();
+    }
+  });
+
+  test('wyłączony nasłuch UDP: zajęty port UDP NIE przestawia portów', async () => {
+    // Port, którego nie otworzymy, nie jest powodem do zmiany konfiguracji.
+    const { createSocket } = await import('node:dgram');
+    const zajete = createSocket({ type: 'udp4', reuseAddr: true });
+    await new Promise((r) => zajete.bind({ address: '127.0.0.1', port: PORT_UDP }, r));
+    try {
+      const plik = zasiejZ({
+        udp: { enabled: false, host: '127.0.0.1', port: PORT_UDP, multicastGroups: [] },
+        api: { enabled: true, port: PORT_API },
+      });
+      const przed = readFileSync(plik, 'utf8');
+      assert.equal(await dostosujPortyPrzyZasiewie(plik), null);
+      assert.equal(readFileSync(plik, 'utf8'), przed);
+    } finally {
+      zajete.close();
+    }
+  });
+
+  test('włączony nasłuch UDP: ten sam zajęty port JEDNAK przestawia porty', async () => {
+    // Druga strona tej samej monety — inaczej test wyżej przechodziłby także
+    // wtedy, gdyby zasiew w ogóle przestał mierzyć port UDP.
+    const { createSocket } = await import('node:dgram');
+    const zajete = createSocket({ type: 'udp4', reuseAddr: true });
+    await new Promise((r) => zajete.bind({ address: '127.0.0.1', port: PORT_UDP }, r));
+    try {
+      const plik = zasiejZ({
+        udp: { enabled: true, host: '127.0.0.1', port: PORT_UDP, multicastGroups: [] },
+        api: { enabled: true, port: PORT_API },
+      });
+      const porty = await dostosujPortyPrzyZasiewie(plik);
+      assert.ok(porty, 'zajęty port UDP miał zostać przestawiony');
+      assert.ok(porty.zmienione.includes('udp'));
+      assert.notEqual(porty.udp, PORT_UDP);
+    } finally {
+      zajete.close();
+    }
+  });
+
+  test('katalog instancji portable dostaje własny port TCP', async () => {
+    // Włączenie Logger32 w drugiej instancji to jedno kliknięcie — port ma być
+    // gotowy, zanim ktoś to zrobi.
+    const obok = kosz();
+    const plik = join(obok, 'portable.exe');
+    writeFileSync(plik, 'x');
+    const w = await zalozKatalogDanych({ plik, przykladowy: examplePath() });
+    const cfg = JSON.parse(readFileSync(join(w.katalog, 'config.json'), 'utf8'));
+    assert.equal(cfg.tcp.port, w.porty.tcp);
+    assert.notEqual(cfg.tcp.port, DOMYSLNY_PORT_TCP);
+    // Włączenia nie robimy za użytkownika — to osobna decyzja.
+    assert.equal(cfg.tcp.enabled, false);
   });
 });

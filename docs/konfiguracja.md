@@ -125,6 +125,12 @@ jedna z dwóch blokad opisanych niżej:
 2. w `radiodyplom-dane/config.json` ustaw inne porty, na przykład
    `udp.port: 12070` i `api.port: 12071`.
 
+Program robi to sam, gdy katalog zakłada za ciebie: dobiera wolną parę portów
+i **wolny port TCP dla Logger32** (52015, 52025…), nawet jeśli nasłuch TCP jest
+wyłączony. Powód jest praktyczny: włączenie go to jedno kliknięcie, a dwie
+instancje na porcie 52005 znaczą, że **druga nie wstanie wcale** — bind TCP jest
+wyłączny, a błąd nasłuchu przerywa start całego rdzenia, razem z UDP.
+
 Sprawdzone na uruchomionym programie: wersja instalowana na `12060/12061`
 i portable na `12070/12071` pracują jednocześnie, każda z własną kolejką.
 
@@ -157,6 +163,9 @@ Bez okienka to samo robi zmienna `RD_DATA_DIR` (dane) razem
 z `RD_CONFIG_DIR` (konfiguracja).
 
 ### Wyłączenie nasłuchu UDP
+
+Przy wyłączonym nasłuchu UDP pierwsze uruchomienie **nie sprawdza portu UDP** —
+portu, którego nikt nie otworzy, nie ma powodu uznawać za zajęty.
 
 `udp.enabled: false` zamyka drogę po UDP: port się w ogóle nie otwiera, a QLog,
 N1MM+ i WSJT-X nie zostaną odebrane. Ma to sens w jednym przypadku — gdy QSO

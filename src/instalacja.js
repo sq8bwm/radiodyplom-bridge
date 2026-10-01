@@ -113,10 +113,13 @@ export function katalogDanychObokPliku({ env = process.env } = {}) {
 // ---------- zakładanie katalogu na życzenie ----------
 
 /** Czy port TCP jest wolny — próbą zajęcia, bo tylko to jest rozstrzygające. */
-const wolnyTcp = (port) => new Promise((gotowe) => {
+/** Domyślny port nasłuchu TCP — ten sam, co w szablonie konfiguracji i w Logger32. */
+export const DOMYSLNY_PORT_TCP = 52005;
+
+const wolnyTcp = (port, host = '127.0.0.1') => new Promise((gotowe) => {
   const s = createServer();
   s.once('error', () => gotowe(false));
-  s.listen({ host: '127.0.0.1', port }, () => s.close(() => gotowe(true)));
+  s.listen({ host, port }, () => s.close(() => gotowe(true)));
 });
 
 /**
@@ -144,7 +147,33 @@ const wolnyUdp = (port, host = '127.0.0.1') => new Promise((gotowe) => {
 export async function wolnaParaPortow({ od = 12070, doKtorego = 12200 } = {}) {
   for (let p = od; p <= doKtorego; p += 10) {
     // eslint-disable-next-line no-await-in-loop -- próby MUSZĄ być po kolei
-    if (await wolnyUdp(p) && await wolnyTcp(p + 1)) return { udp: p, api: p + 1 };
+    if (await wolnyUdp(p) && await wolnyTcp(p + 1)) {
+      return { udp: p, api: p + 1, tcp: await wolnyPortLogger32() };
+    }
+  }
+  return null;
+}
+
+/**
+ * Wolny port nasłuchu TCP dla Logger32.
+ *
+ * Osobna pula i osobny skok, bo to zupełnie inny numer niż porty UDP
+ * i interfejsu — Logger32 ma domyślnie 52005 i tyle samo ma szablon
+ * konfiguracji. Druga instancja dostaje 52015, trzecia 52025 i tak dalej,
+ * żeby numer dało się zapamiętać i przepisać do Logger32.
+ *
+ * Dlaczego w ogóle: bind TCP jest wyłączny, więc dwie instancje z włączonym
+ * Logger32 na tym samym porcie znaczą, że DRUGA NIE WSTANIE WCALE — wyjątek
+ * ze startu nasłuchu przerywa start całego rdzenia, razem z UDP.
+ *
+ * @returns {Promise<number|null>} null = w całej puli nie ma wolnego
+ */
+export async function wolnyPortLogger32({
+  od = DOMYSLNY_PORT_TCP + 10, doKtorego = DOMYSLNY_PORT_TCP + 200, host = '127.0.0.1',
+} = {}) {
+  for (let p = od; p <= doKtorego; p += 10) {
+    // eslint-disable-next-line no-await-in-loop -- próby MUSZĄ być po kolei
+    if (await wolnyTcp(p, host)) return p;
   }
   return null;
 }
@@ -175,6 +204,11 @@ export async function zalozKatalogDanych({ plik, przykladowy }) {
   if (porty) {
     cfg.udp.port = porty.udp;
     cfg.api.port = porty.api;
+    // Port TCP wpisujemy nawet przy wyłączonym nasłuchu Logger32. Włączenie go
+    // jest jednym kliknięciem, a wtedy domyślne 52005 byłoby już zajęte przez
+    // tamtą instancję — i ta NIE WSTAŁABY wcale, bo błąd nasłuchu przerywa
+    // start całego rdzenia.
+    if (porty.tcp) cfg.tcp = { ...(cfg.tcp || {}), port: porty.tcp };
   }
   writeFileSync(plikCfg, `${JSON.stringify(cfg, null, 2)}\n`);
   return { katalog, porty, byloJuz: false };
@@ -205,13 +239,40 @@ export async function dostosujPortyPrzyZasiewie(plikCfg) {
   const host = cfg.udp?.host || '127.0.0.1';
   const udp = Number(cfg.udp?.port) || 12060;
   const api = Number(cfg.api?.port) || udp + 1;
-  if (await wolnyUdp(udp, host) && await wolnyTcp(api)) return null;
+  // Wyłączonego nasłuchu UDP nie ma sensu mierzyć: portu i tak nie otworzymy,
+  // a zajęte 12060 przestawiałoby parę portów bez żadnego powodu.
+  const udpWlaczony = cfg.udp?.enabled !== false;
+  const paraWolna = (!udpWlaczony || await wolnyUdp(udp, host)) && await wolnyTcp(api);
 
-  const porty = await wolnaParaPortow({ od: udp + 10 });
-  if (!porty) return null;
+  let porty = null;
+  if (!paraWolna) {
+    porty = await wolnaParaPortow({ od: udp + 10 });
+    if (porty) {
+      cfg.udp.port = porty.udp;
+      cfg.api.port = porty.api;
+    }
+  }
 
-  cfg.udp.port = porty.udp;
-  cfg.api.port = porty.api;
+  // Nasłuch Logger32 ma własny port i własną pulę. Sprawdzamy go TYLKO, gdy
+  // jest włączony — wyłączony niczego nie zajmie, a szablon ma go wyłączonego.
+  let tcp = null;
+  if (cfg.tcp?.enabled) {
+    const portTcp = Number(cfg.tcp.port) || DOMYSLNY_PORT_TCP;
+    const hostTcp = cfg.tcp.host || '127.0.0.1';
+    if (!await wolnyTcp(portTcp, hostTcp)) {
+      tcp = await wolnyPortLogger32({ od: portTcp + 10, host: hostTcp });
+      if (tcp) cfg.tcp.port = tcp;
+    }
+  }
+
+  if (!porty && !tcp) return null;
   writeFileSync(plikCfg, `${JSON.stringify(cfg, null, 2)}\n`);
-  return porty;
+  return {
+    udp: cfg.udp.port,
+    api: cfg.api.port,
+    tcp: cfg.tcp?.enabled ? cfg.tcp.port : null,
+    // Co faktycznie przestawiliśmy — okno ma powiedzieć o tym, co się zmieniło,
+    // a nie wyliczyć wszystkie porty, z których większość została ta sama.
+    zmienione: [...(porty ? ['udp', 'api'] : []), ...(tcp ? ['tcp'] : [])],
+  };
 }

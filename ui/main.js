@@ -126,7 +126,8 @@ async function zapytajODrugaInstancje({ skad, ja, on }) {
     });
     log.info(`Druga instancja: katalog ${katalog}`
       + `${byloJuz ? ' (konfiguracja już była — nie ruszam)' : ''}`
-      + `${porty ? `, porty UDP ${porty.udp} i API ${porty.api}` : ''}`);
+      + `${porty ? `, porty UDP ${porty.udp} i API ${porty.api}` : ''}`
+      + `${porty?.tcp ? `, TCP dla Logger32 ${porty.tcp}` : ''}`);
     // Druga instancja już się zamknęła (nie dostała blokady), więc trzeba ją
     // uruchomić na nowo — tym razem trafi na własny katalog danych.
     spawn(skad, [], { detached: true, stdio: 'ignore' }).unref();
@@ -136,7 +137,8 @@ async function zapytajODrugaInstancje({ skad, ja, on }) {
       message: t('secondInstance.createdTitle'),
       detail: `${katalog}\n\n`
         + (porty
-          ? `${t('secondInstance.ports').replace('{udp}', porty.udp).replace('{api}', porty.api)}\n\n`
+          ? `${t('secondInstance.ports').replace('{udp}', porty.udp).replace('{api}', porty.api)
+            .replace('{tcp}', porty.tcp ?? '—')}\n\n`
           : '')
         + t('secondInstance.createdHint'),
       buttons: [t('secondInstance.ok')],
@@ -318,8 +320,17 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
   if (ensureConfig()) {
     const porty = await dostosujPortyPrzyZasiewie(configPath());
     if (porty) {
-      log.warn(`Domyślne porty są zajęte — ta instancja dostała UDP ${porty.udp} `
-        + `i interfejs ${porty.api}. Logger musi wysyłać na ${porty.udp}.`);
+      // Mówimy o tym, co NAPRAWDĘ przestawiliśmy. Wyliczanie wszystkich portów
+      // kazałoby zgadywać, który z nich jest nowy — a przepisać do loggera
+      // trzeba właśnie ten.
+      if (porty.zmienione.includes('udp')) {
+        log.warn(`Domyślne porty są zajęte — ta instancja dostała UDP ${porty.udp} `
+          + `i interfejs ${porty.api}. Logger musi wysyłać na ${porty.udp}.`);
+      }
+      if (porty.zmienione.includes('tcp')) {
+        log.warn(`Port TCP dla Logger32 był zajęty — ta instancja dostała ${porty.tcp}. `
+          + 'Wpisz ten sam numer w Logger32 (Config w oknie TCP client event viewer).');
+      }
     }
   }
   const cfg = loadConfig({ seed: true });

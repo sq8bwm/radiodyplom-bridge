@@ -792,3 +792,15 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   `127.0.0.1` i TCP na `0.0.0.0` okno twierdziło, że nic nie wychodzi poza ten
   komputer, choć Logger32 logował przez sieć. Każdy kanał ma teraz własną notę,
   zależną od własnego adresu.
+- **Zasiew portów obejmuje też TCP; wyłączony UDP nie jest mierzony** (0.1.33,
+  pytanie z 2026-10-01: „jak to się ma do TCP i do wyłączonego UDP?"). Przed tą
+  zmianą słowo „tcp" nie padało w `src/instalacja.js` ani razu: port 52005
+  zostawał stały, więc druga instancja z włączonym Logger32 trafiała na
+  `EADDRINUSE` — a ponieważ wyjątek ze startu nasłuchu przerywa start CAŁEGO
+  rdzenia, nie działało wtedy także UDP i okno pokazywało „Mostek nie
+  wystartował". Teraz instancja portable dostaje własny port TCP (52015, 52025…)
+  nawet przy wyłączonym nasłuchu, bo włączenie go jest jednym kliknięciem.
+  Przy `udp.enabled: false` zasiew pomija sondowanie portu UDP. Świadomie NIE
+  łagodzimy awarii nasłuchu TCP do ostrzeżenia: dla kogoś z Logger32 to jedyne
+  źródło QSO, a program, który „działa" i po cichu nie przyjmuje łączności,
+  byłby gorszy od takiego, który wprost mówi, że nie wstał.

@@ -68,6 +68,13 @@ Sprawdzenie: przycisk **„Test the connection"** w event viewerze wysyła tekst
 „nie rozpoznaję jako ADIF". Wbrew pozorom to **dobra wiadomość**: znaczy, że
 dane docierają. Prawdziwe QSO daje wpis „Nowe QSO [Logger32]".
 
+**Dwie instancje mostka a port 52005.** Bind TCP jest wyłączny, więc druga
+instancja z włączonym Logger32 na tym samym porcie nie wstanie — i to nie
+„częściowo": błąd nasłuchu przerywa start całego rdzenia, razem z UDP, a okno
+pokazuje baner „Mostek nie wystartował". Dlatego katalog zakładany dla instancji
+portable dostaje od razu własny port TCP (52015, 52025…). Przy ręcznym ustawianiu
+drugiej instancji zmień `tcp.port` sam i wpisz ten sam numer w Logger32.
+
 > **Nie pomyl z „parallel logging"** (§32.4 instrukcji Logger32). To osobna
 > funkcja, do spinania dwóch Logger32 między sobą; ma własny *TCP server event
 > viewer* i własny port. Jeśli Logger32 i mostek stoją na tej samej maszynie,

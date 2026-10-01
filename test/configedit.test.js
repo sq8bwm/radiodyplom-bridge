@@ -466,3 +466,42 @@ describe('zapis stosuje się na ŻYWO, nie dopiero po restarcie', () => {
     assert.equal(wyslane[0].payload.api_key, 'CCCC-3333');
   });
 });
+
+describe('nasłuch UDP da się wyłączyć', () => {
+  // Zgłoszone 2026-10-01: „jeśli ktoś ma Logger32, to może nie potrzebować UDP".
+  test('brak klucza znaczy WŁĄCZONY — stare konfiguracje działają bez zmian', () => {
+    const view = mod.editableConfig(cfgMod.loadConfig());
+    assert.equal(view.udp.enabled, true);
+  });
+
+  test('wyłączenie żąda restartu, bo gniazdo powstaje przy starcie', () => {
+    const daemon = fakeDaemon(cfgMod.loadConfig());
+    const wynik = mod.applyConfig(daemon, { udp: { enabled: false } });
+
+    assert.ok(wynik.restartRequired.includes('udp.enabled'),
+      `interfejs nie dowie się o restarcie: ${JSON.stringify(wynik.restartRequired)}`);
+    assert.equal(daemon.cfg.udp.enabled, false);
+    // I to samo w pliku — inaczej po restarcie nasłuch wróciłby sam.
+    assert.equal(saved().udp.enabled, false);
+  });
+
+  test('ponowne włączenie też żąda restartu i wraca do pliku', () => {
+    const daemon = fakeDaemon(cfgMod.loadConfig());
+    mod.applyConfig(daemon, { udp: { enabled: false } });
+    const wynik = mod.applyConfig(daemon, { udp: { enabled: true } });
+
+    assert.ok(wynik.restartRequired.includes('udp.enabled'));
+    assert.equal(saved().udp.enabled, true);
+  });
+
+  test('zapis bez pola udp.enabled niczego nie wyłącza', () => {
+    // Starsze okno albo skrypt wołający /api/config nie wie o tym polu.
+    // Po cichu wyłączony nasłuch byłby najgorszym możliwym skutkiem zapisu.
+    const daemon = fakeDaemon(cfgMod.loadConfig());
+    const wynik = mod.applyConfig(daemon, { udp: { port: 12062 } });
+
+    assert.equal(daemon.cfg.udp.enabled, undefined);
+    assert.equal(saved().udp.enabled, true);
+    assert.equal(wynik.restartRequired.includes('udp.enabled'), false);
+  });
+});

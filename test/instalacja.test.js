@@ -502,7 +502,9 @@ describe('porty przy pierwszym uruchomieniu', () => {
     const S = readFileSync(new URL('../ui/strings.js', import.meta.url), 'utf8');
     const H = readFileSync(new URL('../src/httpapi.js', import.meta.url), 'utf8');
     assert.match(H, /domyslnyPort: this\.listener\.port === DOMYSLNY_PORT_UDP/);
-    assert.match(R, /inny\.hidden = s\.listener\.domyslnyPort !== false/);
+    // Od 0.1.33 nota ma też milczeć przy wyłączonym nasłuchu UDP — port, na
+    // którym nikt nie słucha, nie jest informacją, tylko hałasem.
+    assert.match(R, /inny\.hidden = !udpWlaczony \|\| s\.listener\.domyslnyPort !== false/);
     const ile = [...S.matchAll(/'note\.otherPort':/g)].length;
     assert.equal(ile, 2, `note.otherPort ma ${ile} tłumaczeń, a ma mieć 2 (pl i en)`);
   });

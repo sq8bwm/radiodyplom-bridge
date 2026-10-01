@@ -371,7 +371,13 @@ function renderStatus(s) {
 
   const mc = s.listener.multicastGroups?.length
     ? ` · multicast: ${s.listener.multicastGroups.join(', ')}` : '';
-  $('listenInfo').innerHTML = `<code>udp://${esc(s.listener.host)}:${s.listener.port}</code>${esc(mc)}`;
+  // Nasłuch UDP da się wyłączyć — wtedy adres zostaje widoczny (żeby było
+  // wiadomo, co się włączy po powrocie), ale wygaszony i podpisany.
+  const udpWlaczony = s.listener.enabled !== false;
+  $('listenInfo').innerHTML = udpWlaczony
+    ? `<code>udp://${esc(s.listener.host)}:${s.listener.port}</code>${esc(mc)}`
+    : `<code class="muted">udp://${esc(s.listener.host)}:${s.listener.port}</code>`
+      + ` <span class="muted">· ${esc(t('state.udpOff'))}</span>`;
   // Drugi kanał pokazujemy tylko, gdy ktoś go włączył — u większości go nie ma.
   const tcp = $('tcpInfo');
   tcp.hidden = !s.tcp;
@@ -379,12 +385,16 @@ function renderStatus(s) {
     tcp.innerHTML = `<code>tcp://${esc(s.tcp.host)}:${s.tcp.port}</code>`
       + ` <span class="muted">${esc(t('state.tcpFor'))}</span>`;
   }
-  $('localNote').hidden = !s.listener.localOnly;
+  // Każda nota mówi o SWOIM kanale. Jedno zdanie o „nasłuchu" było nieprawdą,
+  // gdy UDP stało na localhoście, a TCP na 0.0.0.0 (zgłoszone 2026-10-01).
+  $('localNote').hidden = !udpWlaczony || !s.listener.localOnly;
+  $('localNoteTcp').hidden = !s.tcp?.localOnly;
+  $('noListenNote').hidden = udpWlaczony || !!s.tcp;
   // Port inny niż z dokumentacji: przy pierwszym uruchomieniu program mógł go
   // zmienić, bo domyślny był zajęty. Bez tej informacji człowiek ustawia
   // logger według README i nic nie dochodzi.
   const inny = $('portNote');
-  inny.hidden = s.listener.domyslnyPort !== false;
+  inny.hidden = !udpWlaczony || s.listener.domyslnyPort !== false;
   if (!inny.hidden) inny.textContent = t('note.otherPort').replace('{n}', s.listener.port);
 
   // JAKIM ZNAKIEM poleci QSO. Ta informacja była wyłącznie w Konfiguracji,
@@ -842,6 +852,7 @@ async function loadConfig() {
   // Wczytanie z dysku = formularz zgadza się ze stanem zapisanym.
   konfigCzysta();
   $('fMulticast').value = (cfg.udp.multicastGroups || []).join(', ');
+  $('fUdpEnabled').checked = cfg.udp?.enabled !== false;
   $('fTcpEnabled').checked = cfg.tcp?.enabled === true;
   $('fTcpHost').value = cfg.tcp?.host || '127.0.0.1';
   $('fTcpPort').value = cfg.tcp?.port ?? 52005;
@@ -1352,10 +1363,11 @@ async function saveFromForm() {
       ...(haslo ? { auth: { password: haslo } } : {}),
     },
     udp: {
+      enabled: $('fUdpEnabled').checked,
       host: $('fHost').value,
       port: Number($('fPort').value),
       multicastGroups: $('fMulticast').value.split(',').map((x) => x.trim()).filter(Boolean),
-      },
+    },
       tcp: {
         enabled: $('fTcpEnabled').checked,
         host: $('fTcpHost').value,

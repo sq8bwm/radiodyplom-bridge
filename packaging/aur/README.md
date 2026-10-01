@@ -16,15 +16,11 @@ w odróżnieniu od `radiodyplom-bridge-bin`, która pakuje gotowy AppImage.
 Obie mają sens i mogą istnieć obok siebie w AUR; `conflicts` pilnuje tylko tego,
 żeby nie instalować ich jednocześnie (obie dają `/usr/bin/radiodyplom-bridge`).
 
-## Zanim to trafi do AUR: wymagane wydanie 0.1.34 lub nowsze
+## Wymagane wydanie 0.1.34 lub nowsze
 
-`PKGBUILD` ma na razie `pkgver=0.1.33`, ale **tej wersji nie wolno opublikować**:
-archiwum z tagu `v0.1.33` zawiera jeszcze twardy `import` modułu `js-yaml`
-w `test/desktop-entry.test.js`, więc `check()` pada, a z nim cała budowa.
-Poprawka (miękki import i pomijanie tych sześciu testów) weszła po tym wydaniu.
-
-Przy publikacji: `pkgver` na pierwsze wydanie zawierające poprawkę i nowa suma
-archiwum — przepis niżej.
+W archiwum z tagu `v0.1.33` test `desktop-entry` importował jeszcze twardo moduł
+`js-yaml`, więc `check()` padał i przerywał całą budowę. **0.1.34 jest pierwszym
+wydaniem, z którego ta paczka się zbuduje** — i na nie wskazuje `PKGBUILD`.
 
 ## Budowanie i test
 

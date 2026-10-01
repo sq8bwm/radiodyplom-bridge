@@ -6,7 +6,7 @@
 # z pacmanem, paczka waży setki kilobajtów zamiast 120 MB i nie potrzebuje
 # --no-sandbox.
 pkgname=radiodyplom-bridge
-pkgver=0.1.33
+pkgver=0.1.34
 pkgrel=1
 pkgdesc='Mostek QSO: przekazuje łączności z loggera krótkofalarskiego na radiodyplom.pl'
 arch=('any')
@@ -25,7 +25,7 @@ source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz
         'radiodyplom-bridge.desktop'
         'radiodyplom-bridge.sysusers'
         'radiodyplom-bridge.tmpfiles')
-sha256sums=('0f4ffabedb6b176e8e92d3d8707a2c50240c66e4605b0a22922e61fe18272c57'
+sha256sums=('2ffbe6c4eaa2feaa3802dab5d159db2f6e5ac4121df51bc4659cbd37cf321f5f'
             'SKIP'
             'SKIP'
             'SKIP'

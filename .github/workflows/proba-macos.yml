@@ -61,12 +61,24 @@ jobs:
           echo "--- a co robi openssl verify (to był powód obejścia) ---"
           openssl verify -CAfile /tmp/proba.pem /tmp/proba.pem || echo "verify ODRZUCIŁ — zgodnie z tym, co pisał Kamil"
 
-      - name: Pytanie 2 — czy testy przechodzą na macOS
-        run: npm test
-        continue-on-error: true
-
-      - name: Pytanie 1 — czy zbudują się paczki dla OBU architektur
-        run: npx electron-builder --mac --publish never
+      - name: Pytanie 3b — to samo SYSTEMOWYM openssl (LibreSSL), czyli jak u Kamila
+        run: |
+          echo "systemowy:  $(/usr/bin/openssl version)"
+          echo "--- SAN-y wg LibreSSL ---"
+          /usr/bin/openssl x509 -in /tmp/proba.pem -noout -text | grep -A2 -i "Subject Alternative Name"
+          echo "--- czy nasz wzorzec pasuje ---"
+          if /usr/bin/openssl x509 -in /tmp/proba.pem -noout -text | grep -q "IP Address:192.168.8.50"; then
+            echo "WNIOSEK: asercja o adresie IP DZIAŁA też na LibreSSL — nie trzeba jej było usuwać"
+          else
+            echo "WNIOSEK: LibreSSL wypisuje to inaczej — trzeba innego wzorca"
+          fi
+          echo "--- a verify? ---"
+          /usr/bin/openssl verify -CAfile /tmp/proba.pem /tmp/proba.pem \
+            && echo "WNIOSEK: verify przechodzi, obejście niepotrzebne" \
+            || echo "WNIOSEK: verify odrzuca — obejście Kamila UZASADNIONE"
+          echo "--- czy testy padają, gdy openssl to LibreSSL ---"
+          mkdir -p /tmp/bin && ln -sf /usr/bin/openssl /tmp/bin/openssl
+          PATH=/tmp/bin:$PATH node --test test/certyfikat.test.js 2>&1 | tail -12
 
       - name: Co powstało
         run: |

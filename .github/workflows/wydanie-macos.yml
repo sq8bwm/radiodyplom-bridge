@@ -1,0 +1,100 @@
+# Paczki macOS do wydania — jedyny job w tym repozytorium z prawem ZAPISU.
+#
+# Po co osobny workflow: `.dmg` nie zbuduje się nigdzie poza macOS (electron-builder
+# woła `sips`, narzędzie wyłącznie Apple'owe), a reszta wydania powstaje ręcznie
+# na maszynie autora. Ten job dokłada brakujące cztery pliki do wydania, które
+# już istnieje.
+#
+# Zmierzone 2026-10-02 na macos-latest (M1): obie architektury budują się
+# krzyżowo, `lipo -archs` potwierdza arm64 i x86_64 w odpowiednich pakietach.
+name: Wydanie macOS
+
+on:
+  # Wydanie tworzymy ręcznie (`gh release create`) — ten job dokłada do niego
+  # paczki macOS, gdy tylko zostanie opublikowane.
+  release:
+    types: [published]
+  # Ręczne powtórzenie, gdy coś padnie albo przy próbach na wydaniu roboczym.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag wydania (np. v0.1.35)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  paczki:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Zależności
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      # Paczki wydaniowej NIE budujemy z kodu, który nie przechodzi testów —
+      # nawet jeśli testy przeszły wcześniej na Linuksie.
+      - name: Testy na macOS
+        run: npm test
+
+      # Tag i package.json muszą mówić to samo, inaczej do wydania v0.1.35
+      # trafiłyby pliki z numerem 0.1.34 i nikt by tego nie zauważył.
+      - name: Wersja zgadza się z tagiem
+        run: |
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          WERSJA="v$(node -p "require('./package.json').version")"
+          echo "tag: $TAG | package.json: $WERSJA"
+          [ "$TAG" = "$WERSJA" ] || { echo "::error::tag i package.json się różnią"; exit 1; }
+
+      - name: Budowa paczek macOS
+        run: npx electron-builder --mac --publish never
+
+      - name: Co powstało
+        run: |
+          ls -la release/*.dmg release/*.zip
+          for app in release/mac*/*.app; do
+            bin="$app/Contents/MacOS/$(basename "$app" .app)"
+            echo "$app → $(lipo -archs "$bin")"
+          done
+
+      # SHA256SUMS ma pozostać JEDNYM plikiem dla całego wydania — odbiorca
+      # sprawdza wszystko jednym `sha256sum -c SHA256SUMS`. Dlatego pobieramy
+      # istniejący plik i dopisujemy do niego cztery linie, zamiast wgrywać
+      # osobny plik sum dla macOS.
+      - name: Sumy kontrolne i wgranie do wydania
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          cd release
+
+          mkdir -p poprzednie
+          gh release download "$TAG" --pattern SHA256SUMS --dir poprzednie
+          # Brak pliku sum to nie jest sytuacja, którą wolno obejść po cichu:
+          # wgralibyśmy wtedy sumy obejmujące wyłącznie macOS i odbiorca
+          # sprawdzający resztę wydania dostałby „No such file or directory".
+          test -s poprzednie/SHA256SUMS
+
+          shasum -a 256 radiodyplom-bridge-*-arm64.dmg radiodyplom-bridge-*-arm64.zip \
+                        radiodyplom-bridge-*-x64.dmg   radiodyplom-bridge-*-x64.zip \
+            > macos.sums
+          cat poprzednie/SHA256SUMS macos.sums > SHA256SUMS
+          echo "--- SHA256SUMS po scaleniu ---"
+          cat SHA256SUMS
+
+          gh release upload "$TAG" \
+            radiodyplom-bridge-*-arm64.dmg radiodyplom-bridge-*-arm64.zip \
+            radiodyplom-bridge-*-x64.dmg   radiodyplom-bridge-*-x64.zip \
+            --clobber
+          gh release upload "$TAG" SHA256SUMS --clobber

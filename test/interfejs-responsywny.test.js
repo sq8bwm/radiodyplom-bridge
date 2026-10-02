@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const H = readFileSync(new URL('../ui/index.html', import.meta.url), 'utf8');
+const R = readFileSync(new URL('../ui/renderer.js', import.meta.url), 'utf8');
 const PROG = /@media \(max-width: (\d+)px\) \{/;
 
 /** Treść bloku `@media` dla wąskiego ekranu — do sprawdzania reguł w środku. */
@@ -85,14 +86,52 @@ describe('układ na wąskim ekranie', () => {
     assert.match(b, /header #btnPause, header #btnQuit \{ min-width:0; \}/);
   });
 
-  test('każda tabela siedzi w opakowaniu przewijanym w poziomie', () => {
-    // Bez tego wąski ekran dawał poziomy pasek na CAŁYM oknie i nagłówek
-    // uciekał w bok razem z treścią.
-    const tabel = (H.match(/<table>/g) || []).length;
-    const opakowanych = (H.match(/<div class="tbl-scroll"><table>/g) || []).length;
+  test('każda tabela siedzi w opakowaniu .tbl-scroll', () => {
+    // Opakowanie steruje zachowaniem na obu szerokościach: na monitorze daje
+    // przewijanie w poziomie (nagłówek nie ucieka razem z treścią), a na
+    // telefonie zamienia wiersze w karty.
+    const tabel = (H.match(/<table[ >]/g) || []).length;
+    const opakowanych = (H.match(/<div class="tbl-scroll"><table[ >]/g) || []).length;
     assert.ok(tabel > 0, 'nie ma żadnej tabeli — test stracił sens');
     assert.equal(opakowanych, tabel, `${tabel} tabel, opakowanych ${opakowanych}`);
     assert.match(H, /\.tbl-scroll \{ overflow-x:auto; \}/);
+  });
+
+  test('na telefonie tabele Kolejki są KARTAMI, nie przewijaniem w bok', () => {
+    // ZMIERZONE 2026-10-02 przy 390 px: przewijana tabela ucinała ostatnią
+    // kolumnę, czyli POWÓD odrzucenia — jedyne, po co otwiera się tę zakładkę
+    // na telefonie („sieć: ETIMEDOU…", „NOT_SAVED: bra…").
+    const b = blokWaski();
+    assert.match(b, /\.tbl-scroll \{ overflow-x:visible; \}/,
+      'przewijanie w bok musi zniknąć, inaczej karty nic nie dają');
+    assert.match(b, /\.tbl-scroll table, \.tbl-scroll tbody, \.tbl-scroll tr, \.tbl-scroll td \{ display:block/);
+    assert.match(b, /\.tbl-scroll td::before \{ content:attr\(data-label\)/,
+      'etykieta karty bierze się z data-label');
+    // Treść musi móc się łamać — inaczej karta ucina tak samo jak tabela.
+    assert.match(b, /overflow-wrap:anywhere/);
+  });
+
+  test('etykiety kart pochodzą z nagłówków tabeli, nie z drugiego słownika', () => {
+    // Gdyby renderer miał własną listę etykiet, po zmianie nagłówka karty
+    // pokazywałyby co innego niż tabela — i to tylko na telefonie.
+    assert.match(R, /querySelectorAll\('thead th'\)/);
+    assert.match(R, /data-label="/);
+  });
+
+  test('karty nie gubią semantyki tabeli dla czytnika ekranu', () => {
+    // `display:block` odbiera tabeli jej rolę, więc role są w znacznikach —
+    // inaczej na telefonie czytnik czytałby ciąg bloków bez związku.
+    assert.equal((H.match(/<table role="table">/g) || []).length,
+      (H.match(/<table[ >]/g) || []).length, 'każda tabela musi mieć role="table"');
+    assert.match(H, /<tbody role="rowgroup"/);
+    assert.match(H, /<th role="columnheader"/);
+    assert.match(R, /<tr role="row">/);
+    assert.match(R, /<td role="cell"/);
+    // Nagłówek ma być UKRYTY WIZUALNIE, nie usunięty: display:none wyrzuciłby
+    // go także z drzewa dostępności.
+    const b = blokWaski();
+    assert.match(b, /\.tbl-scroll thead \{ position:absolute/);
+    assert.doesNotMatch(b, /\.tbl-scroll thead \{ display:none/);
   });
 
   test('reguły wąskiego ekranu nie ruszają okna na monitorze', () => {

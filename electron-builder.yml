@@ -88,6 +88,24 @@ linux:
       Keywords: krótkofalarstwo;krotkofalarstwo;hamradio;ham;radio;QSO;log;logger;QLog;N1MM;WSJT-X;JTDX;MSHV;ADIF;dyplom;radiodyplom;
       StartupNotify: 'true'
 
+mac:
+  artifactName: radiodyplom-bridge-${version}-${arch}.${ext}
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+  icon: build/icon.png
+  category: public.app-category.utilities
+  # Brak podpisu Apple Developer ID – macOS pokaże ostrzeżenie Gatekeepera.
+  # Uruchomienie: Ustawienia systemowe → Prywatność i ochrona → Otwórz mimo to.
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
 # ŚWIADOMIE BEZ `appImage: license:`. Ta opcja nie „dokłada tekstu licencji",
 # tylko robi z niej BRAMKĘ: `AppRun` pokazuje przez zenity tekst GPL
 # z przyciskami Agree/Disagree i przy „Disagree" nie uruchamia programu

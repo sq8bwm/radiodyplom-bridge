@@ -1,0 +1,79 @@
+# PRÓBA, nie element wydania. Odpowiada na trzy pytania, których nie da się
+# rozstrzygnąć bez Maca, a które blokują decyzję o sposobie wydawania paczek
+# macOS (PR #72):
+#
+#   1. czy `.dmg` dla Intela (x64) zbuduje się KRZYŻOWO na runnerze arm64,
+#   2. czy nasz zestaw testów przechodzi na macOS,
+#   3. czy `openssl` na macOS to LibreSSL i jak wypisuje adresy IP w SAN-ach
+#      (od tego zależy, czy asercja usunięta w PR #72 ma wrócić).
+#
+# Gałąź jest jednorazowa i nie trafia do main.
+name: Próba macOS
+
+on:
+  push:
+    branches: [proba-macos-ci]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  proba:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Co to za maszyna
+        run: |
+          echo "procesor:  $(uname -m)"
+          echo "system:    $(sw_vers -productVersion)"
+          echo "openssl:   $(openssl version)"
+
+      - name: Zależności
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      - name: Pytanie 3 — jak LibreSSL wypisuje adres IP w certyfikacie
+        run: |
+          node -e '
+            import("./src/cert.js").then(({ wystawCertyfikat }) => {
+              const { cert } = wystawCertyfikat({
+                cn: "malinka",
+                nazwy: ["localhost", "malinka"],
+                adresy: ["127.0.0.1", "192.168.8.50"],
+              });
+              require("node:fs").writeFileSync("/tmp/proba.pem", cert);
+            });'
+          echo "--- sekcja Subject Alternative Name ---"
+          openssl x509 -in /tmp/proba.pem -noout -text | grep -A2 -i "Subject Alternative Name"
+          echo "--- czy wzorzec z naszego testu pasuje ---"
+          if openssl x509 -in /tmp/proba.pem -noout -text | grep -q "IP Address:192.168.8.50"; then
+            echo "TAK — asercja z main działa na macOS, usunięcie jej nie było konieczne"
+          else
+            echo "NIE — LibreSSL wypisuje to inaczej (patrz wydruk wyżej)"
+          fi
+          echo "--- a co robi openssl verify (to był powód obejścia) ---"
+          openssl verify -CAfile /tmp/proba.pem /tmp/proba.pem || echo "verify ODRZUCIŁ — zgodnie z tym, co pisał Kamil"
+
+      - name: Pytanie 2 — czy testy przechodzą na macOS
+        run: npm test
+        continue-on-error: true
+
+      - name: Pytanie 1 — czy zbudują się paczki dla OBU architektur
+        run: npx electron-builder --mac --publish never
+
+      - name: Co powstało
+        run: |
+          ls -la release/*.dmg release/*.zip 2>/dev/null || true
+          echo "--- architektura zbudowanych binariów ---"
+          for app in release/mac*/*.app; do
+            [ -e "$app" ] || continue
+            bin="$app/Contents/MacOS/$(basename "$app" .app)"
+            [ -e "$bin" ] && echo "$app → $(lipo -archs "$bin" 2>/dev/null || file -b "$bin")"
+          done

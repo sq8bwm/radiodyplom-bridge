@@ -119,6 +119,13 @@ Instalatory **nie są podpisane komercyjnymi certyfikatami** (Microsoft SmartScr
 - **Windows**: SmartScreen pokaże ostrzeżenie („Nieznany wydawca”) — kliknij *Więcej informacji → Uruchom mimo to*.
 - **macOS**: Otwórz pobrany plik `.dmg` i przeciągnij program do katalogu **Programy** (*Applications*). Przy pierwszym uruchomieniu system zablokuje otwarcie niepodpisanej aplikacji — wejdź w **Ustawienia systemowe → Prywatność i ochrona** (*Privacy & Security*) i kliknij **„Otwórz mimo to”** (*Open Anyway*), ewentualnie kliknij ikonę programu prawym przyciskiem myszy (Control + klik) w Finderze i wybierz *Otwórz*.
 
+![RadioDyplom Bridge na macOS](docs/obrazy/okno-macos.png)
+
+Zrzut z **macOS Sequoia 15.7** na MacBooku Pro 13″ z 2020 roku — procesor
+**Intel Core i5**, 8 GB RAM. Wersja dla **Apple Silicon** (M1–M4) to ten sam
+program, osobny plik `.dmg`. Port macOS przygotował i sprawdził na własnym
+sprzęcie **Kamil Pawlak (SO8KP)**.
+
 Do każdego wydania dołączony jest plik sum kontrolnych:
 
 ```bash

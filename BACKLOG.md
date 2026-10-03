@@ -825,3 +825,19 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   przez co wpis w menu nie skojarzyłby się z oknem. Wniosek ogólniejszy:
   **pakowanie w obcej dystrybucji jest testem, którego nie zastąpi czytanie
   własnego kodu.**
+- **macOS i RUMlogNG — wkład z zewnątrz** (0.1.35). Pierwszy pull request spoza
+  projektu: Kamil Pawlak SO8KP przysłał komplet portu na macOS (pakowanie `.dmg`
+  i `.zip` dla arm64 i x64, obsługa zdarzenia `activate` w Docku, dokumentacja,
+  testy) oraz opis RUMlogNG, który gada po UDP protokołem N1MM. Sprawdził to na
+  MacBooku Pro M2 Pro, a wersję dla Intela na starym MacBooku.
+  Recenzja wychwyciła cztery rzeczy, w tym dwie poważniejsze: zaszyte w kodzie
+  nazwisko (zamiast odczytu z `package.json`) i testy wywracające budowę paczki
+  AUR bez `node_modules`. Wszystkie poprawione przez autora.
+  Pytania, których nie dało się rozstrzygnąć bez Maca, rozstrzygnął próbny
+  workflow na `macos-latest`: budowanie krzyżowe DZIAŁA (`lipo` potwierdza
+  arm64 i x86_64), testy przechodzą, a systemowy `openssl` to LibreSSL 3.3.6 —
+  który wypisuje SAN-y tak samo jak OpenSSL, więc usunięta asercja o adresie IP
+  mogła wrócić; pada wyłącznie `openssl verify` (`error 20`).
+  Datagram RUMlogNG przechwycony z żywego programu jest w testach — wniosek
+  z Logger32: dopóki nie ma przechwyconego datagramu, „obsługujemy" jest
+  przypuszczeniem.

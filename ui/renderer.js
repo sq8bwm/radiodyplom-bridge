@@ -710,10 +710,15 @@ function renderAbout(s) {
     ? `<b>${esc(s.version || '—')}</b> — <span class="lvl-warn">${
       t('about.newVersion').replace('{n}', esc(s.update.latest))}</span>`
     : `<b>${esc(s.version || '—')}</b>`;
+  const contributorRows = (s.contributors || []).map((c) => {
+    const label = c.role === 'port macOS' ? t('about.macPort') : t('about.contributors');
+    return [label, esc(c.name)];
+  });
   const rows = [
     [t('about.program'), `${esc(s.app || '—')}`],
     [t('about.version'), wersja],
     [t('about.author'), esc(s.author || '—')],
+    ...contributorRows,
     [t('about.license'), esc(s.license || '—')],
     [t('about.install'), instalacjaOpis(s.instalacja)],
   ];

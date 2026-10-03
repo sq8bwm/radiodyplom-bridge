@@ -109,3 +109,36 @@ describe('AppImage bez bramki licencyjnej', bezYamla, () => {
       'appImage.license wraca jako klikana zgoda na licencję — patrz komentarz w electron-builder.yml');
   });
 });
+
+describe('konfiguracja paczek dla macOS', bezYamla, () => {
+  test('cele obejmują dmg i zip dla arm64 i x64', () => {
+    assert.ok(cfg.mac, 'brak sekcji mac w electron-builder.yml');
+    const targets = cfg.mac.target || [];
+    const dmg = targets.find((t) => t.target === 'dmg');
+    const zip = targets.find((t) => t.target === 'zip');
+    assert.ok(dmg, 'brak celu dmg');
+    assert.ok(zip, 'brak celu zip');
+    assert.ok(dmg.arch.includes('arm64'), 'dmg musi wspierać arm64 (Apple Silicon)');
+    assert.ok(dmg.arch.includes('x64'), 'dmg musi wspierać x64 (Intel)');
+    assert.ok(zip.arch.includes('arm64'), 'zip musi wspierać arm64');
+    assert.ok(zip.arch.includes('x64'), 'zip musi wspierać x64');
+  });
+
+  test('kategoria aplikacji jest ustawiona', () => {
+    assert.equal(cfg.mac.category, 'public.app-category.utilities');
+  });
+});
+
+describe('macOS: okno i współtwórcy', () => {
+  test('kliknięcie w Dock (zdarzenie activate) przywraca okno', () => {
+    const mainJs = readFileSync(join(ROOT, 'ui', 'main.js'), 'utf8');
+    assert.match(mainJs, /app\.on\(['"]activate['"],/);
+  });
+
+  test('współtwórca portu macOS jest wpisany i ma rolę', () => {
+    assert.ok(Array.isArray(pkg.contributors), 'brak contributors w package.json');
+    const macPort = pkg.contributors.find((c) => c.role === 'port macOS' || c.name?.includes('SO8KP'));
+    assert.ok(macPort, 'brak wpisu dla Kamila Pawlaka (SO8KP) jako port macOS');
+    assert.equal(macPort.role, 'port macOS');
+  });
+});

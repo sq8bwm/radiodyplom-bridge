@@ -152,6 +152,9 @@ export class StatusApi {
       author: typeof this.pkg.author === 'string'
         ? this.pkg.author
         : (this.pkg.author?.name || null),
+      contributors: (Array.isArray(this.pkg.contributors) ? this.pkg.contributors : [])
+        .map((c) => (typeof c === 'string' ? { name: c } : { name: c?.name, role: c?.role }))
+        .filter((c) => c.name),
       license: this.pkg.license || null,
       // Skąd program wystartował. Na Windowsie instalator i portable dzielą
       // ten sam katalog danych, więc bez tego nie było jak stwierdzić, który

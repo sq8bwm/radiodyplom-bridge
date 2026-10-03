@@ -52,7 +52,7 @@ i aktywnych akcji; niczego tam nie zmienia poza dopisaniem QSO.
 - **Statystyki** — ile QSO w który dzień, na której akcji, spod której stacji,
   na jakim pasmie.
 - **Tryb próbny**, żeby najpierw sprawdzić mapowanie pól, a dopiero potem wysyłać.
-- **Da się to czytać.** Powiększanie okna skrótem Ctrl + i Ctrl −, trzy stopnie
+- **Da się to czytać.** Powiększanie okna skrótem Ctrl + i Ctrl − (na macOS: Cmd + i Cmd −), trzy stopnie
   wielkości tekstu pod ikoną w nagłówku, a ustawienie „większa czcionka" z systemu
   jest szanowane. Okno działa też na telefonie.
 - **Działa też bez pulpitu** — na Raspberry Pi jako usługa, z oknem w przeglądarce.
@@ -60,7 +60,7 @@ i aktywnych akcji; niczego tam nie zmienia poza dopisaniem QSO.
 | Protokół | Loggery |
 |---|---|
 | JSON (Notifications) | **QLog** |
-| XML `<contactinfo>` | **N1MM+**, DXLog, BBlogger, Log4OM (tryb N1MM) |
+| XML `<contactinfo>` | **N1MM+**, DXLog, BBlogger, **RUMlogNG**, Log4OM (tryb N1MM) |
 | binarny QDataStream | **WSJT-X**, JTDX ≥ 2.2.158, MSHV |
 | ADIF po TCP | **Logger32** ≥ 4.0.344 (nasłuch włącza się w Konfiguracji) |
 
@@ -76,11 +76,15 @@ Pobierz z **[wydań](https://github.com/sq8bwm/radiodyplom-bridge/releases)**:
 | `radiodyplom-bridge-*-x64-portable.exe` | Windows 10+ — bez instalacji |
 | `radiodyplom-bridge-*-x86_64.AppImage` | Linux — uniwersalny |
 | `radiodyplom-bridge-*-amd64.deb` | Debian / Ubuntu |
+| `radiodyplom-bridge-*-arm64.dmg` | macOS — Apple Silicon (M-series) |
+| `radiodyplom-bridge-*-x64.dmg` | macOS — procesory Intel |
 | `radiodyplom-bridge-headless-*-all.deb` | **bez interfejsu** — Raspberry Pi, serwer ([opis](docs/malinka.md)) |
 
-Wersje z interfejsem są **tylko 64-bitowe na procesory Intel/AMD** — stąd `x64`,
-`amd64` i `x86_64` w nazwach (to samo, trzy konwencje). Paczka `headless` ma
-`all`, bo to czysty JavaScript: działa też na **arm64 i armhf**, czyli na malince.
+Wersje z interfejsem są **64-bitowe**: dla Windows i Linuksa na procesory
+Intel/AMD (stąd `x64`, `amd64` i `x86_64` w nazwach — to samo, trzy konwencje),
+dla macOS osobno na Apple Silicon (`arm64`) i Intela (`x64`). Paczka `headless`
+ma `all`, bo to czysty JavaScript: działa też na **arm64 i armhf**, czyli na
+malince.
 
 Na Linuksie `.deb` dodaje pozycję do menu (**Internet / Sieć**). AppImage niczego
 nie instaluje — uruchamiasz plik i tyle, więc w menu się nie pojawi.
@@ -111,9 +115,11 @@ system odmówi wczytania pliku komunikatem *„nie jest prawidłową aplikacją 
 Win32"*. Nie da się tego obejść, ale mostek **nie musi stać na tym samym
 komputerze co logger** — patrz [Windows i sieć](docs/windows-i-siec.md#windows-7-i-8--program-się-nie-uruchomi).
 
-Instalatory **nie są podpisane certyfikatem**, więc Windows pokaże SmartScreen
-(„Nieznany wydawca") — *Więcej informacji → Uruchom mimo to*. Do każdego wydania
-dołączony jest plik sum kontrolnych:
+Instalatory **nie są podpisane komercyjnymi certyfikatami** (Microsoft SmartScreen ani Apple Developer ID):
+- **Windows**: SmartScreen pokaże ostrzeżenie („Nieznany wydawca”) — kliknij *Więcej informacji → Uruchom mimo to*.
+- **macOS**: Otwórz pobrany plik `.dmg` i przeciągnij program do katalogu **Programy** (*Applications*). Przy pierwszym uruchomieniu system zablokuje otwarcie niepodpisanej aplikacji — wejdź w **Ustawienia systemowe → Prywatność i ochrona** (*Privacy & Security*) i kliknij **„Otwórz mimo to”** (*Open Anyway*), ewentualnie kliknij ikonę programu prawym przyciskiem myszy (Control + klik) w Finderze i wybierz *Otwórz*.
+
+Do każdego wydania dołączony jest plik sum kontrolnych:
 
 ```bash
 sha256sum -c SHA256SUMS
@@ -140,6 +146,7 @@ zmieniać. PIN nigdy nie opuszcza programu w jawnej postaci, także przez API st
 | Logger | Gdzie |
 |---|---|
 | QLog | *Settings → Network → Notifications → **QSO Changes*** |
+| RUMlogNG | *Preferences → UDP → RUMlog, N1MM & TR4W compatible* ([opis](docs/loggery.md#rumlogng-macos--przez-protokół-n1mm)) |
 | Logger32 | inaczej: patrz [Loggery i dane](docs/loggery.md#logger32--jedyny-po-tcp) |
 | N1MM+ / DXLog | rozgłoszenie na porcie 12060 |
 | WSJT-X / JTDX / MSHV | *Settings → Reporting → UDP Server* |
@@ -174,7 +181,7 @@ potrzebuje autostartu, znajdzie opis w [Windows i sieć](docs/windows-i-siec.md#
 Interfejs jest po **polsku i angielsku**, a motyw ma trzy stany —
 **jak w systemie, jasny albo ciemny**. Przełącza się je ikonami w nagłówku: flagą
 i słońcem/księżycem. Trzecia ikona, **`aA`**, zmienia wielkość tekstu (normalny →
-duży → bardzo duży), a **Ctrl +**, **Ctrl −** i **Ctrl 0** powiększają całe okno.
+duży → bardzo duży), a **Ctrl +**, **Ctrl −** i **Ctrl 0** (na macOS: **Cmd +**, **Cmd −** i **Cmd 0**) powiększają całe okno.
 Oba ustawienia są zapamiętywane.
 
 ---
@@ -258,7 +265,7 @@ Znane usterki i plany: [BACKLOG.md](BACKLOG.md).
 
 ---
 
-Autor: **SQ8BWM** · licencja **GPL-3.0-or-later** ([pełny tekst](LICENSE))
+Autor: **SQ8BWM** · port macOS: **Kamil Pawlak (SO8KP)** · licencja **GPL-3.0-or-later** ([pełny tekst](LICENSE))
 
 To wolne oprogramowanie: możesz je rozpowszechniać i modyfikować na warunkach
 Powszechnej Licencji Publicznej GNU w wersji 3 albo dowolnej późniejszej.

@@ -241,7 +241,12 @@ function buildMenu() {
 }
 
 function showWindow() {
-  if (win) { win.show(); win.focus(); return; }
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+    return;
+  }
   win = new BrowserWindow({
     width: 900,
     height: 700,
@@ -470,6 +475,11 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
 // Sama subskrypcja tego zdarzenia wyłącza domyślne „zamknij okno = zakończ aplikację".
 // Aplikacja ma żyć w zasobniku; kończy ją wyłącznie pozycja „Zakończ" w menu.
 app.on('window-all-closed', () => { /* celowo nic – patrz komentarz */ });
+
+// Na macOS kliknięcie ikony w Docku (lub przełączenie aplikacji) przywraca okno.
+app.on('activate', () => {
+  showWindow();
+});
 
 /**
  * Uporządkowane zamknięcie.

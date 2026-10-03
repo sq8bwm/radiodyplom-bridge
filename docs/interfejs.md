@@ -330,13 +330,13 @@ Dwie niezależne drogi, bo działają w różnych miejscach i skalują różne r
 
 | Droga | Gdzie działa | Co skaluje |
 |---|---|---|
-| **Ctrl `+`, Ctrl `−`, Ctrl `0`** oraz szczypanie dwoma palcami | okno na pulpicie | **wszystko** — tekst, odstępy, ikony, ramki |
+| **Ctrl `+`, Ctrl `−`, Ctrl `0`** (na macOS: **Cmd `+`, `−`, `0`**) oraz szczypanie dwoma palcami | okno na pulpicie | **wszystko** — tekst, odstępy, ikony, ramki |
 | **ikona `aA`** w nagłówku: normalny → duży → bardzo duży | okno i przeglądarka (także telefon) | tylko tekst, więc na małym ekranie zostaje więcej treści |
 
 Oba wybory są **zapamiętywane** (`ui.zoom` i `fontScale` w konfiguracji), bo kto
 potrzebuje większego widoku, potrzebuje go przy każdym starcie.
 
-Te dwie drogi są **niezależne** i tak ma być: **Ctrl `0` zeruje tylko
+Te dwie drogi są **niezależne** i tak ma być: **Ctrl `0`** (lub **Cmd `0`**) **zeruje tylko
 powiększenie okna**, a wybrany rozmiar tekstu zostaje. Powiększenie jest jak
 lupa — rzecz chwilowa, związana z tym monitorem; rozmiar tekstu to deklaracja
 „tak chcę czytać", więc lupa nie ma prawa jej kasować. Do rozmiaru tekstu

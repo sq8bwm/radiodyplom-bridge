@@ -12,7 +12,7 @@ obsługuje mieszane źródła jednocześnie.
 | Dekoder | Format | Loggery |
 |---|---|---|
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
-| `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, BBlogger, Log4OM (tryb N1MM) |
+| `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, BBlogger, **RUMlogNG**, Log4OM (tryb N1MM) |
 | `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 | WSJT-X, JTDX ≥ 2.2.158, MSHV |
 | `Logger32` | goły rekord ADIF, **po TCP** | Logger32 ≥ 4.0.344 |
 
@@ -30,12 +30,35 @@ dodanie polega na dopisaniu jednego pliku w `src/decoders/` i wpisaniu go do rej
 Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.json`):
 
 - **QLog** — `Settings → Network → Notifications → QSO Changes`
+- **RUMlogNG (macOS)** — `Preferences → UDP → RUMlog, N1MM & TR4W compatible` (szczegóły niżej)
 - **N1MM+ / DXLog** — broadcast na porcie 12060 (domyślny dla tej rodziny)
 - **WSJT-X / JTDX / MSHV** — `Settings → Reporting → UDP Server` + port
 - **Logger32** — patrz niżej, bo jako jedyny nie używa UDP
 
 WSJT-X wysyła „QSO Logged” dopiero po zatwierdzeniu okna **Log QSO** — to celowe
 zachowanie samego WSJT-X, nie ograniczenie daemona.
+
+
+## RUMlogNG (macOS) — przez protokół N1MM
+
+RUMlogNG (popularny logger na system macOS autorstwa DL2RUM) **posiada wbudowane
+wsparcie dla protokołu N1MM/TR4W przez UDP**. Wysyła standardowy datagram
+XML `<contactinfo>`, który w moście jest automatycznie rozpoznawany i obsługiwany
+przez dekoder N1MM.
+
+Konfiguracja krok po kroku w **RUMlogNG**:
+
+1. W menu górnym wybierz: **RUMlogNG ➪ Preferences** (lub skrót **`Cmd + ,`**).
+2. Przejdź do zakładki **UDP**.
+3. W sekcji **RUMlog, N1MM & TR4W compatible**:
+   - zaznacz **App info** i podaj adres oraz port: `127.0.0.1` / `12060`,
+   - zmień jedną z pozycji **Contact info Off** na **Contact info N1MM**,
+   - wpisz ten sam adres i port: `127.0.0.1` / `12060`.
+4. Zamknij okno preferencji (zmiany sieciowe w RUMlogNG zatwierdzają się po
+   zamknięciu okna).
+
+Od tego momentu każde dodane i zapisane QSO w RUMlogNG zostanie natychmiast
+rozgłoszone przez UDP i odebrane przez mostek.
 
 
 ## Logger32 — jedyny po TCP

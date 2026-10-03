@@ -19,6 +19,7 @@
     "ui": "electron ui/main.js",
     "pack:linux": "electron-builder --linux && npm run checksums",
     "pack:win": "electron-builder --win && npm run checksums",
+    "pack:mac": "electron-builder --mac && npm run checksums",
     "pack:headless": "node src/tools/build-headless-deb.js",
     "pack:all": "npm run pack && npm run pack:headless",
     "pack": "electron-builder --linux --win && npm run checksums",
@@ -38,6 +39,13 @@
     "name": "SQ8BWM",
     "email": "sq8bwm@gmail.com"
   },
+  "contributors": [
+    {
+      "name": "Kamil Pawlak (SO8KP)",
+      "role": "port macOS",
+      "url": "https://github.com/rico-et22"
+    }
+  ],
   "homepage": "https://radiodyplom.pl/",
   "repository": {
     "type": "git",

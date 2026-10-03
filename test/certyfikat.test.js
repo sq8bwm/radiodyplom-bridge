@@ -135,9 +135,14 @@ describe('trzecia opinia: openssl', () => {
       assert.match(opis, /CA:FALSE/);
       assert.match(opis, /TLS Web Server Authentication/);
       assert.match(opis, /DNS:localhost/);
-      assert.match(opis, /IP Address:192\.168\.8\.50/);
-      const w = execFileSync('openssl', ['verify', '-CAfile', plik, plik], { encoding: 'utf8' });
-      assert.match(w, /OK/);
+      assert.match(opis, new RegExp(`IP Address:${DANE.adresy[1].replace(/\./g, '\\.')}`));
+      // LibreSSL (domyślny openssl na macOS) rzuca error 20 (unable to get local issuer certificate)
+      // przy weryfikacji certyfikatu końcowego przez -CAfile.
+      const isLibreSSL = /LibreSSL/i.test(execFileSync('openssl', ['version'], { encoding: 'utf8' }));
+      if (!isLibreSSL) {
+        const w = execFileSync('openssl', ['verify', '-CAfile', plik, plik], { encoding: 'utf8' });
+        assert.match(w, /OK/);
+      }
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -90,6 +90,7 @@ Domyślnie **każda** wersja z okienkiem trzyma dane w katalogu użytkownika:
 |---|---|---|
 | Windows | `%APPDATA%\radiodyplom-bridge` | `%APPDATA%\radiodyplom-bridge\data` |
 | Linux | `~/.config/radiodyplom-bridge` | `~/.local/share/radiodyplom-bridge/data` |
+| macOS | `~/Library/Application Support/RadioDyplom Bridge` | `~/Library/Application Support/radiodyplom-bridge/data` |
 
 Znaczy to, że **portable dzieli wszystko z wersją instalowaną** (a AppImage
 z paczką `.deb`): ten sam PIN, tę samą kolejkę, ten sam certyfikat i tę samą

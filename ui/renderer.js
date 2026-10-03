@@ -618,7 +618,14 @@ function stateReason(s) {
 
 function fillTable(tbodyId, emptyId, items, cols) {
   const tb = $(tbodyId);
-  tb.innerHTML = (items || []).map((i) => `<tr>${cols(i).map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('');
+  // Etykiety do kart na telefonie bierzemy z NAGŁÓWKÓW tej samej tabeli.
+  // Dublowanie ich w słowniku znaczyłoby dwa miejsca do tłumaczenia i dwa do
+  // rozjechania się — a nagłówek jest już przetłumaczony przez data-i18n.
+  const naglowki = [...(tb.closest('table')?.querySelectorAll('thead th') || [])]
+    .map((th) => th.textContent.trim());
+  tb.innerHTML = (items || []).map((i) => `<tr role="row">${
+    cols(i).map((c, k) => `<td role="cell" data-label="${esc(naglowki[k] || '')}">${esc(c)}</td>`).join('')
+  }</tr>`).join('');
   $(emptyId).hidden = (items || []).length > 0;
 }
 

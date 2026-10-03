@@ -328,10 +328,33 @@
     .range { width:100%; }
     .range input { flex:1 1 8ch; }
 
-    /* Tabele: mniejszy druk i bez łamania komórek — czytelniejsze jest
-       przewinięcie w bok niż znak w trzech linijkach. */
-    .tbl-scroll table { font-size:0.75rem; }
-    .tbl-scroll th, .tbl-scroll td { white-space:nowrap; }
+    /* Tabele Kolejki jako KARTY „etykieta: wartość".
+       Pięć kolumn nie mieści się na telefonie, a przewijanie w bok ucinało
+       OSTATNIĄ kolumnę — czyli powód, dla którego w ogóle otwiera się tę
+       zakładkę. Zmierzone 2026-10-02 przy 390 px: „sieć: ETIMEDOU…",
+       „NOT_SAVED: bra…". Było widać, ŻE QSO odpadło, ale nie dlaczego.
+
+       Etykiety biorą się z nagłówków tej samej tabeli (`data-label` dokładane
+       przy rysowaniu), więc nie powstaje drugie miejsce z tłumaczeniami.
+
+       `display:block` gubi semantykę tabeli, dlatego role ARIA są wpisane
+       wprost w znaczniki — czytnik ekranu nadal widzi tabelę, wiersze
+       i komórki. */
+    .tbl-scroll { overflow-x:visible; }
+    .tbl-scroll table, .tbl-scroll tbody, .tbl-scroll tr, .tbl-scroll td { display:block; }
+    .tbl-scroll table { font-size:0.875rem; }
+    /* Nagłówek znika z widoku, ale zostaje w drzewie dostępności. */
+    .tbl-scroll thead { position:absolute; width:1px; height:1px;
+                        overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+    .tbl-scroll tr { border:1px solid var(--line); border-radius:10px;
+                     padding:8px 10px; margin-bottom:8px; }
+    .tbl-scroll td { display:grid; grid-template-columns:minmax(8ch,auto) 1fr;
+                     gap:10px; border:0; padding:3px 0;
+                     white-space:normal; overflow-wrap:anywhere; }
+    .tbl-scroll td::before { content:attr(data-label); color:var(--muted); }
+    /* Pierwsza komórka to znak korespondenta — tytuł karty, nie pole. */
+    .tbl-scroll td:first-child { display:block; font-weight:600; font-size:1rem; }
+    .tbl-scroll td:first-child::before { content:none; }
 
     /* „O programie": etykieta nad wartością, bo ścieżki plików są długie. */
     dl.kv { grid-template-columns:1fr; gap:0; }
@@ -452,20 +475,20 @@
   <section id="kolejka">
     <div class="panel">
       <h2 data-i18n="panel.pending"></h2>
-      <div class="tbl-scroll"><table><thead><tr>
-        <th data-i18n="th.callsign"></th><th data-i18n="th.station"></th>
-        <th data-i18n="th.operator"></th>
-        <th data-i18n="th.attempts"></th><th data-i18n="th.error"></th>
-      </tr></thead><tbody id="tPending"></tbody></table></div>
+      <div class="tbl-scroll"><table role="table"><thead role="rowgroup"><tr role="row">
+        <th role="columnheader" data-i18n="th.callsign"></th><th role="columnheader" data-i18n="th.station"></th>
+        <th role="columnheader" data-i18n="th.operator"></th>
+        <th role="columnheader" data-i18n="th.attempts"></th><th role="columnheader" data-i18n="th.error"></th>
+      </tr></thead><tbody role="rowgroup" id="tPending"></tbody></table></div>
       <div class="empty" id="ePending" data-i18n="empty.queue"></div>
     </div>
     <div class="panel">
       <h2 data-i18n="panel.rejected"></h2>
-      <div class="tbl-scroll"><table><thead><tr>
-        <th data-i18n="th.callsign"></th><th data-i18n="th.station"></th>
-        <th data-i18n="th.operator"></th>
-        <th data-i18n="th.attempts"></th><th data-i18n="th.reason"></th>
-      </tr></thead><tbody id="tFailed"></tbody></table></div>
+      <div class="tbl-scroll"><table role="table"><thead role="rowgroup"><tr role="row">
+        <th role="columnheader" data-i18n="th.callsign"></th><th role="columnheader" data-i18n="th.station"></th>
+        <th role="columnheader" data-i18n="th.operator"></th>
+        <th role="columnheader" data-i18n="th.attempts"></th><th role="columnheader" data-i18n="th.reason"></th>
+      </tr></thead><tbody role="rowgroup" id="tFailed"></tbody></table></div>
       <div class="empty" id="eFailed" data-i18n="empty.none"></div>
       <div class="hint" data-i18n="hint.requeue"></div>
       <div class="row" style="margin-top:10px">

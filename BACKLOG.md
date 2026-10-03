@@ -326,10 +326,19 @@ Konfiguracja jednokolumnowa, biurkowe 900 px bez zmian. Osiem testów pilnuje
 kontraktu (m.in. tego, że viewport i `@media` istnieją RAZEM i że próg nie
 dochodzi do szerokości okna).
 
-**Etap 2 — do rozważenia, nie zamówione:** tabele Kolejki jako karty
-„etykieta: wartość" zamiast wierszy przewijanych w bok. Wymaga `data-label`
-w rendererze. Dziś tabele działają, tylko trzeba przewijać. Warto zobaczyć na
-telefonie z prawdziwą kolejką, czy w ogóle przeszkadza.
+**Etap 2 — ZROBIONE 2026-10-02.** Tabele Kolejki są na telefonie kartami
+„etykieta: wartość". Pytanie „czy w ogóle przeszkadza" rozstrzygnął pomiar na
+prawdziwym oknie przy 390 px (Xvfb, instancja z własnym `RD_CONFIG_DIR`):
+przewijana w bok tabela ucinała OSTATNIĄ kolumnę, czyli powód — `sieć:
+ETIMEDOU…`, `NOT_SAVED: bra…`. Widać było, ŻE QSO odpadło, ale nie dlaczego,
+a to jedyny powód, dla którego otwiera się tę zakładkę z telefonu.
+
+Etykiety kart biorą się z nagłówków tej samej tabeli (`data-label` dokładane
+w `fillTable`), więc tłumaczenia nie ma w drugim miejscu. `display:block` gubi
+semantykę tabeli, dlatego role ARIA (`table`, `rowgroup`, `row`, `columnheader`,
+`cell`) są wpisane wprost w znaczniki, a nagłówek jest ukryty wizualnie
+(`position:absolute` + `clip-path`), NIE przez `display:none` — inaczej
+zniknąłby też z drzewa dostępności. Na monitorze wygląd bez zmian.
 
 ### Powiększanie widoku — ZROBIONE w 0.1.26, dostępność szerzej otwarta
 

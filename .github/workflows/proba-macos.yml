@@ -7,12 +7,17 @@
 #   3. czy `openssl` na macOS to LibreSSL i jak wypisuje adresy IP w SAN-ach
 #      (od tego zależy, czy asercja usunięta w PR #72 ma wrócić).
 #
-# Gałąź jest jednorazowa i nie trafia do main.
+# ARCHIWUM z 2026-10-02. Wyniki: budowanie krzyżowe DZIAŁA (lipo potwierdza
+# arm64 i x86_64), testy na macOS przechodzą, systemowy openssl to
+# LibreSSL 3.3.6 — wypisuje SAN-y tak samo jak OpenSSL, pada wyłącznie
+# `openssl verify` (error 20). Gałąź NIE trafia do main.
 name: Próba macOS
 
 on:
-  push:
-    branches: [proba-macos-ci]
+  # ARCHIWUM. Wyzwalacz `push` zdjęty 2026-10-03: próba zrobiła swoje
+  # (wnioski w BACKLOG.md i w komentarzach wydanie-macos.yml), a workflow,
+  # o którym nikt nie pamięta, nie powinien móc wystartować sam.
+  # `workflow_dispatch` poza gałęzią główną i tak jest nieaktywne.
   workflow_dispatch:
 
 permissions:

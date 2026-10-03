@@ -41,6 +41,11 @@ zachowanie samego WSJT-X, nie ograniczenie daemona.
 
 ## RUMlogNG (macOS) — przez protokół N1MM
 
+**Potwierdzone na żywym programie** (2026-10-02, RUMlogNG na macOS, zgłoszone
+przez SO8KP): QSO dochodzi do mostka i przechodzi całą drogę. Przechwycony
+datagram jest w testach (`test/decoders.test.js`), więc zmiana w dekoderze,
+która by go zepsuła, zatrzyma się na testach.
+
 RUMlogNG (popularny logger na system macOS autorstwa DL2RUM) **posiada wbudowane
 wsparcie dla protokołu N1MM/TR4W przez UDP**. Wysyła standardowy datagram
 XML `<contactinfo>`, który w moście jest automatycznie rozpoznawany i obsługiwany

@@ -115,6 +115,83 @@ describe('dekoder QLog', () => {
   });
 });
 
+// ---------- RUMlogNG (macOS), przez protokół N1MM ----------
+// PRZECHWYCONY Z ŻYWEGO PROGRAMU: RUMlogNG 2026-10-02, macOS, MacBook Pro M2 Pro
+// (przysłane przez SO8KP w PR #72, razem z potwierdzeniem, że QSO naprawdę
+// dochodzi do mostka).
+//
+// Po co osobny test, skoro to ten sam dekoder co N1MM+: przy Logger32
+// obsługa napisana „z opisu formatu" wyglądała poprawnie, a na prawdziwym
+// programie ODPADAŁO KAŻDE QSO, bo brakowało jednego pola. Dopóki nie ma
+// przechwyconego datagramu, „obsługujemy" jest przypuszczeniem.
+//
+// Czym RUMlogNG różni się od N1MM+ i co z tego wynika:
+//   • <mycall> bywa ze znakiem dodatkowym (/P) — musi przejść bez okrojenia,
+//   • <band> podaje MHz jako liczbę całkowitą („14"), a nie pasmo ADIF,
+//   • raporty są w <snt>/<rcv>, nie w <sent>/<rcvd>,
+//   • nie ma <ID> ani <operator>.
+const RUMLOG_XML = Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
+<contactinfo>
+    <contestname>Rag Chewing</contestname>
+    <timestamp>2026-10-02 21:06:27</timestamp>
+    <mycall>SO8KP/P</mycall>
+    <band>14</band>
+    <txfreq>1420000</txfreq>
+    <mode>SSB</mode>
+    <call>SO8X</call>
+    <countryprefix>SP</countryprefix>
+    <wpxprefix>SO8</wpxprefix>
+    <continent>Eu</continent>
+    <snt>59</snt>
+    <rcv>59</rcv>
+    <gridsquare></gridsquare>
+    <comment></comment>
+    <qth></qth>
+    <name></name>
+    <power>Mid Power</power>
+    <zone>15</zone>
+    <IsOriginal>YES</IsOriginal>
+    <StationName>Kamil's MacBook Pro</StationName>
+    <dxcc>269</dxcc>
+</contactinfo>`, 'utf8');
+
+describe('RUMlogNG — przechwycony datagram z żywego programu', () => {
+  test('trafia do dekodera N1MM, a nie do innego', () => {
+    assert.equal(pickDecoder(RUMLOG_XML).name, 'N1MM');
+  });
+
+  test('znak stacji ze znakiem dodatkowym przechodzi w całości', () => {
+    // Gdyby /P wypadło, QSO poszłoby pod innym znakiem niż praca w terenie.
+    assert.equal(n1mm.decode(RUMLOG_XML).adif.station_callsign, 'SO8KP/P');
+  });
+
+  test('brak <operator> spada na znak stacji', () => {
+    // RUMlogNG nie wysyła tego pola w ogóle — bez fallbacku QSO odpadłoby
+    // z „brak wymaganych pól", dokładnie jak przy Logger32.
+    assert.equal(n1mm.decode(RUMLOG_XML).adif.operator, 'SO8KP/P');
+  });
+
+  test('pasmo liczy się z <txfreq>, czyli 1420000 × 10 Hz = 14,2 MHz', () => {
+    const r = n1mm.decode(RUMLOG_XML);
+    assert.equal(r.adif.band, '20m');
+    assert.equal(r.adif.freq, '14.2');
+  });
+
+  test('raporty z <snt> i <rcv> trafiają do pól ADIF', () => {
+    const r = n1mm.decode(RUMLOG_XML);
+    assert.equal(r.adif.rst_sent, '59');
+    assert.equal(r.adif.rst_rcvd, '59');
+  });
+
+  test('cały rekord ma komplet pól wymaganych przez serwis', () => {
+    // To jest sedno: nie „dekoder coś zwrócił", tylko „QSO przejdzie dalej".
+    const adif = n1mm.decode(RUMLOG_XML).adif;
+    for (const pole of ['call', 'qso_date', 'time_on', 'band', 'mode', 'station_callsign']) {
+      assert.ok(adif[pole], `brak pola ${pole} — serwis odrzuciłby to QSO`);
+    }
+  });
+});
+
 // ---------- N1MM ----------
 describe('dekoder N1MM', () => {
   // REGRESJA: <txfreq> jest w jednostkach 10 Hz, nie w Hz. Potraktowanie tego

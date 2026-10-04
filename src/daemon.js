@@ -73,6 +73,10 @@ export async function startDaemon(cfg, opts = {}) {
     operations: cfg.forward.operations,
     pin: cfg.radiodyplom.pin,
     targets: cfg.forward.targets,
+    // Katalog danych wyprowadzamy z kolejki: config.js już rozwiązał tam
+    // ścieżki względem dataDir, więc nieznane datagramy trafią obok queue
+    // i failed, a nie w losowe miejsce.
+    dataDir: dirname(cfg.queue.dir),
     onQSO: (item) => {
       const added = store.enqueue(item);
       if (added) {

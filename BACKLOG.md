@@ -908,3 +908,19 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   sprawdzić — i w takiej sytuacji należało napisać „nie wiem", a nie domykać
   wniosku. Prostował to użytkownik, który ten program po prostu miał
   uruchomiony na Linuksie.
+- **Mostek zbiera nieznane datagramy sam** (0.1.37). Dodanie obsługi nowego
+  loggera to jeden plik w `src/decoders/`, ale napisanie go Z OPISU formatu nie
+  udało się ani razu: Logger32 miał obsługę „z dokumentacji" i odpadało każde
+  QSO, a BBLogger figurował u nas jako obsługiwany od pierwszego commita — bez
+  dowodu. Jedyne, co działa, to prawdziwy datagram z żywego programu.
+  Dotąd prosiliśmy o przechwycenie go przez `nc -u -l 12060`, czego na Windowsie
+  nie ma — czyli kazaliśmy ludziom instalować narzędzia zamiast użyć programu,
+  który już mają uruchomiony. Teraz nieznany datagram zapisuje się sam i trafia
+  do pliku zgłoszenia, więc instrukcja brzmi „kliknij Zapisz zgłoszenie".
+  Trzy ograniczenia, każde celowe: tylko formaty NIEROZPOZNANE (rozpoznanych nie
+  odkładamy nigdzie — to byłoby podsłuchiwanie własnych użytkowników), tylko
+  PIERWSZY datagram każdego rodzaju (jeden logger = jedno miejsce, nie dziesięć)
+  i najwyżej 5 rodzajów po 8 kB. Mechanizm sam wygasa: po dopisaniu dekodera
+  format przestaje być nieznany.
+  Osobny test pilnuje, że PIN nie wyjdzie w zgłoszeniu, nawet gdyby jakiś logger
+  wysyłał go w treści datagramu.

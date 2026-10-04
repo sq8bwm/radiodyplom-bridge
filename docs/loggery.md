@@ -25,6 +25,26 @@ więc ADIF (węższy wzorzec, z deklarowaną długością) jest sprawdzany pierw
 Win-Test (9871), Ham Radio Deluxe, WriteLog, LogHX. Każdy wymaga własnego dekodera —
 dodanie polega na dopisaniu jednego pliku w `src/decoders/` i wpisaniu go do rejestru.
 
+### Chcesz, żeby Twój logger był obsługiwany
+
+Dekodera **nie da się napisać z opisu formatu** — sprawdziliśmy to dwa razy
+i dwa razy się nie udało. Potrzebny jest prawdziwy datagram z Twojego programu.
+Mostek zbiera je sam:
+
+1. ustaw w loggerze wysyłkę UDP na `127.0.0.1` i port `12060` (albo ten, który
+   masz w Konfiguracji),
+2. zaloguj **jedno** QSO,
+3. w mostku: zakładka *O programie* → **Zapisz zgłoszenie do wysłania**,
+4. przyślij powstały plik.
+
+Nieznany datagram jest w nim zapisany w całości. Nie trzeba niczego
+przechwytywać ani instalować. W logu zobaczysz wtedy wpis `Nieznany datagram
+z … zapisany do analizy`.
+
+Zapisujemy **tylko to, czego nie umiemy odczytać**, i tylko **pierwszy datagram
+każdego rodzaju** — najwyżej pięć rodzajów po 8 kB. Rozpoznane QSO nie są
+odkładane nigdzie poza kolejką.
+
 
 ## Konfiguracja loggera
 Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.json`):

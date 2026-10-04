@@ -20,6 +20,7 @@ import { platform, arch, release, hostname } from 'node:os';
 import { editableConfig } from './configedit.js';
 import { rodzajInstalacji } from './instalacja.js';
 import { recentLog } from './log.js';
+import { doZgloszenia } from './nieznane.js';
 
 /** Ile ostatnich wpisów logu dołączamy. Dość, żeby zobaczyć start i awarię. */
 const WPISOW_LOGU = 200;
@@ -133,6 +134,10 @@ export function buildReport({ cfg, status = null, pkg = {}, wpisow = WPISOW_LOGU
       aktualizacja: status.update,
     } : null,
     log: ogonLogu(cfg, wpisow),
+    // Datagramy, których nie umieliśmy odczytać. Bez nich prośba o dodanie
+    // nowego loggera kończy się instruowaniem człowieka, jak przechwycić
+    // pakiet UDP na Windowsie — czyli nie kończy się wcale.
+    nieznaneDatagramy: cfg?.queue?.dir ? doZgloszenia(dirname(cfg.queue.dir)) : [],
   };
 
   // Warstwa druga — patrz komentarz na górze pliku.

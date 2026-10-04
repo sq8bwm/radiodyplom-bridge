@@ -12,13 +12,16 @@ import { pickDecoder } from './decoders/index.js';
 import { mapToRadiodyplom } from './mapper.js';
 import { expandTargets } from './fanout.js';
 import { log } from './log.js';
+import { zapiszNieznany } from './nieznane.js';
 
 export class QsoPipeline {
-  constructor({ operations, pin, targets, onQSO }) {
+  constructor({ operations, pin, targets, onQSO, dataDir = null }) {
     this.operations = new Set(operations || ['insert']);
     this.pin = pin;
     this.targets = targets || [];
     this.onQSO = onQSO;
+    // Gdzie odkładać nieznane datagramy. null = nie odkładamy (testy jednostkowe).
+    this.dataDir = dataDir;
     this.stats = { received: 0, accepted: 0, skipped: 0, invalid: 0, unknown: 0,
       bySource: {}, skipReasons: {},
       // Znak stacji z OSTATNIEGO odebranego QSO — czyli to, czym logujesz
@@ -45,6 +48,9 @@ export class QsoPipeline {
         head: buf.subarray(0, 8).toString('hex'),
         ...(czytelny ? { poczatek: tekstowy.replace(/[\u0000-\u001f]/g, '·') } : {}),
       });
+        // Początek w logu wystarcza, żeby ROZPOZNAĆ, że coś przyszło, ale nie
+        // wystarcza, żeby napisać dekoder. Całość odkładamy do analizy.
+        zapiszNieznany(buf, skad, { dataDir: this.dataDir });
       return;
     }
 

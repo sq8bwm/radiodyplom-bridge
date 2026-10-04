@@ -18,11 +18,14 @@ import {
   ciastkoSesji, odczytajCiastko, czyLokalny, trybApi, czyOpenssl,
 } from '../src/apiauth.js';
 import { setLevel } from '../src/log.js';
+import { wolnyPortTcp } from './pomoc-porty.js';
 
 setLevel('error');
 
 const HASLO = 'bardzo-tajne-haslo';
-const PORT = 12779;
+// Port od systemu, nie wpisany na sztywno — inaczej test pada, gdy ktokolwiek
+// inny trzyma ten numer (działający mostek, drugi przebieg testów).
+const PORT = await wolnyPortTcp();
 const base = `http://127.0.0.1:${PORT}`;
 
 // ---------------------------------------------------------------- jednostkowe

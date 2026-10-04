@@ -20,6 +20,7 @@ import {
   wolnyPortLogger32, DOMYSLNY_PORT_TCP,
 } from '../src/instalacja.js';
 import { examplePath, DOMYSLNY_PORT_UDP } from '../src/config.js';
+import { wolnyPortTcp, wolnyPortUdp } from './pomoc-porty.js';
 
 const ELECTRON = { electron: '44.0.0', defaultApp: undefined };
 
@@ -513,6 +514,16 @@ describe('porty przy pierwszym uruchomieniu', () => {
   });
 });
 
+// Porty do prób bierzemy od systemu, zamiast wpisywać numery na sztywno.
+// Stały numer sprawia, że test pada nie wtedy, gdy kod jest zły, tylko wtedy,
+// gdy ktokolwiek inny trzyma ten port — działający mostek na maszynie
+// dewelopera (12060, 12061, 52005) albo drugi przebieg testów obok.
+// Złapane 2026-10-01 (EADDRINUSE zamiast sprawdzenia) i zmierzone 2026-10-04:
+// przy dwóch zestawach naraz padało z tego powodu ok. 30 testów na przebieg.
+const PORT_TCP = await wolnyPortTcp();
+const PORT_UDP = await wolnyPortUdp();
+const PORT_API = await wolnyPortTcp();
+
 describe('port TCP dla Logger32 w zasiewie', () => {
   // Pytanie z 2026-10-01: „jak to się ma do TCP i do wyłączonego UDP?".
   // Odpowiedź przed tą zmianą: nijak — słowo „tcp" nie padało w instalacja.js
@@ -560,12 +571,6 @@ describe('port TCP dla Logger32 w zasiewie', () => {
     }
   });
 
-  // Własne numery portów, a NIE domyślne: na maszynie deweloperskiej mostek
-  // zwykle działa i trzyma 12060, 12061 oraz 52005 — test, który je zajmuje,
-  // padał z EADDRINUSE zamiast sprawdzić cokolwiek (złapane 2026-10-01).
-  const PORT_TCP = 52105;
-  const PORT_UDP = 12160;
-  const PORT_API = 12161;
 
   test('zajęty port TCP przy WŁĄCZONYM nasłuchu — konfiguracja dostaje inny', async () => {
     const zwolnij = await zajmijTcp(PORT_TCP);

@@ -6,7 +6,7 @@
   "main": "ui/main.js",
   "desktopName": "radiodyplom-bridge.desktop",
   "bin": {
-    "qlog-radiodyplom-bridge": "src/index.js"
+    "radiodyplom-bridge-headless": "src/index.js"
   },
   "scripts": {
     "start": "node src/index.js",

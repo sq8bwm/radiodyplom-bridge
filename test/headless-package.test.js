@@ -176,6 +176,17 @@ describe('nazwa polecenia jest jedna, nie dwie', () => {
     assert.equal(pkg.bin[nazwy[0]], 'src/index.js');
   });
 
+  test('wersja w package-lock nie zostaje w tyle', () => {
+    // Rozjechało się po cichu na pół roku: package.json szedł do 0.1.35,
+    // a lock został na 0.1.8. `npm ci` to toleruje, więc nic nie krzyczało —
+    // ale plik z metadanymi, który kłamie o wersji, trafia do każdego, kto
+    // sklonuje repozytorium.
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+    const lock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
+    assert.equal(lock.version, pkg.version, 'lock.version ma nadążać za package.json');
+    assert.equal(lock.packages[''].version, pkg.version, 'to samo w packages[""]');
+  });
+
   test('stara nazwa nie wraca', () => {
     const pkg = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
     const lock = readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8');

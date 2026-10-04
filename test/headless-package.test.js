@@ -153,3 +153,33 @@ describe('skrypty instalacyjne', () => {
     assert.match(BUILD, /Zostawiam dane QSO/, 'i ma o tym powiedzieć');
   });
 });
+
+describe('nazwa polecenia jest jedna, nie dwie', () => {
+  // RELIKT z sierpnia: pole `bin` w package.json nazywało się
+  // `qlog-radiodyplom-bridge`, choć program od dawna nazywa się inaczej,
+  // a QLog jest jednym z pięciu obsługiwanych loggerów. Nie bolało, bo żadna
+  // nasza paczka tego pola nie używa — zobaczyłby je dopiero ktoś, kto
+  // zainstalowałby projekt przez `npm install -g`. Czyli: niewidoczne dla nas,
+  // mylące dla kogoś z zewnątrz. Najgorszy rodzaj nieścisłości.
+  test('pole bin wskazuje rdzeń BEZ OKNA i nazywa się tak jak w paczce', () => {
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+    const nazwy = Object.keys(pkg.bin || {});
+    assert.equal(nazwy.length, 1, 'jedno polecenie, nie lista');
+
+    // Nazwa musi zgadzać się z tą, którą zakłada budowniczy paczki headless —
+    // inaczej to samo uruchomienie miałoby dwie nazwy zależnie od drogi instalacji.
+    const builder = readFileSync(new URL('../src/tools/build-headless-deb.js', import.meta.url), 'utf8');
+    const zPaczki = builder.match(/const NAZWA = '([^']+)'/)[1];
+    assert.equal(nazwy[0], zPaczki);
+
+    // I musi wskazywać rdzeń, a nie okno: `bin` uruchamia się bez Electrona.
+    assert.equal(pkg.bin[nazwy[0]], 'src/index.js');
+  });
+
+  test('stara nazwa nie wraca', () => {
+    const pkg = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+    const lock = readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8');
+    assert.ok(!pkg.includes('qlog-radiodyplom-bridge'), 'relikt w package.json');
+    assert.ok(!lock.includes('qlog-radiodyplom-bridge'), 'relikt w package-lock.json');
+  });
+});

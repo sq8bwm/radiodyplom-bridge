@@ -144,7 +144,12 @@ const wolnyUdp = (port, host = '127.0.0.1') => new Promise((gotowe) => {
  * Bez tego świeża konfiguracja dostawała domyślne 12060, czyli port zajęty
  * przez instancję, która już działa — druga natychmiast padała na blokadzie.
  */
-export async function wolnaParaPortow({ od = 12070, doKtorego = 12200 } = {}) {
+// `doKtorego` liczone OD `od`, a nie wpisane na stałe: przy porcie spoza
+// okolic 12060 (ktoś ustawił wyżej, albo tak wyszło przy zasiewie) sztywny
+// sufit sprawiał, że pętla nie wykonywała ani jednego obrotu i funkcja
+// zwracała null — czyli zajęty port NIE był przestawiany, bez słowa w logu.
+// Złapane testem 2026-10-04 po odejściu od stałych portów w testach.
+export async function wolnaParaPortow({ od = 12070, doKtorego = od + 130 } = {}) {
   for (let p = od; p <= doKtorego; p += 10) {
     // eslint-disable-next-line no-await-in-loop -- próby MUSZĄ być po kolei
     if (await wolnyUdp(p) && await wolnyTcp(p + 1)) {
@@ -169,7 +174,7 @@ export async function wolnaParaPortow({ od = 12070, doKtorego = 12200 } = {}) {
  * @returns {Promise<number|null>} null = w całej puli nie ma wolnego
  */
 export async function wolnyPortLogger32({
-  od = DOMYSLNY_PORT_TCP + 10, doKtorego = DOMYSLNY_PORT_TCP + 200, host = '127.0.0.1',
+  od = DOMYSLNY_PORT_TCP + 10, doKtorego = od + 190, host = '127.0.0.1',
 } = {}) {
   for (let p = od; p <= doKtorego; p += 10) {
     // eslint-disable-next-line no-await-in-loop -- próby MUSZĄ być po kolei

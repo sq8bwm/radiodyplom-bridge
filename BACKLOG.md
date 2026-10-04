@@ -841,3 +841,19 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   Datagram RUMlogNG przechwycony z żywego programu jest w testach — wniosek
   z Logger32: dopóki nie ma przechwyconego datagramu, „obsługujemy" jest
   przypuszczeniem.
+- **Niestabilne testy: stałe numery portów** (naprawione 2026-10-04). Raz na
+  kilkanaście przebiegów padał pojedynczy test — zawsze inny, zawsze przechodzący
+  przy powtórzeniu. Diagnoza wyszła dopiero przy obciążeniu: dwa zestawy testów
+  uruchomione naraz dawały **około 30 porażek na przebieg**, wszystkie z jednego
+  powodu — testy API i testy portów używały numerów wpisanych na sztywno
+  (12777, 12779, 52105, 12160), więc padały, gdy ktokolwiek inny trzymał ten port:
+  działający mostek na maszynie, drugi przebieg, cokolwiek. Taka porażka nie niesie
+  żadnej informacji, a kosztuje czas na szukanie nieistniejącego błędu — i to
+  u kogoś, kto właśnie przysłał pierwszy pull request.
+  Porty bierzemy teraz od systemu (`test/pomoc-porty.js`). Po zmianie: osiem
+  przebiegów pod tym samym obciążeniem, **zero porażek**.
+  Przy okazji wyszedł prawdziwy błąd w kodzie: `wolnaParaPortow` i
+  `wolnyPortLogger32` miały sufit wpisany na stałe (12200, 52205), więc przy
+  porcie ustawionym wyżej `od` wychodziło ponad `doKtorego`, pętla nie robiła ani
+  jednego obrotu i zajęty port **nie był przestawiany — bez słowa w logu**. Sufit
+  liczy się teraz od `od`. Mutacja potwierdzona.

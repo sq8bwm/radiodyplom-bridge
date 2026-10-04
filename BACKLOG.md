@@ -873,3 +873,38 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   Lekcja ogólniejsza: **„u nas nie do odtworzenia" nie znaczy „nie ma problemu"** —
   znaczy tylko, że nie mamy jeszcze dowodu. Dlatego prosimy o plik zgłoszenia,
   a nie o opis z pamięci.
+- **HamAward i HamConnect — ten sam pomysł, niezależnie** (rozpoznane 2026-10-04).
+  HamAward to włoski serwis dyplomowy, który do odbioru QSO używa własnego
+  programu-pośrednika **HamConnect**: przechwytuje datagramy UDP z loggera
+  i wysyła je do serwisu. Czyli dokładnie nasza architektura — i dokładnie to,
+  co opiekun QLoga napisał, odrzucając pomysł wysyłania po HTTP wprost z loggera
+  („the ideal solution would be to implement a dedicated UDP bridge").
+  Dwa serwisy doszły do tego niezależnie; warto o tym pamiętać, gdy ktoś znów
+  zaproponuje wkładanie logiki serwisu do programu logującego.
+
+  **Z ich dokumentacji** (hamaward.cloud, wersja 25.12.0): paczki na Windows,
+  macOS, Linux deb i AppImage; pobranie **wymaga konta** w serwisie; lista
+  obsługiwanych loggerów obejmuje m.in. QARTest, Log4OM, WSJT-X, DXLog, N1MM,
+  Swisslog, MSHV, JTDX, LogHX, Win-Test, **BBlogger** (podają dla niego port
+  **12060**, czyli nasz domyślny), HRD, WriteLog i QLog; adres odbioru domyślnie
+  `0.0.0.0`, multicast opcjonalnie. Ostrzegają czerwonym drukiem przed
+  antywirusem kasującym pobrany plik — czyli kłopoty z oprogramowaniem ochronnym
+  na Windowsie to cecha gatunku, nie nasza specyfika (patrz zgłoszenie SQ9MEZ
+  z tego samego dnia).
+
+  **Z użytkowania przez nas** (SQ8BWM, SQ8BWA — nie z ich dokumentacji): bufor
+  z ponawianiem istnieje, ale wielkości nie znamy i najpewniej **nie przeżywa
+  restartu programu**; w praktyce po komunikacie o braku łączności trzeba było
+  **przerwać pracę i poczekać**, aż wróci. U nas kolejka leży na dysku i przeżywa
+  restart, więc można nadawać dalej.
+
+  **Czego nie wiemy i nie zgadujemy:** czy mają rozmnażanie jednego QSO na kilka
+  znaków stacji, czy obsługują Logger32 po TCP i jak dokładnie działa ich
+  ponawianie. Brak w opisie nie znaczy brak w programie.
+
+  Lekcja metodologiczna: najpierw napisałam w porównaniu „tylko Windows", bo tak
+  wynikało z JEDNEGO zdania w cudzym przewodniku („download the Windows
+  Hamconnect"). Pobieranie jest za logowaniem, więc nie miałam jak tego
+  sprawdzić — i w takiej sytuacji należało napisać „nie wiem", a nie domykać
+  wniosku. Prostował to użytkownik, który ten program po prostu miał
+  uruchomiony na Linuksie.

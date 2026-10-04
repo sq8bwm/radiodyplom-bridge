@@ -20,6 +20,7 @@
 // przeżywającą restart i te same liczniki w oknie.
 import net from 'node:net';
 import { koniecRekordu } from './adif.js';
+import { opisBleduPortu } from './bledy-portow.js';
 import { log } from './log.js';
 
 /** Ile najwyżej połączeń naraz. Logger32 trzyma jedno; reszta to pomyłka albo skan. */
@@ -56,16 +57,13 @@ export class Logger32Listener {
       this.server = net.createServer((socket) => this._polaczenie(socket));
 
       this.server.on('error', (err) => {
-        // Bind TCP jest wyłączny, więc zajęty port zgłasza się sam — ale
-        // komunikat systemowy („EADDRINUSE") nie mówi, co z tym zrobić.
-        if (err.code === 'EADDRINUSE') {
-          reject(new Error(`Port TCP ${this.host}:${this.port} jest już zajęty. `
-            + 'Zamknij program, który go trzyma, albo zmień tcp.port '
-            + '(i to samo ustawienie w Logger32).'));
-          return;
-        }
-        log.error('Błąd nasłuchu TCP', err.message);
-        reject(err);
+        // Komunikat systemowy mówi, CO się stało, ale nie mówi, co z tym zrobić —
+        // a ląduje prosto na czerwonym banerze „Mostek nie wystartował”.
+        const opis = opisBleduPortu(err, {
+          protokol: 'TCP', host: this.host, port: this.port, logger: 'Logger32',
+        });
+        log.error(opis);
+        reject(new Error(opis));
       });
 
       this.server.listen(this.port, this.host, () => {

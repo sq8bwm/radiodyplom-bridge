@@ -7,6 +7,7 @@ import dgram from 'node:dgram';
 import { DECODER_NAMES } from './decoders/index.js';
 import { QsoPipeline } from './qso-pipeline.js';
 import { log } from './log.js';
+import { opisBleduPortu } from './bledy-portow.js';
 import { acquireLock, releaseLock, udpLockPath } from './lock.js';
 
 export class LoggerListener {
@@ -66,8 +67,13 @@ export class LoggerListener {
     return new Promise((resolve, reject) => {
       this.socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
       this.socket.on('error', (err) => {
-        log.error('Błąd socketu UDP', err.message);
-        reject(err);
+        // To samo co przy TCP: surowy EACCES/EADDRNOTAVAIL na banerze nie mówi
+        // nikomu, co zrobić dalej.
+        const opis = opisBleduPortu(err, {
+          protokol: 'UDP', host: this.host, port: this.port, logger: 'loggerze',
+        });
+        log.error(opis);
+        reject(new Error(opis));
       });
       this.socket.on('message', (buf, rinfo) => this._handle(buf, rinfo));
       this.socket.bind(this.port, this.host, () => {

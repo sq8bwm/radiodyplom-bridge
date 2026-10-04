@@ -857,3 +857,19 @@ domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
   porcie ustawionym wyżej `od` wychodziło ponad `doKtorego`, pętla nie robiła ani
   jednego obrotu i zajęty port **nie był przestawiany — bez słowa w logu**. Sufit
   liczy się teraz od `od`. Mutacja potwierdzona.
+- **Rdzeń nie startował na Windowsie, dopóki nie uruchomiono go raz jako
+  administrator** (zgłoszone 2026-10-04 przez SQ9MEZ na **0.1.35**, czyli na
+  bieżącym kodzie; **przyczyny nie ustaliliśmy**).
+  Objaw: po odhaczeniu nasłuchu UDP program pokazywał „Mostek nie wystartował".
+  U nas nie do odtworzenia — rdzeń i okno wstają z wyłączonym UDP zarówno
+  w trybie headless, jak i w Electronie (sprawdzone na izolowanej konfiguracji).
+  Instalacja i pierwsze uruchomienie z prawami administratora usunęły problem
+  i więcej nie wrócił; zgłaszający podejrzewa zaporę albo inne oprogramowanie
+  ochronne. Zapisane w `docs/windows-i-siec.md` jako obejście, które komuś
+  pomogło — wyraźnie NIE jako wyjaśnienie.
+  Co z tego wynikło na pewno: powód awarii startu lądował na banerze w surowej
+  postaci systemowej, więc zgłaszający zapamiętał z niego tyle, co z plakietki.
+  Komunikaty o nieudanym otwarciu portu mówią teraz, co zrobić (`src/bledy-portow.js`).
+  Lekcja ogólniejsza: **„u nas nie do odtworzenia" nie znaczy „nie ma problemu"** —
+  znaczy tylko, że nie mamy jeszcze dowodu. Dlatego prosimy o plik zgłoszenia,
+  a nie o opis z pamięci.

@@ -84,6 +84,40 @@ Przy pierwszym uruchomieniu Windows zapyta o zezwolenie dla Node/aplikacji na
 przyjmowanie połączeń. Bez zgody dla **sieci prywatnej** datagramy z innych maszyn
 nie dojdą.
 
+### Rdzeń nie startuje — co sprawdzić
+
+Gdy w oknie pojawi się czerwony baner **„Mostek nie wystartował"**, powód jest
+wypisany tuż pod nim — zdaniem z radą, a nie samym kodem systemowym: zajęty
+port, port zarezerwowany przez system albo adres, którego ta maszyna nie ma.
+Zacznij od przeczytania tego zdania, zwykle wystarcza.
+
+Dwie rzeczy specyficzne dla Windowsa:
+
+1. **Port zarezerwowany przez system.** Hyper-V, WSL i Docker Desktop rezerwują
+   całe zakresy portów; bind w takim zakresie kończy się odmową dostępu, choć
+   nikt tego portu nie używa. Lista zakresów:
+
+   ```
+   netsh int ipv4 show excludedportrange protocol=tcp
+   ```
+
+   Jeśli twój port tam jest, zmień go w zakładce Konfiguracja — i ten sam numer
+   w loggerze. Uruchamianie programu jako administrator zwykle tego **nie
+   omija**.
+
+2. **Jednorazowe uruchomienie jako administrator.** Zgłoszone 2026-10-04 (SQ9MEZ,
+   **wersja 0.1.35**, Windows): rdzeń nie startował po wyłączeniu nasłuchu UDP,
+   a instalacja i pierwsze uruchomienie z prawami administratora problem usunęły —
+   i więcej nie wrócił.
+   **Przyczyny nie ustaliliśmy**; podejrzenie padło na zaporę lub inne
+   oprogramowanie ochronne. Zapisujemy to jako obejście, które komuś pomogło,
+   a nie jako wyjaśnienie.
+
+   Jeśli trafisz na to samo, najcenniejsze będzie zgłoszenie z zakładki
+   *O programie* → **Zapisz zgłoszenie do wysłania** (PIN-y i hasła są w nim
+   zamaskowane). Bez niego zgadujemy.
+
+
 ### Katalog danych
 `dataDir` decyduje, względem czego liczone są ścieżki z sekcji `queue`:
 

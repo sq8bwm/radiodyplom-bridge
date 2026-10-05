@@ -14,11 +14,15 @@ import { platform } from 'node:os';
 /**
  * @param {Error & {code?: string}} err  błąd z `listen`/`bind`
  * @param {{protokol: 'TCP'|'UDP', host: string, port: number, logger?: string,
- *   system?: string}} gdzie  `system` tylko dla testów — domyślnie ten, na którym
- *   program działa; rada przy EACCES jest inna na Windowsie niż na Linuksie
+ *   system?: string, zajetyPrzezInnyProces?: boolean}} gdzie  `system` tylko dla
+ *   testów — domyślnie ten, na którym program działa; rada przy EACCES jest inna
+ *   na Windowsie niż na Linuksie. `zajetyPrzezInnyProces` to wynik sondy z
+ *   `src/udp.js`: gdy wiemy, że port ktoś trzyma, nie wysyłamy człowieka do
+ *   `netsh` szukać rezerwacji systemowej, której tam nie ma
  * @returns {string} zdanie dla człowieka, zakończone radą
  */
-export function opisBleduPortu(err, { protokol, host, port, logger, system = platform() }) {
+export function opisBleduPortu(err, { protokol, host, port, logger, system = platform(),
+  zajetyPrzezInnyProces = false }) {
   const gdzie = `${protokol} ${host}:${port}`;
   // „zmień port” znaczy co innego dla UDP (ustawienie w loggerze) niż dla TCP
   // (ustawienie w Logger32) — stąd parametr, zamiast ogólnikowego „w konfiguracji”.
@@ -30,6 +34,15 @@ export function opisBleduPortu(err, { protokol, host, port, logger, system = pla
         + `albo zmień port w zakładce Konfiguracja${iTam}.`;
 
     case 'EACCES':
+      // ZMIERZONE 2026-10-05 na Windowsie 11: gdy port trzyma program, który
+      // zbindował go BEZ reuseAddr, nasz bind dostaje EACCES — nie EADDRINUSE.
+      // Bez tej gałęzi komunikat wysyłał wtedy po `netsh` szukać rezerwacji
+      // systemowej, której nie ma, zamiast powiedzieć o cudzym programie.
+      if (zajetyPrzezInnyProces) {
+        return `Port ${gdzie} trzyma już inny program i nie oddaje go do współdzielenia `
+          + '— zwykle druga aplikacja odbierająca QSO z loggera (np. HamConnect). '
+          + `Zamknij tamten program albo zmień port${iTam}.`;
+      }
       // Na Windowsie to najczęściej NIE brak praw administratora, tylko zakres
       // portów zarezerwowany przez system (Hyper-V, WSL, Docker Desktop).
       // Uruchamianie mostka „jako administrator” wtedy nie pomaga, a bywa
@@ -48,4 +61,33 @@ export function opisBleduPortu(err, { protokol, host, port, logger, system = pla
     default:
       return `Nie udało się otworzyć portu ${gdzie}: ${err?.message || err}`;
   }
+}
+
+/**
+ * Ostrzeżenie, gdy port UDP trzyma JUŻ INNY program.
+ *
+ * Nasz nasłuch binduje z `reuseAddr` (potrzebne do multicastu WSJT-X), więc taki
+ * bind SIĘ UDA mimo cudzego gniazda i nikt by się nie dowiedział. A datagram
+ * dostaje wtedy tylko jedno gniazdo — zmierzone 2026-10-05 na obu systemach:
+ *
+ *   Windows 11 → ten, który zbindował się PIERWSZY
+ *   Linux      → ten, który zbindował się PÓŹNIEJ
+ *
+ * Czyli nie da się nawet powiedzieć „wygrywa ten uruchomiony później". Dlatego
+ * komunikat mówi o skutku (część QSO przepada), a nie o kolejności.
+ *
+ * Nie odmawiamy startu: port mógł zająć program, który nam nie przeszkadza,
+ * a odmowa zabrałaby decyzję użytkownikowi. Ostrzeżenie ma być widoczne.
+ *
+ * @param {{host: string, port: number, system?: string}} gdzie
+ */
+export function ostrzezenieOCudzymNasluchu({ host, port, system = platform() }) {
+  const ktoDostaje = system === 'win32'
+    ? 'ten, który zbindował się PIERWSZY'
+    : 'ten, który zbindował się PÓŹNIEJ';
+  return `Port UDP ${host}:${port} trzyma już inny program — zwykle druga aplikacja `
+    + `odbierająca QSO z loggera (np. HamConnect, który domyślnie słucha na 12060). `
+    + `Oba nasłuchy wstaną, ale datagram dostaje TYLKO JEDEN: na tym systemie `
+    + `${ktoDostaje}. Część QSO przepadnie bez śladu w logu. Zmień udp.port u nas `
+    + `albo port odbioru w tamtym programie — loggery wysyłają do kilku celów naraz.`;
 }

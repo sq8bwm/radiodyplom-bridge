@@ -105,6 +105,13 @@ Dwie rzeczy specyficzne dla Windowsa:
    w loggerze. Uruchamianie programu jako administrator zwykle tego **nie
    omija**.
 
+   **Ale odmowa dostępu nie zawsze znaczy rezerwację systemową.** Zmierzone
+   2026-10-05: gdy port trzyma inny program, który nie oddaje go do
+   współdzielenia (tak robi część odbiorników QSO), Windows oddaje nam
+   dokładnie ten sam błąd. Od **0.1.38** mostek sam to rozróżnia i pisze wprost,
+   że port trzyma inny program — wtedy `netsh` nic nie pokaże i szukanie w nim
+   jest stratą czasu.
+
 2. **Jednorazowe uruchomienie jako administrator.** Zgłoszone 2026-10-04 (SQ9MEZ,
    **wersja 0.1.35**, Windows): rdzeń nie startował po wyłączeniu nasłuchu UDP,
    a instalacja i pierwsze uruchomienie z prawami administratora problem usunęły —

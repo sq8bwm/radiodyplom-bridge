@@ -17,6 +17,7 @@ import {
 import { join, dirname } from 'node:path';
 import { createServer } from 'node:net';
 import { createSocket } from 'node:dgram';
+import { bezBom } from './config.js';
 
 /**
  * Nazwa pliku ze ścieżki — dzieląc po OBU separatorach.
@@ -236,7 +237,7 @@ export async function zalozKatalogDanych({ plik, przykladowy }) {
 export async function dostosujPortyPrzyZasiewie(plikCfg) {
   let cfg;
   try {
-    cfg = JSON.parse(readFileSync(plikCfg, 'utf8'));
+    cfg = JSON.parse(bezBom(readFileSync(plikCfg)));
   } catch {
     return null; // nieczytelna konfiguracja to nie nasza sprawa na tym etapie
   }

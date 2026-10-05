@@ -99,6 +99,30 @@ export function isPinMissing(pin) {
 }
 
 /**
+ * Treść pliku konfiguracji jako tekst, bez znacznika kolejności bajtów.
+ *
+ * ZGŁOSZENIE 2026-10-05 (odtworzone na Windowsie 11): plik zapisany „UTF-8
+ * z BOM" kładł rdzeń komunikatem o nieprawidłowym JSON-ie — bo `JSON.parse`
+ * widzi na początku niewidzialny znak U+FEFF. Na Windowsie robi to PowerShell
+ * (`Set-Content -Encoding UTF8`) i Notatnik przy wyborze „UTF-8 z BOM", czyli
+ * wystarczy, że ktoś RAZ otworzy config.json w edytorze, żeby program przestał
+ * wstawać. Dla człowieka plik wygląda wtedy identycznie — nic nie ostrzeże.
+ *
+ * UTF-16 rozpoznajemy osobno, bo tam nie wystarczy obciąć znacznika: cała treść
+ * jest w innym kodowaniu i komunikat musi mówić, co zrobić.
+ */
+export function bezBom(buf) {
+  if (buf[0] === 0xff && buf[1] === 0xfe) {
+    throw new Error('plik jest w kodowaniu UTF-16 LE — zapisz go jako UTF-8');
+  }
+  if (buf[0] === 0xfe && buf[1] === 0xff) {
+    throw new Error('plik jest w kodowaniu UTF-16 BE — zapisz go jako UTF-8');
+  }
+  const tekst = buf.toString('utf8');
+  return tekst.charCodeAt(0) === 0xfeff ? tekst.slice(1) : tekst;
+}
+
+/**
  * @param {{seed?:boolean}} opts seed=true zasiewa config.json, gdy go brak
  * @returns cfg; brak PIN-u NIE jest błędem – UI musi wstać, żeby dało się go wpisać
  */
@@ -110,7 +134,7 @@ export function loadConfig(opts = {}) {
 
   let cfg;
   try {
-    cfg = JSON.parse(readFileSync(path, 'utf8'));
+    cfg = JSON.parse(bezBom(readFileSync(path)));
   } catch (err) {
     throw new Error(`Nie mogę wczytać konfiguracji (${path}): ${err.message}`);
   }

@@ -9,7 +9,7 @@
 // przesyłania sekretu tam i z powrotem.
 import { readFileSync, existsSync } from 'node:fs';
 import { writeAtomic } from './atomic.js';
-import { configPath, isPinMissing } from './config.js';
+import { configPath, isPinMissing, bezBom } from './config.js';
 import { maskPin } from './httpapi.js';
 import { zahaszujHaslo, hasloUstawione } from './apiauth.js';
 import { log, setLevel } from './log.js';
@@ -371,7 +371,9 @@ export function writeConfigFile(cfg) {
   let original = {};
   const target = configPath();
   if (existsSync(target)) {
-    try { original = JSON.parse(readFileSync(target, 'utf8')); } catch { /* nadpiszemy */ }
+    // BOM tu nie jest kosmetyką: nieudany odczyt zostawia `original` pusty,
+      // a wtedy zapis z UI wycina wszystkie klucze spoza listy poniżej.
+      try { original = JSON.parse(bezBom(readFileSync(target))); } catch { /* nadpiszemy */ }
   }
 
   // Zaczynamy od tego, co JEST w pliku, i nadpisujemy tylko pola, którymi

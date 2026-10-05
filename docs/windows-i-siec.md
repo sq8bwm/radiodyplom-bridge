@@ -117,6 +117,16 @@ Dwie rzeczy specyficzne dla Windowsa:
    *O programie* → **Zapisz zgłoszenie do wysłania** (PIN-y i hasła są w nim
    zamaskowane). Bez niego zgadujemy.
 
+3. **Plik konfiguracji otwarty w edytorze z Windowsa.** Notatnik (opcja „UTF-8
+   z BOM") i PowerShell (`Set-Content -Encoding UTF8`) dopisują na początku pliku
+   niewidzialny znacznik kodowania. Do **wersji 0.1.37** rdzeń mówił wtedy
+   `Unexpected token '?' … is not valid JSON`, choć w pliku na oko nic nie było
+   nie tak. Od **0.1.38** taki plik wczytuje się normalnie.
+
+   Zapis w UTF-16 (w Notatniku „Unicode") to osobna sprawa — tam przestawione są
+   wszystkie bajty, nie tylko początek. Program powie wprost, że plik jest
+   w UTF-16; trzeba go zapisać ponownie jako UTF-8.
+
 
 ### Katalog danych
 `dataDir` decyduje, względem czego liczone są ścieżki z sekcji `queue`:

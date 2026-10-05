@@ -114,7 +114,8 @@ o którym instrukcja nie mówi wprost):
 Sprawdzenie: przycisk **„Test the connection"** w event viewerze wysyła tekst
 **„Hello World!"**, a nie ADIF — mostek zapisze wtedy w logu ostrzeżenie
 „nie rozpoznaję jako ADIF". Wbrew pozorom to **dobra wiadomość**: znaczy, że
-dane docierają. Prawdziwe QSO daje wpis „Nowe QSO [Logger32]".
+dane docierają. Prawdziwe QSO daje wpis „Nowe QSO [ADIF]" — źródło nazywa się
+formatem, bo ten sam ADIF przysyła nam też BBLogger.
 
 **Dwie instancje mostka a port 52005.** Bind TCP jest wyłączny, więc druga
 instancja z włączonym Logger32 na tym samym porcie nie wstanie — i to nie

@@ -4,7 +4,7 @@
 // Rejestr dekoderów + automatyczne rozpoznanie formatu po zawartości datagramu.
 // Rodziny są rozłączne w pierwszych bajtach:
 //   '{'            → JSON (QLog)
-//   '<nazwa:dł>'   → ADIF (Logger32 po TCP)
+//   '<nazwa:dł>'   → ADIF (Logger32 po TCP, ale format nie jest jego własnością)
 //   '<'            → XML  (N1MM, DXLog, BBlogger, Log4OM)
 //   AD BC CB DA    → binarny QDataStream (WSJT-X, JTDX, MSHV)
 import * as qlog from './qlog.js';

@@ -14,11 +14,15 @@ import { platform } from 'node:os';
 /**
  * @param {Error & {code?: string}} err  błąd z `listen`/`bind`
  * @param {{protokol: 'TCP'|'UDP', host: string, port: number, logger?: string,
- *   system?: string}} gdzie  `system` tylko dla testów — domyślnie ten, na którym
- *   program działa; rada przy EACCES jest inna na Windowsie niż na Linuksie
+ *   system?: string, zajetyPrzezInnyProces?: boolean}} gdzie  `system` tylko dla
+ *   testów — domyślnie ten, na którym program działa; rada przy EACCES jest inna
+ *   na Windowsie niż na Linuksie. `zajetyPrzezInnyProces` to wynik sondy z
+ *   `src/udp.js`: gdy wiemy, że port ktoś trzyma, nie wysyłamy człowieka do
+ *   `netsh` szukać rezerwacji systemowej, której tam nie ma
  * @returns {string} zdanie dla człowieka, zakończone radą
  */
-export function opisBleduPortu(err, { protokol, host, port, logger, system = platform() }) {
+export function opisBleduPortu(err, { protokol, host, port, logger, system = platform(),
+  zajetyPrzezInnyProces = false }) {
   const gdzie = `${protokol} ${host}:${port}`;
   // „zmień port” znaczy co innego dla UDP (ustawienie w loggerze) niż dla TCP
   // (ustawienie w Logger32) — stąd parametr, zamiast ogólnikowego „w konfiguracji”.
@@ -30,6 +34,15 @@ export function opisBleduPortu(err, { protokol, host, port, logger, system = pla
         + `albo zmień port w zakładce Konfiguracja${iTam}.`;
 
     case 'EACCES':
+      // ZMIERZONE 2026-10-05 na Windowsie 11: gdy port trzyma program, który
+      // zbindował go BEZ reuseAddr, nasz bind dostaje EACCES — nie EADDRINUSE.
+      // Bez tej gałęzi komunikat wysyłał wtedy po `netsh` szukać rezerwacji
+      // systemowej, której nie ma, zamiast powiedzieć o cudzym programie.
+      if (zajetyPrzezInnyProces) {
+        return `Port ${gdzie} trzyma już inny program i nie oddaje go do współdzielenia `
+          + '— zwykle druga aplikacja odbierająca QSO z loggera (np. HamConnect). '
+          + `Zamknij tamten program albo zmień port${iTam}.`;
+      }
       // Na Windowsie to najczęściej NIE brak praw administratora, tylko zakres
       // portów zarezerwowany przez system (Hyper-V, WSL, Docker Desktop).
       // Uruchamianie mostka „jako administrator” wtedy nie pomaga, a bywa

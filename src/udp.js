@@ -82,7 +82,8 @@ export class LoggerListener {
 
     // Cudzy nasłuch na tym porcie NIE przeszkodzi nam wstać (reuseAddr), więc bez
     // tej sondy przepadanie co drugiego QSO wyglądałoby na usterkę loggera.
-    if (await portZajetyPrzezKogosInnego(this.host, this.port)) {
+    const zajetyPrzezInnyProces = await portZajetyPrzezKogosInnego(this.host, this.port);
+    if (zajetyPrzezInnyProces) {
       log.warn(ostrzezenieOCudzymNasluchu({ host: this.host, port: this.port }));
     }
 
@@ -93,6 +94,7 @@ export class LoggerListener {
         // nikomu, co zrobić dalej.
         const opis = opisBleduPortu(err, {
           protokol: 'UDP', host: this.host, port: this.port, logger: 'loggerze',
+          zajetyPrzezInnyProces,
         });
         log.error(opis);
         reject(new Error(opis));

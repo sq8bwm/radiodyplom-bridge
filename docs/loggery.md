@@ -12,9 +12,9 @@ obsługuje mieszane źródła jednocześnie.
 | Dekoder | Format | Loggery |
 |---|---|---|
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
-| `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, BBlogger, **RUMlogNG**, **Log4OM** |
+| `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, **RUMlogNG**, **Log4OM**, **BBLogger** (tryb XML) |
 | `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 | WSJT-X, JTDX ≥ 2.2.158, MSHV |
-| `Logger32` | goły rekord ADIF, **po TCP** | Logger32 ≥ 4.0.344 |
+| `Logger32` | goły rekord ADIF | Logger32 ≥ 4.0.344 (**po TCP**), **BBLogger** (tryb ADIF, po UDP) |
 
 Rozpoznanie jest jednoznaczne, bo rodziny różnią się początkiem: `{` → JSON,
 `<nazwa:długość>` → ADIF, `<` bez długości → XML, `AD BC CB DA` → binarny.
@@ -53,6 +53,7 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 - **RUMlogNG (macOS)** — `Preferences → UDP → RUMlog, N1MM & TR4W compatible` (szczegóły niżej)
 - **N1MM+ / DXLog** — broadcast na porcie 12060 (domyślny dla tej rodziny)
 - **Log4OM** — `Settings → Program Configuration → Software integration → Connections`, zakładka UDP, sekcja **UDP OUTBOUND**, typ usługi **N1MM_CONTACT** (szczegóły niżej)
+- **BBLogger** — `Tools → Configuration/Maintenance → QSO UDP Broadcast`, format **ADIF** albo **XML (N1MM)** (szczegóły niżej)
 - **WSJT-X / JTDX / MSHV** — `Settings → Reporting → UDP Server` + port
 - **Logger32** — patrz niżej, bo jako jedyny nie używa UDP
 
@@ -123,6 +124,74 @@ Konfiguracja krok po kroku w **RUMlogNG**:
 Od tego momentu każde dodane i zapisane QSO w RUMlogNG zostanie natychmiast
 rozgłoszone przez UDP i odebrane przez mostek.
 
+
+## BBLogger — ADIF datagramem UDP
+
+**Potwierdzone na żywym programie** (2026-10-05, BBLogger 14.7 na Windowsie 11):
+QSO dochodzi do mostka i przechodzi całą drogę — w **obu** trybach. Datagramy
+z tej próby są wklejone do testów, więc zmiana, która by je zepsuła, zatrzyma się
+na testach.
+
+BBLogger daje **oba formaty do wyboru** — lista *Format* ma pozycje `ADIF`
+i `XML (N1MM)`. Sprawdzone w programie 2026-10-05.
+
+Nasz dawny wpis „BBlogger → N1MM" nie był więc fałszywy, ale był **niesprawdzony**
+i mylący: w żadnym materiale autorów słowo „N1MM" nie pada ani razu, a instrukcja
+podłączenia do HamAward każe wybrać ADIF. Kto szedł za ich instrukcją, dostawał
+od nas format, którego u siebie nie wybrał.
+
+Mostek rozumie **oba** — ADIF i XML N1MM mają u nas osobne dekodery i wspólną
+drogę dalej. Nie trzeba niczego dobierać; wystarczy, że wybór w BBLoggerze zgadza
+się z tym, co w kolumnie Źródła zobaczysz jako nazwę formatu.
+
+Konfiguracja według instrukcji autorów:
+
+1. **Tools ➪ Configuration/Maintenance ➪ QSO UDP Broadcast**
+   (w wersji włoskiej: *Strumenti ➪ Configurazione/Manutenzione*).
+2. W sekcji **UDP 1** wpisz: **IP/Host** `127.0.0.1`, **Port** `12060`,
+   **Format** `ADIF` (albo `XML (N1MM)` — mostek przyjmie oba).
+3. W oknie wprowadzania QSO (**F2**) kliknij przycisk **UDP1** — z szarego robi się
+   **czerwony**. Dopiero wtedy dane wychodzą; sam wpis w konfiguracji nie wystarcza.
+
+**Sekcje są trzy: UDP 1, UDP 2 i UDP 3.** To ważne, gdy ktoś wysyła QSO do dwóch
+platform naraz: zamiast dzielić z kimś jeden port (co kończy się cichą utratą
+części QSO), daje się każdemu odbiorcy własny numer.
+
+Cytat z instrukcji (BBLogger 1.1.7.2, podłączenie do HamAward):
+
+> Nel campo UDP 1 dovrebbero essere già inseriti i parametri di IP/Host, Porta e
+> Formato […] **IP/Host 127.0.0.1 e Porta 12060. Il formato ADIF va benissimo.**
+
+Port 12060 to ten sam, który mamy domyślnie, więc po stronie mostka nie trzeba
+zmieniać niczego.
+
+**Zielone okienko w tym samym oknie to co innego** — obsługuje dane wchodzące DO
+BBLoggera z programów FT8/FT4 i JT Alert (port 2334 i podobne). Z wysyłką do nas
+nie ma nic wspólnego.
+
+Po naszej stronie ADIF przysłany datagramem UDP przechodzi tą samą drogą co rekord
+z Logger32 — pilnują tego testy w `test/bblogger.test.js`. W kolumnie **Źródła** QSO
+z BBLoggera pokaże się pod nazwą dekodera ADIF-a.
+
+### Tryb XML wymagał poprawki po naszej stronie
+
+Do wersji 0.1.37 QSO z BBLoggera w trybie **XML (N1MM)** przechodziło z **dziesięć
+razy za małą częstotliwością i bez pasma** — zmierzone: `14.2500` w trybie ADIF, a
+`1.425` w trybie XML, z pustym pasmem. Przyczyny były dwie:
+
+| pole | N1MM+ | BBLogger |
+|---|---|---|
+| `<txfreq>` | setne części kHz (`1425000`) | **dziesiąte** części kHz (`142500`) |
+| `<band>` | MHz-y (`14`) | **nazwa pasma ADIF** (`20m`) |
+
+Mostek dzielił zawsze jak dla N1MM+, a zapasowe `<band>` próbował czytać jako
+liczbę. Od **0.1.38** jednostkę rozstrzyga pasmo: brany jest ten przelicznik, który
+trafia w pasmo podane przez logger. Samo zgadywanie „ta wartość, która wpada
+w jakiekolwiek pasmo" byłoby cichym błędem — `181000` to po N1MM-owemu 1,81 MHz,
+czyli istniejące pasmo 160 m, a naprawdę jest to 18,1 MHz (17 m).
+
+Kto loguje przez BBLoggera w trybie XML na wersji starszej niż 0.1.38, ma w logu
+na radiodyplom.pl złe częstotliwości.
 
 ## Logger32 — jedyny po TCP
 

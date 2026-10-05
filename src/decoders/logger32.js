@@ -1,7 +1,17 @@
 // SPDX-FileCopyrightText: 2026 SQ8BWM
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Dekoder Logger32: goły rekord ADIF.
+// Dekoder ADIF: goły rekord ADIF, bez opakowania.
+//
+// NAZWA. Dekoder nazywa się ADIF, a nie Logger32, bo ADIF jest formatem
+// WYMIANY, nie formatem jednego programu — przysyła go też BBLogger i każdy
+// skrypt, który potrafi złożyć rekord. Nazwa programu w kolumnie Źródła
+// kłamałaby użytkownikowi innego loggera: widziałby QSO przypisane do czegoś,
+// czego nie ma na dysku. Tak samo nazywa się dekoder N1MM — formatem, którym
+// mówi do nas kilka programów naraz.
+//
+// Prefiks deduplikacji ZOSTAJE `logger32`: siedzi w kluczach QSO już wysłanych,
+// a zmiana rozsypałaby je na nowe i wysłała drugi raz.
 //
 // Logger32 (od 4.0.344) ma „enable QSO export by TCP": jako KLIENT TCP łączy
 // się pod wskazany adres i port i wysyła każde zalogowane QSO w ADIF-ie.
@@ -14,7 +24,7 @@ import { parseAdif } from '../adif.js';
 import { qsoKey } from '../dedupkey.js';
 import { log } from '../log.js';
 
-export const name = 'Logger32';
+export const name = 'ADIF';
 
 /**
  * ADIF poznajemy po tagu z DEKLAROWANĄ DŁUGOŚCIĄ: `<call:6>`.

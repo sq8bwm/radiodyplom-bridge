@@ -84,7 +84,8 @@ describe('prawdziwy rekord z Logger32', () => {
 describe('rozpoznawanie ADIF-a obok innych formatów', () => {
   test('rekord Logger32 trafia do właściwego dekodera', () => {
     const d = pickDecoder(Buffer.from(QSO));
-    assert.equal(d.name, 'Logger32');
+    // Nazwa formatu, nie programu: ten sam ADIF przysyła BBLogger i każdy skrypt.
+    assert.equal(d.name, 'ADIF');
   });
 
   test('XML N1MM NIE trafia do Logger32', () => {
@@ -175,7 +176,7 @@ describe('nasłuch TCP zachowuje się jak Logger32', () => {
     assert.equal(odebrane.length, 1);
     assert.equal(odebrane[0].payload.callsign, 'SP9XYZ');
     assert.equal(odebrane[0].payload.station_callsign, 'SQ8BWM');
-    assert.equal(odebrane[0].meta.source, 'Logger32');
+    assert.equal(odebrane[0].meta.source, 'ADIF');
   });
 
   test('rekord rozbity na kawałki jest sklejany', async () => {
@@ -263,7 +264,7 @@ describe('nasłuch TCP zachowuje się jak Logger32', () => {
     await wyslij(port, QSO);
     await chwila();
     assert.equal(pipeline.stats.accepted, 1);
-    assert.equal(pipeline.stats.bySource.Logger32, 1);
+    assert.equal(pipeline.stats.bySource.ADIF, 1);
     assert.equal(pipeline.stats.lastStation, 'SQ8BWM');
   });
 });

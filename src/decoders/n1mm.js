@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2026 SQ8BWM
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Dekoder rodziny N1MM: XML <contactinfo> (N1MM+, DXLog, BBlogger, Log4OM w trybie N1MM).
+// Dekoder rodziny N1MM: XML <contactinfo> (N1MM+, DXLog, Log4OM, RUMlogNG).
+//
+// BBLogger umie OBA: w jego oknie „QSO UDP Broadcast" lista Format ma `ADIF`
+// i `XML (N1MM)` (sprawdzone w programie 05.10.2026). Instrukcja jego autorów
+// (podłączenie do HamAward) każe wybrać ADIF i słowo „N1MM" nie pada w niej ani
+// razu — dlatego nasz dawny wpis „BBlogger = N1MM" był mylący, choć nie fałszywy.
 // Uwaga: <rxfreq>/<txfreq> są w jednostkach 10 Hz, a <band> to MHz (np. "3.5"), nie pasmo ADIF.
 import { bandFromMHz } from '../bands.js';
 import { normalizeMode } from '../modes.js';

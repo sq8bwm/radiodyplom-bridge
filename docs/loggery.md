@@ -14,7 +14,7 @@ obsługuje mieszane źródła jednocześnie.
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
 | `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, **RUMlogNG**, **Log4OM**, **BBLogger** (tryb XML) |
 | `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 | WSJT-X, JTDX ≥ 2.2.158, MSHV |
-| `Logger32` | goły rekord ADIF | Logger32 ≥ 4.0.344 (**po TCP**), BBLogger (tryb ADIF, po UDP) |
+| `Logger32` | goły rekord ADIF | Logger32 ≥ 4.0.344 (**po TCP**), **BBLogger** (tryb ADIF, po UDP) |
 
 Rozpoznanie jest jednoznaczne, bo rodziny różnią się początkiem: `{` → JSON,
 `<nazwa:długość>` → ADIF, `<` bez długości → XML, `AD BC CB DA` → binarny.
@@ -127,9 +127,10 @@ rozgłoszone przez UDP i odebrane przez mostek.
 
 ## BBLogger — ADIF datagramem UDP
 
-**Nie sprawdzone na żywym programie** (BBLoggera jeszcze nie mieliśmy na maszynie
-testowej). To, co niżej, pochodzi z **instrukcji jego autorów** — opisu podłączenia
-BBLoggera do platformy HamAward, wydanego przez ARI Busto Arsizio.
+**Potwierdzone na żywym programie** (2026-10-05, BBLogger 14.7 na Windowsie 11):
+QSO dochodzi do mostka i przechodzi całą drogę — w **obu** trybach. Datagramy
+z tej próby są wklejone do testów, więc zmiana, która by je zepsuła, zatrzyma się
+na testach.
 
 BBLogger daje **oba formaty do wyboru** — lista *Format* ma pozycje `ADIF`
 i `XML (N1MM)`. Sprawdzone w programie 2026-10-05.
@@ -169,8 +170,28 @@ BBLoggera z programów FT8/FT4 i JT Alert (port 2334 i podobne). Z wysyłką do 
 nie ma nic wspólnego.
 
 Po naszej stronie ADIF przysłany datagramem UDP przechodzi tą samą drogą co rekord
-z Logger32 — pilnują tego testy w `test/bblogger-adif-udp.test.js`. W kolumnie
-**Źródła** QSO z BBLoggera pokaże się pod nazwą dekodera ADIF-a.
+z Logger32 — pilnują tego testy w `test/bblogger.test.js`. W kolumnie **Źródła** QSO
+z BBLoggera pokaże się pod nazwą dekodera ADIF-a.
+
+### Tryb XML wymagał poprawki po naszej stronie
+
+Do wersji 0.1.37 QSO z BBLoggera w trybie **XML (N1MM)** przechodziło z **dziesięć
+razy za małą częstotliwością i bez pasma** — zmierzone: `14.2500` w trybie ADIF, a
+`1.425` w trybie XML, z pustym pasmem. Przyczyny były dwie:
+
+| pole | N1MM+ | BBLogger |
+|---|---|---|
+| `<txfreq>` | setne części kHz (`1425000`) | **dziesiąte** części kHz (`142500`) |
+| `<band>` | MHz-y (`14`) | **nazwa pasma ADIF** (`20m`) |
+
+Mostek dzielił zawsze jak dla N1MM+, a zapasowe `<band>` próbował czytać jako
+liczbę. Od **0.1.38** jednostkę rozstrzyga pasmo: brany jest ten przelicznik, który
+trafia w pasmo podane przez logger. Samo zgadywanie „ta wartość, która wpada
+w jakiekolwiek pasmo" byłoby cichym błędem — `181000` to po N1MM-owemu 1,81 MHz,
+czyli istniejące pasmo 160 m, a naprawdę jest to 18,1 MHz (17 m).
+
+Kto loguje przez BBLoggera w trybie XML na wersji starszej niż 0.1.38, ma w logu
+na radiodyplom.pl złe częstotliwości.
 
 ## Logger32 — jedyny po TCP
 

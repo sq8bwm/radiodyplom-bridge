@@ -48,3 +48,23 @@ export function bandFromMHz(mhz) {
 export function bandFromHz(hz) {
   return bandFromMHz(Number(hz) / 1e6);
 }
+
+/** Czy taki napis jest nazwą pasma ADIF (np. „20m"). */
+export function czyNazwaPasma(nazwa) {
+  if (!nazwa) return false;
+  const n = String(nazwa).trim().toLowerCase();
+  return BANDS.some(([name]) => name === n);
+}
+
+/**
+ * Czy częstotliwość mieści się w TYM paśmie.
+ *
+ * Potrzebne, gdy logger podaje i pasmo, i częstotliwość w nieznanej jednostce:
+ * pasmo rozstrzyga, który przelicznik był właściwy. Patrz `src/decoders/n1mm.js`.
+ */
+export function pasmoZawiera(nazwa, mhz) {
+  if (!Number.isFinite(mhz)) return false;
+  const n = String(nazwa ?? '').trim().toLowerCase();
+  const wiersz = BANDS.find(([name]) => name === n);
+  return !!wiersz && mhz >= wiersz[1] && mhz <= wiersz[2];
+}

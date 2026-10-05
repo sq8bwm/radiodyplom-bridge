@@ -12,7 +12,7 @@ obsługuje mieszane źródła jednocześnie.
 | Dekoder | Format | Loggery |
 |---|---|---|
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
-| `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, BBlogger, **RUMlogNG**, Log4OM (tryb N1MM) |
+| `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, BBlogger, **RUMlogNG**, **Log4OM** |
 | `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 | WSJT-X, JTDX ≥ 2.2.158, MSHV |
 | `Logger32` | goły rekord ADIF, **po TCP** | Logger32 ≥ 4.0.344 |
 
@@ -52,11 +52,49 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 - **QLog** — `Settings → Network → Notifications → QSO Changes`
 - **RUMlogNG (macOS)** — `Preferences → UDP → RUMlog, N1MM & TR4W compatible` (szczegóły niżej)
 - **N1MM+ / DXLog** — broadcast na porcie 12060 (domyślny dla tej rodziny)
+- **Log4OM** — `Settings → Program Configuration → Software integration → Connections`, zakładka UDP, sekcja **UDP OUTBOUND**, typ usługi **N1MM_CONTACT** (szczegóły niżej)
 - **WSJT-X / JTDX / MSHV** — `Settings → Reporting → UDP Server` + port
 - **Logger32** — patrz niżej, bo jako jedyny nie używa UDP
 
 WSJT-X wysyła „QSO Logged” dopiero po zatwierdzeniu okna **Log QSO** — to celowe
 zachowanie samego WSJT-X, nie ograniczenie daemona.
+
+
+## Log4OM 2 — przez protokół N1MM
+
+**Potwierdzone na żywym programie** (2026-10-05, Log4OM 2 v.2.41.0.0 na Windowsie 11):
+QSO zalogowane w Log4OM dochodzi do mostka i przechodzi całą drogę aż do wysyłki.
+
+Log4OM nie ma osobnego trybu „radiodyplom" — używamy jego **wyjścia N1MM**, bo wysyła
+dokładnie ten sam datagram XML `<contactinfo>`, który mostek już rozumie.
+
+Konfiguracja krok po kroku:
+
+1. **Settings ➪ Program Configuration** (menu górne).
+2. W drzewie po lewej: **Software integration ➪ Connections**, zakładka **UDP**.
+3. W prawej kolumnie **UDP OUTBOUND** wypełnij:
+   - **Port** — `12060` (ten sam, co `udp.port` w `config.json`),
+   - **Connection name** — dowolna nazwa, np. `RADIODYPLOM-BRIDGE`,
+   - **Service type** — **`N1MM_CONTACT`**,
+   - **Destination IP Address** — `127.0.0.1` (mostek na tym samym komputerze),
+   - **Broadcast** — niezaznaczone.
+4. Dodaj wpis zielonym **+** i upewnij się, że na liście *UDP Outbound connections*
+   ma **zaznaczony haczyk** — bez niego połączenie jest wyłączone.
+5. **Save and apply**.
+
+Gotowy wpis wygląda na liście tak:
+
+```
+[UDP_OUTBOUND] [N1MM_CONTACT] [12060] RADIODYPLOM-BRIDGE
+```
+
+Od tego momentu każde QSO dodane w Log4OM leci do mostka od razu po zapisaniu.
+Sprawdzone pola: znak, data, czas, pasmo, emisja, raporty, częstotliwość, operator
+i znak stacji — czyli komplet potrzebny do wysyłki.
+
+**Uwaga na częstotliwość.** Pole *Freq* w Log4OM jest w kHz (`7100` to 7,1 MHz)
+i steruje pasmem. Dopóki jest puste albo niepoprawne, Log4OM **nie zapisze QSO**
+i nic nie wyśle — a komunikat o tym jest dyskretny (żółty trójkąt przy polu *Band*).
 
 
 ## RUMlogNG (macOS) — przez protokół N1MM

@@ -49,3 +49,32 @@ export function opisBleduPortu(err, { protokol, host, port, logger, system = pla
       return `Nie udało się otworzyć portu ${gdzie}: ${err?.message || err}`;
   }
 }
+
+/**
+ * Ostrzeżenie, gdy port UDP trzyma JUŻ INNY program.
+ *
+ * Nasz nasłuch binduje z `reuseAddr` (potrzebne do multicastu WSJT-X), więc taki
+ * bind SIĘ UDA mimo cudzego gniazda i nikt by się nie dowiedział. A datagram
+ * dostaje wtedy tylko jedno gniazdo — zmierzone 2026-10-05 na obu systemach:
+ *
+ *   Windows 11 → ten, który zbindował się PIERWSZY
+ *   Linux      → ten, który zbindował się PÓŹNIEJ
+ *
+ * Czyli nie da się nawet powiedzieć „wygrywa ten uruchomiony później". Dlatego
+ * komunikat mówi o skutku (część QSO przepada), a nie o kolejności.
+ *
+ * Nie odmawiamy startu: port mógł zająć program, który nam nie przeszkadza,
+ * a odmowa zabrałaby decyzję użytkownikowi. Ostrzeżenie ma być widoczne.
+ *
+ * @param {{host: string, port: number, system?: string}} gdzie
+ */
+export function ostrzezenieOCudzymNasluchu({ host, port, system = platform() }) {
+  const ktoDostaje = system === 'win32'
+    ? 'ten, który zbindował się PIERWSZY'
+    : 'ten, który zbindował się PÓŹNIEJ';
+  return `Port UDP ${host}:${port} trzyma już inny program — zwykle druga aplikacja `
+    + `odbierająca QSO z loggera (np. HamConnect, który domyślnie słucha na 12060). `
+    + `Oba nasłuchy wstaną, ale datagram dostaje TYLKO JEDEN: na tym systemie `
+    + `${ktoDostaje}. Część QSO przepadnie bez śladu w logu. Zmień udp.port u nas `
+    + `albo port odbioru w tamtym programie — loggery wysyłają do kilku celów naraz.`;
+}

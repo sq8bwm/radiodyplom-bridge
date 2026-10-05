@@ -7,8 +7,24 @@ import dgram from 'node:dgram';
 import { DECODER_NAMES } from './decoders/index.js';
 import { QsoPipeline } from './qso-pipeline.js';
 import { log } from './log.js';
-import { opisBleduPortu } from './bledy-portow.js';
+import { opisBleduPortu, ostrzezenieOCudzymNasluchu } from './bledy-portow.js';
 import { acquireLock, releaseLock, udpLockPath } from './lock.js';
+
+/**
+ * Czy ten port trzyma już ktoś inny. Sonda binduje BEZ `reuseAddr`, bo tylko taka
+ * to wykryje — bind z `reuseAddr` (nasz właściwy) wchodzi obok cudzego gniazda
+ * i nie zgłasza niczego. Sprawdzone na Linuksie i na Windowsie 11: oba oddają
+ * wtedy EADDRINUSE.
+ *
+ * @returns {Promise<boolean>}
+ */
+function portZajetyPrzezKogosInnego(host, port) {
+  return new Promise((gotowe) => {
+    const s = dgram.createSocket('udp4');
+    s.once('error', (err) => gotowe(err.code === 'EADDRINUSE'));
+    s.bind(port, host, () => s.close(() => gotowe(false)));
+  });
+}
 
 export class LoggerListener {
   constructor({ host, port, multicastGroups, operations, pin, targets, onQSO, pipeline }) {
@@ -50,7 +66,7 @@ export class LoggerListener {
     this.pipeline.handle(buf, `${rinfo.address}:${rinfo.port}`);
   }
 
-  start() {
+  async start() {
     // reuseAddr jest potrzebny do multicastu, gdzie KAŻDY słuchacz dostaje
     // własną kopię datagramu. Przy unicaście współistnienia nie ma: datagram
     // trafia do jednego gniazda (zmierzone: do tego, które zbindowało się
@@ -63,6 +79,12 @@ export class LoggerListener {
       'Dwa mostki na jednym porcie dzieliłyby między siebie QSO, część by przepadła. '
       + 'Zamknij tamtą instancję albo zmień udp.port.',
     );
+
+    // Cudzy nasłuch na tym porcie NIE przeszkodzi nam wstać (reuseAddr), więc bez
+    // tej sondy przepadanie co drugiego QSO wyglądałoby na usterkę loggera.
+    if (await portZajetyPrzezKogosInnego(this.host, this.port)) {
+      log.warn(ostrzezenieOCudzymNasluchu({ host: this.host, port: this.port }));
+    }
 
     return new Promise((resolve, reject) => {
       this.socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });

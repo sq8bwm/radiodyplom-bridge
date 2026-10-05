@@ -80,8 +80,12 @@ export async function startDaemon(cfg, opts = {}) {
     onQSO: (item) => {
       const added = store.enqueue(item);
       if (added) {
+        // `program` NIE idzie w nawias kwadratowy: stamtąd import-log.js czyta
+        // źródło do dziennika i dopisek rozsypałby statystyki wstecz. Jest to
+        // zresztą tylko to, ZA CO PROGRAM SIĘ PODAJE — RUMlogNG wpisuje w <app>
+        // „N1MM", bo celowo udaje N1MM-a (zmierzone na przechwyconym datagramie).
         log.info(`Nowe QSO [${item.meta.source}]: ${item.payload.callsign} → ${item.payload.station_callsign}`, {
-          band: item.payload.band, mode: item.payload.mode, operator: item.payload.operator,
+          band: item.payload.band, mode: item.payload.mode, operator: item.payload.operator, program: item.meta.app || undefined,
         });
       } else {
         // NIE debug: pominięta kopia znikała bez śladu, przez co realnie

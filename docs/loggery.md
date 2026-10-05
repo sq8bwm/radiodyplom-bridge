@@ -61,6 +61,36 @@ WSJT-X wysyła „QSO Logged” dopiero po zatwierdzeniu okna **Log QSO** — to
 zachowanie samego WSJT-X, nie ograniczenie daemona.
 
 
+## Dwa programy odbierające QSO na jednym porcie
+
+Port **12060** nie jest „nasz" — to domyślny port **rodziny N1MM** i słucha na nim
+każdy program odbierający QSO z loggerów, nie tylko mostek. Jeśli obok działa drugi
+taki program (np. HamConnect, którego instrukcja też każe ustawić 12060), oba
+zbindują port bez błędu, ale **datagram dostanie tylko jeden z nich**.
+
+Zmierzone 2026-10-05, tym samym kodem na obu systemach:
+
+| system | kto odbiera |
+|---|---|
+| Windows 11 | ten, który zbindował się **pierwszy** |
+| Linux | ten, który zbindował się **później** |
+
+Nie da się więc nawet powiedzieć „wygrywa uruchomiony później". Od **0.1.38** mostek
+sprawdza to przy starcie i wypisuje ostrzeżenie — wcześniej część QSO przepadała bez
+jednego słowa w logu i wyglądało to na usterkę loggera.
+
+**Rozwiązanie: każdemu odbiorcy własny port.** Loggery wysyłają do kilku celów naraz,
+więc nie trzeba niczego dzielić:
+
+- **BBLogger** — trzy niezależne gniazda (`UDP 1`, `UDP 2`, `UDP 3`), każde z własnym
+  adresem, portem i formatem,
+- **Log4OM** — dowolna liczba połączeń w sekcji *UDP OUTBOUND*,
+- **N1MM+ / DXLog** — kilka adresów w *Broadcast Data*.
+
+Port odbioru w drugim programie zwykle też da się zmienić — HamConnect ma go
+w ustawieniach obok dwóch innych. Zmieniaj ten, który łatwiej zmienić; ważne, żeby
+numery były różne i żeby logger wysyłał do obu.
+
 ## Log4OM 2 — przez protokół N1MM
 
 **Potwierdzone na żywym programie** (2026-10-05, Log4OM 2 v.2.41.0.0 na Windowsie 11):

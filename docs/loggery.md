@@ -85,6 +85,12 @@ WSJT-X idzie na skróty i wpisuje wprost `MODE=FT8`. Do **0.1.38** czytaliśmy s
 `MODE`, więc **każda łączność FT4 szła na radiodyplom.pl jako „MFSK"** — przechodziła,
 ale z emisją, która nic nie znaczy. Od **0.1.39** `SUBMODE` ma pierwszeństwo.
 
+**Emisja decyduje o punktacji.** W konfiguracji akcji organizator zaznacza
+*dozwolone emisje*, a lista ma `FT8`, `FT4`, `MFSK`, `FT2`, `PSK31`, `C4FM` i inne
+jako **osobne pozycje**. Jeśli organizator zaznaczy `FT4`, a mostek wyśle `MFSK`,
+łączność **nie zostanie punktowana** — będzie widoczna w logu, ale nie policzy się
+do dyplomu. Zgłoszenia takiego nikt by z mostkiem nie powiązał.
+
 **Serwer zapisuje emisję dosłownie — nie sprawdza jej i nie poprawia.** Zmierzone
 2026-10-06 na akcji testowej: wysłaliśmy trzy łączności z `FT4`, `MFSK` i `FT4`
 (powstałym z `MFSK`+`SUBMODE`) — wszystkie zostały przyjęte i zapisane dokładnie

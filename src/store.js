@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // Trwała kolejka plikowa (crash-safe): każdy element to jeden plik JSON.
-// Deduplikacja po kluczu (logid#rowid) przez zbiór "seen".
+// Deduplikacja po kluczu (logid#rowid) przez zbiór "seen" ORAZ po samym odcisku
+// treści QSO — patrz `_odcisk()` i komentarz przy `seenOdciski`.
 import {
   mkdirSync, readdirSync, readFileSync, writeFileSync,
   renameSync, unlinkSync, existsSync,
@@ -19,6 +20,19 @@ export class Store {
     this.seenFile = seenFile;
     this.seen = new Set();        // klucze obsłużone: wysłane ALBO trwale odrzucone
     this.pendingKeys = new Set(); // klucze aktualnie w kolejce
+    // TE SAME QSO Z DWÓCH ŹRÓDEŁ. Klucz zaczyna się od nazwy źródła
+    // (`qlog:…`, `wsjtx:…`), więc ta sama łączność przysłana przez WSJT-X
+    // i przekazana dalej przez QLoga ma DWA różne klucze — i poszłaby na serwer
+    // dwa razy. Zmierzone 2026-10-06 na żywym ruchu: jedno QSO, trzy datagramy
+    // (WSJT-X typ 5, typ 12 i JSON z QLoga), dwa różne klucze.
+    //
+    // Odcisk treści (ostatni człon klucza) jest w takim przypadku IDENTYCZNY,
+    // bo powstaje ze znaku, daty, czasu co do sekundy, pasma, emisji i znaku
+    // stacji. Dlatego pilnujemy go osobno. Rozmnażanie na wiele celów tego nie
+    // psuje: tam zmienia się znak stacji, więc i odcisk.
+    // odcisk treści -> zbiór ŹRÓDEŁ, z których już go widzieliśmy
+    this.seenOdciski = new Map();
+    this.pendingOdciski = new Map();
     this.skipped = 0;             // ile QSO pominięto jako już znane
     // Licznik REALNIE wysłanych. Osobny od `seen`, bo `seen` obejmuje też
     // trwałe odrzucenia — pokazywanie jego rozmiaru jako „wysłane" zawyżało
@@ -58,7 +72,13 @@ export class Store {
       }
     }
     // Odbuduj pendingKeys z plików w kolejce
-    for (const item of this.list()) this.pendingKeys.add(item.key);
+    for (const item of this.list()) {
+      this.pendingKeys.add(item.key);
+      Store._dopiszOdcisk(this.pendingOdciski, item.key);
+    }
+    // Indeks odcisków odtwarzamy z ISTNIEJĄCYCH kluczy — format seen.json
+    // zostaje bez zmian, więc aktualizacja nie gubi nikomu historii.
+    for (const key of this.seen) Store._dopiszOdcisk(this.seenOdciski, key);
 
     log.info('Kolejka zainicjowana', {
       pending: this.pendingKeys.size, seen: this.seen.size,
@@ -84,6 +104,50 @@ export class Store {
     return this.seen.has(key) || this.pendingKeys.has(key);
   }
 
+  /**
+   * Odcisk treści QSO — ostatni człon klucza (`źródło:identyfikator:odcisk`).
+   * Patrz `qsoKey()` w src/dedupkey.js.
+   */
+  static _odcisk(key) {
+    const czesci = String(key).split(':');
+    return czesci.length > 1 ? czesci[czesci.length - 1] : null;
+  }
+
+  /** Źródło z klucza (`qlog:…`, `wsjtx:…`). */
+  static _zrodlo(key) {
+    const czesci = String(key).split(':');
+    return czesci.length > 1 ? czesci[0] : null;
+  }
+
+  /**
+   * Czy TA SAMA łączność przyszła już z INNEGO źródła.
+   *
+   * „Z innego" jest tu istotne. Gdyby wystarczył sam odcisk, zepsulibyśmy drogę
+   * ratunkową opisaną w docs/kolejka.md: operator, któremu QSO nie doszło,
+   * loguje je w swoim programie jeszcze raz. Dostaje wtedy nowy identyfikator
+   * (np. kolejny `rowid` z QLoga), ale odcisk treści ten sam — i powtórka
+   * zostałaby pominięta, choć o nią właśnie chodziło.
+   */
+  znanaZInnegoZrodla(key) {
+    const odcisk = Store._odcisk(key);
+    const zrodlo = Store._zrodlo(key);
+    if (!odcisk || !zrodlo) return false;
+    for (const mapa of [this.seenOdciski, this.pendingOdciski]) {
+      const zrodla = mapa.get(odcisk);
+      if (zrodla && [...zrodla].some((z) => z !== zrodlo)) return true;
+    }
+    return false;
+  }
+
+  /** Zapisuje, że ten odcisk widzieliśmy z tego źródła. */
+  static _dopiszOdcisk(mapa, key) {
+    const odcisk = Store._odcisk(key);
+    const zrodlo = Store._zrodlo(key);
+    if (!odcisk || !zrodlo) return;
+    if (!mapa.has(odcisk)) mapa.set(odcisk, new Set());
+    mapa.get(odcisk).add(zrodlo);
+  }
+
   _fileFor(item) {
     const safe = item.key.replace(/[^A-Za-z0-9_.#-]/g, '_');
     return join(this.dir, `${item.createdAt}-${safe}.json`);
@@ -100,6 +164,15 @@ export class Store {
   /** Dodaje nowy element. Zwraca false, jeśli klucz już znany (dedup). */
   enqueue({ key, payload, meta }) {
     if (this.isKnown(key)) { this.skipped += 1; return false; }
+    if (this.znanaZInnegoZrodla(key)) {
+      // NIE po cichu: użytkownik ma wiedzieć, czemu QSO widoczne w drugim
+      // programie nie pojawiło się drugi raz na radiodyplomie.
+      this.skipped += 1;
+      log.info(`QSO ${payload?.callsign ?? '?'} już przyszło z innego źródła – pomijam kopię`, {
+        zrodlo: meta?.source || null, odcisk: Store._odcisk(key),
+      });
+      return false;
+    }
     const item = {
       key,
       payload,
@@ -112,6 +185,7 @@ export class Store {
     item._file = this._fileFor(item);
     this._atomicWrite(item._file, item);
     this.pendingKeys.add(key);
+    Store._dopiszOdcisk(this.pendingOdciski, key);
     return true;
   }
 
@@ -169,6 +243,7 @@ export class Store {
   }
 
   _markSeen(key) {
+    Store._dopiszOdcisk(this.seenOdciski, key);
     this.seen.add(key);
     this._persistState();
   }
@@ -274,6 +349,7 @@ export class Store {
     else this.sentCount += 1;
     this._markSeen(item.key);
     this.pendingKeys.delete(item.key);
+    this.pendingOdciski.delete(Store._odcisk(item.key));
     try { unlinkSync(item._file); } catch { /* już usunięty */ }
   }
 
@@ -286,6 +362,7 @@ export class Store {
   fail(item, markSeen = true) {
     if (markSeen) this._markSeen(item.key);
     this.pendingKeys.delete(item.key);
+    this.pendingOdciski.delete(Store._odcisk(item.key));
     // basename(), nie split('/') – na Windows separatorem jest '\\'.
     const base = basename(item._file);
     const dest = join(this.failedDir, base);

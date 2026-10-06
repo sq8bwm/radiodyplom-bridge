@@ -37,6 +37,24 @@ częstotliwość **nie** — bywają poprawiane po fakcie, a to wciąż ta sama 
 Przy fan-oucie do klucza doklejany jest znak stacji celu (`…|SN0ABC`), inaczej trzy
 kopie miałyby ten sam klucz i do kolejki weszłaby tylko pierwsza.
 
+### Ta sama łączność z dwóch źródeł
+
+Klucz zaczyna się od **nazwy źródła**, więc ta sama łączność przysłana dwiema
+drogami ma dwa różne klucze. Zmierzone 2026-10-06 na żywym ruchu: jedno QSO
+doszło **trzema** datagramami — WSJT-X nadał „QSO Logged" i „Logged ADIF" na
+grupę multicast, a QLog, który też je odebrał, przekazał je dalej własnym
+protokołem. Bez dodatkowego zabezpieczenia łączność poszłaby na serwer dwa razy.
+
+Dlatego obok kluczy pilnujemy **samego odcisku treści wraz ze źródłem**:
+pomijamy kopię tylko wtedy, gdy ten sam odcisk widzieliśmy już **z innego**
+źródła. Indeks odtwarza się przy starcie z `seen.json`, więc restart niczego nie
+otwiera na nowo.
+
+„Z innego źródła" jest tu kluczowe i wynika wprost z akapitu wyżej: **przelogowanie
+łączności w tym samym programie musi dalej działać**. Operator dostaje wtedy nowy
+identyfikator (np. kolejny `rowid`), ale odcisk ten sam — gdybyśmy pomijali każdy
+znany odcisk, zabralibyśmy mu jedyną rzecz, którą może zrobić sam.
+
 **Pominięcie jest widoczne w logu i liczone** (karta „Pominięte (duplikaty)").
 Wcześniej leciało na poziomie `debug`, więc zgubione QSO wyglądało jak „nic nie
 przyszło" — najgorszy możliwy tryb awarii.

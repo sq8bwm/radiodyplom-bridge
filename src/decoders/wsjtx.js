@@ -23,7 +23,7 @@
 // treści, więc drugi wpada w deduplikację. Sprawdzone na przechwyconej parze
 // z jednego kliknięcia „Log QSO" (test/wsjtx-logged-adif.test.js).
 import { bandFromHz, bandFromMHz, normalizujPasmo } from '../bands.js';
-import { normalizeMode, modeZRekordu } from '../modes.js';
+import { normalizeMode, modeZRekordu, rodzinaEmisji } from '../modes.js';
 import { qsoKey } from '../dedupkey.js';
 import { parseAdif, koniecRekordu } from '../adif.js';
 
@@ -127,6 +127,7 @@ function zLoggedAdif(r, clientId) {
   // łączność z typu 5 i typu 12 ma różny odcisk treści i idzie na serwer dwa razy
   // (zmierzone na parze komunikatów z MSHV, 2026-10-06).
   const m = modeZRekordu(adif);
+  const rodzina = rodzinaEmisji(adif);
   if (m) adif.mode = m;
   delete adif.submode;
   if (adif.band) adif.band = normalizujPasmo(adif.band);
@@ -141,7 +142,11 @@ function zLoggedAdif(r, clientId) {
   return {
     key: qsoKey('wsjtx', null, adif),
     adif,
-    meta: { source: 'WSJT-X', client: clientId, program: naglowek.programid || undefined },
+    meta: {
+      source: 'WSJT-X', client: clientId, program: naglowek.programid || undefined,
+      // Zapas na wypadek INVALID_MODE — patrz rodzinaEmisji() w src/modes.js.
+      modeRodzina: rodzina || undefined,
+    },
   };
 }
 

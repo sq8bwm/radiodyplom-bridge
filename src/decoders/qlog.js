@@ -4,7 +4,7 @@
 // Dekoder QLog: JSON z rekordem ADIF w data.value.
 // {appid:"QLog", msgtype:"qso", time, logid, data:{operation, rowid, type:"adif", value}}
 import { parseAdif } from '../adif.js';
-import { modeZRekordu } from '../modes.js';
+import { modeZRekordu, rodzinaEmisji } from '../modes.js';
 import { normalizujPasmo } from '../bands.js';
 import { qsoKey } from '../dedupkey.js';
 
@@ -41,6 +41,7 @@ export function decode(buf, { operations }) {
   // małymi literami. Bez tego ta sama łączność z dwóch źródeł ma różny odcisk
   // treści — a na tym stoi deduplikacja.
   const emisja = modeZRekordu(adif);
+  const rodzina = rodzinaEmisji(adif);
   if (emisja) adif.mode = emisja;
   delete adif.submode;
   if (adif.band) adif.band = normalizujPasmo(adif.band);
@@ -55,6 +56,8 @@ export function decode(buf, { operations }) {
       logid: msg.logid,
       rowid: d.rowid,
       operation: d.operation,
+      // Zapas na wypadek INVALID_MODE — patrz rodzinaEmisji() w src/modes.js.
+      modeRodzina: rodzina || undefined,
     },
   };
 }

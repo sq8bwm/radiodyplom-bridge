@@ -16,27 +16,6 @@
 //  - DIGITAL/DIGI – ADIF nie ma emisji "DATA"; wymyślanie jej dałoby wartość
 //             nieznaną serwerowi.
 // Takie wartości przechodzą surowe (wielkimi literami) i są widoczne w logu.
-/**
- * Emisje, które radiodyplom.pl PRZYJMUJE. Reszta kończy się trwałym odrzuceniem:
- * `INVALID_MODE: Nieprawidłowa lub nieobsługiwana emisja (mode/submode)`.
- *
- * Lista pochodzi z panelu organizatora („Dozwolone emisje") i została sprawdzona
- * uploadami na akcję testową 2026-10-06: C4FM, PSK31, DIGI, NXDN i FT2 przeszły,
- * a JS8, Q65 oraz wymyślone ZZTEST zostały odrzucone.
- *
- * PO CO NAM TA LISTA: bez niej pierwszeństwo `SUBMODE` byłoby groźne. Łączność
- * JS8 przychodzi jako MODE=MFSK + SUBMODE=JS8 — samo MFSK serwer przyjmuje,
- * a JS8 odrzuca trwale. Podstawiając podtyp „na ślepo" zamienialibyśmy QSO
- * zapisane w dyplomie na QSO przepadnięte w failed/.
- *
- * Gdy lista się rozjedzie z serwerem, objawem będzie INVALID_MODE w logu —
- * wtedy tutaj dopisać, a nie obchodzić w dekoderach.
- */
-const PRZYJMOWANE_PRZEZ_SERWER = new Set([
-  'SSB', 'FM', 'CW', 'FT8', 'FT4', 'FT2', 'PSK', 'PSK31', 'PSK63', 'MFSK',
-  'AM', 'RTTY', 'MSK144', 'DIGI', 'C4FM', 'DMR', 'DSTAR', 'DIGITALVOICE', 'NXDN',
-]);
-
 const ALIASES = {
   USB: 'SSB',
   LSB: 'SSB',
@@ -71,9 +50,25 @@ export function normalizeMode(mode) {
  * wychodzi na to samo: `MODE=SSB, SUBMODE=USB` → `USB` → alias → `SSB`.
  */
 export function modeZRekordu(adif) {
+  return normalizeMode(adif?.submode || adif?.mode);
+}
+
+/**
+ * Rodzina, z której pochodzi podtyp — albo `null`, gdy podtypu nie było.
+ *
+ * Potrzebna, bo emisji NIE OCENIAMY sami. Wysyłamy to, co podał logger (podtyp
+ * jest dokładniejszy, więc wygrywa), a gdy serwer odpowie `INVALID_MODE`,
+ * worker ponawia to samo QSO z rodziną. Decyzję o tym, co jest obsługiwane,
+ * podejmuje więc serwer, a nie nasza lista wpisana w kod.
+ *
+ * Powód, dla którego to się liczy: `INVALID_MODE` jest odrzuceniem TRWAŁYM —
+ * QSO ląduje w `failed/` i nie trafia do dyplomu wcale. Zmierzone 2026-10-06:
+ * serwer przyjmuje FT4, C4FM, PSK31, DIGI, NXDN i FT2, a odrzuca JS8 i Q65.
+ * Łączność JS8 przychodzi jako MODE=MFSK + SUBMODE=JS8, więc bez ponowienia
+ * przepadłaby — mimo że jako MFSK zostałaby przyjęta.
+ */
+export function rodzinaEmisji(adif) {
   const podtyp = normalizeMode(adif?.submode);
   const rodzina = normalizeMode(adif?.mode);
-  // Podtyp TYLKO wtedy, gdy serwer go zna. Inaczej zamienialibyśmy łączność
-  // przyjmowaną na trwale odrzucaną — patrz PRZYJMOWANE_PRZEZ_SERWER.
-  return podtyp && PRZYJMOWANE_PRZEZ_SERWER.has(podtyp) ? podtyp : rodzina;
+  return podtyp && rodzina && podtyp !== rodzina ? rodzina : null;
 }

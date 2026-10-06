@@ -574,40 +574,26 @@ zamknięciu".
 Repozytorium `apt` dla `.deb` byłoby „właściwą" drogą dystrybucji, ale to własny
 serwer albo PPA, klucze GPG i utrzymanie — nieproporcjonalne do skali.
 
-### Lista emisji przyjmowanych przez serwer — dziś przepisana ręcznie
+### Lista emisji w PING — prośba do autora platformy
 
-**Stan (2026-10-06):** `PRZYJMOWANE_PRZEZ_SERWER` w `src/modes.js` to **lista
-wpisana w kod**, przepisana z panelu organizatora i potwierdzona uploadami na akcję
-testową (przeszły `FT4`, `MFSK`, `C4FM`, `PSK31`, `DIGI`, `NXDN`, `FT2`; odrzucone
-`JS8`, `Q65`, wymyślone `ZZTEST`). Służy do jednego: podtyp podstawiamy tylko wtedy,
-gdy serwer go zna, bo inaczej QSO zostaje odrzucone trwale i ląduje w `failed/`.
+**Stan (2026-10-06):** mostek NIE ma listy obsługiwanych emisji i mieć jej nie
+musi. Wysyła wiernie to, co podał logger, a przy `INVALID_MODE` ponawia QSO
+z rodziną (`JS8` → `MFSK`). Decyzję, czego serwis nie obsługuje, podejmuje więc
+serwer — zgodnie z zasadą, że jesteśmy pośrednikiem, a nie instancją oceniającą.
 
-**Dlaczego to niewygodne.** Lista z natury się zestarzeje — gdy radiodyplom doda
-emisję albo zmieni nazwę, nasz kod będzie kłamać, a objaw (`INVALID_MODE` w logu,
-QSO w `failed/`) zobaczy dopiero użytkownik. Marek zgłosił też zastrzeżenie
-ogólniejsze: przepisywanie emisji po stronie mostka mu się nie podoba.
+Przez chwilę mieliśmy listę wpisaną w kod (`PRZYJMOWANE_PRZEZ_SERWER`). Marek
+podważył to podejście i słusznie: lista zestarzałaby się przy pierwszej zmianie
+u nich, a my braliśmy na siebie decyzję, która do nas nie należy.
 
-**Trzy drogi, w kolejności od najlepszej:**
+**Co zostaje do rozważenia:** poprosić autora radiodyplom.pl, żeby odpowiedź
+`action=PING` zawierała listę przyjmowanych emisji (dziś ma `operator`,
+`stations`, `activeActions`, `pinExpires`, `apiEnabled`, `timestamp`). Zysk
+byłby po obu stronach: moglibyśmy ostrzec użytkownika **przed** wysyłką, zamiast
+dowiadywać się z odmowy, a serwis miałby mniej odrzuconych QSO.
 
-1. **Serwer podaje listę w `PING`.** Dziś odpowiedź zawiera `operator`, `stations`,
-   `activeActions`, `pinExpires`, `apiEnabled`, `timestamp` — emisji **nie ma**.
-   Wymaga prośby do autora platformy. *Zastrzeżenie Marka: na wcześniejsze pytania
-   nie dostaliśmy odpowiedzi, więc nie ma co na tym opierać planu.*
-2. **Ponowienie przy `INVALID_MODE`** — wysyłamy podtyp, a gdy serwer go nie zna,
-   powtarzamy to samo QSO z rodziną (`FT4` → `MFSK`). Lista w kodzie przestaje być
-   potrzebna, a nowe emisje zaczynają działać bez aktualizacji mostka. Koszt: jedno
-   dodatkowe żądanie w rzadkim przypadku i rozróżnienie w workerze „odrzucone, ale
-   da się uratować" od „odrzucone naprawdę" — dziś `INVALID_MODE` jest błędem
-   trwałym. Minus: to też jest przepisywanie emisji, tylko sterowane odpowiedzią
-   serwera zamiast listą.
-3. **Zostawić listę w kodzie** (stan obecny). Działa, jest zmierzona i opisana,
-   ale wymaga pamiętania o niej przy zmianach po stronie platformy.
-
-**Czego NIE robić:** nie rozszerzać listy „na zapas" o wartości, których nie
-sprawdziliśmy uploadem. Każda pozycja ma pochodzić z pomiaru, nie z ADIF-a.
-
-Zobacz też wpis o uzupełnianiu brakującego `SUBMODE` — to ten sam temat widziany
-z drugiej strony.
+*Zastrzeżenie Marka: na wcześniejsze pytania do autora nie dostaliśmy
+odpowiedzi, więc nie ma co na tym opierać planu — ponowienie działa bez niczyjej
+zgody.*
 
 ### Uzupełnianie brakującego SUBMODE wartością z ustawień — do przemyślenia
 

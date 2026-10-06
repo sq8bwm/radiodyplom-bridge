@@ -21,7 +21,7 @@
 // Dekoder jest oddzielony od transportu celowo: ten sam ADIF przyjmiemy też
 // datagramem UDP, gdyby ktoś podał go skryptem.
 import { parseAdif } from '../adif.js';
-import { modeZRekordu } from '../modes.js';
+import { modeZRekordu, rodzinaEmisji } from '../modes.js';
 import { normalizujPasmo } from '../bands.js';
 import { qsoKey } from '../dedupkey.js';
 import { log } from '../log.js';
@@ -56,6 +56,7 @@ export function decode(buf) {
   // małymi literami. Bez tego ta sama łączność z dwóch źródeł ma różny odcisk
   // treści — a na tym stoi deduplikacja.
   const emisja = modeZRekordu(adif);
+  const rodzina = rodzinaEmisji(adif);
   if (emisja) adif.mode = emisja;
   delete adif.submode;
   if (adif.band) adif.band = normalizujPasmo(adif.band);
@@ -88,6 +89,11 @@ export function decode(buf) {
     // (jak przy WSJT-X).
     key: qsoKey('logger32', adif.app_logger32_qso_number || null, adif),
     adif,
-    meta: { source: name, ...(zOperatora ? { stacjaZOperatora: true } : {}) },
+    meta: {
+      source: name,
+      ...(zOperatora ? { stacjaZOperatora: true } : {}),
+      // Zapas na wypadek INVALID_MODE — patrz rodzinaEmisji() w src/modes.js.
+      modeRodzina: rodzina || undefined,
+    },
   };
 }

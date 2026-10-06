@@ -103,10 +103,21 @@ Odrzucenie jest **trwałe**: QSO ląduje w `failed/` i do dyplomu nie trafia wca
 Lista przyjmowanych pokrywa się z tą z panelu organizatora.
 
 Ma to bezpośredni skutek dla podtypów: łączność **JS8** przychodzi jako
-`MODE=MFSK` + `SUBMODE=JS8`, a serwer `JS8` odrzuca. Dlatego pierwszeństwo
-`SUBMODE` jest **warunkowe** — podstawiamy go tylko wtedy, gdy serwer tę wartość
-zna (`PRZYJMOWANE_PRZEZ_SERWER` w `src/modes.js`). Inaczej zamienialibyśmy QSO
-zapisane w dyplomie na QSO przepadnięte.
+`MODE=MFSK` + `SUBMODE=JS8`, a serwer `JS8` odrzuca.
+
+**Mostek nie decyduje, co serwis obsługuje.** Wysyłamy wiernie to, co podał
+logger — podtyp jest dokładniejszy, więc idzie pierwszy. Gdy serwer odpowie
+`INVALID_MODE`, mostek **ponawia to samo QSO z rodziną** (`JS8` → `MFSK`)
+i odnotowuje to w logu:
+
+```
+QSO SP9ABC: serwer nie zna emisji JS8, ponawiam jako MFSK (rodzina z rekordu loggera)
+```
+
+Dzięki temu nie ma w kodzie listy obsługiwanych emisji, która i tak zestarzałaby
+się przy pierwszej zmianie po stronie serwisu — a nowe emisje zaczną działać bez
+aktualizacji mostka. Gdy rodziny też nie ma (logger podał samo `MFSK`),
+odrzucenie zostaje odrzuceniem; niczego nie podstawiamy „na wszelki wypadek".
 
 To samo dotyczy zapisu pasma: MSHV w rekordzie ADIF podaje `20M`, a wyliczenie
 z częstotliwości daje `20m`. Ujednolicamy do małych liter — inaczej ta sama łączność

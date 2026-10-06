@@ -4,6 +4,8 @@
 // Dekoder QLog: JSON z rekordem ADIF w data.value.
 // {appid:"QLog", msgtype:"qso", time, logid, data:{operation, rowid, type:"adif", value}}
 import { parseAdif } from '../adif.js';
+import { modeZRekordu } from '../modes.js';
+import { normalizujPasmo } from '../bands.js';
 import { qsoKey } from '../dedupkey.js';
 
 export const name = 'QLog';
@@ -33,6 +35,15 @@ export function decode(buf, { operations }) {
   if (d.type !== 'adif' || !d.value) return null;
 
   const adif = parseAdif(d.value);
+
+  // Emisja i pasmo ujednolicone jak w pozostałych dekoderach: SUBMODE ma
+  // pierwszeństwo (ADIF trzyma FT4 jako MODE=MFSK + SUBMODE=FT4), a pasmo idzie
+  // małymi literami. Bez tego ta sama łączność z dwóch źródeł ma różny odcisk
+  // treści — a na tym stoi deduplikacja.
+  const emisja = modeZRekordu(adif);
+  if (emisja) adif.mode = emisja;
+  delete adif.submode;
+  if (adif.band) adif.band = normalizujPasmo(adif.band);
 
   return {
     // rowid SAM W SOBIE nie wystarcza: SQLite używa go ponownie po skasowaniu

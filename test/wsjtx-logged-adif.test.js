@@ -90,3 +90,71 @@ describe('WSJT-X: Logged ADIF (typ 12)', () => {
     assert.match(r.skip, /typ 0/);
   });
 });
+
+// ===== PRAWDZIWE QSO Z MSHV 2.76.3, przechwycone 2026-10-06 =====
+//
+// Jedna łączność FT4 wysłana przez MSHV DWOMA komunikatami naraz (w oknie
+// Network Configuration zaznaczone były oba przełączniki). To ten przypadek,
+// który omal nie wprowadził podwójnych QSO: MSHV opisuje tę samą łączność
+// RÓŻNIE w obu komunikatach —
+//
+//   typ 5  → MODE=FT4,  BAND=20m   (pasmo liczone z częstotliwości)
+//   typ 12 → MODE=MFSK, SUBMODE=FT4, BAND=20M
+//
+// bo ADIF trzyma FT4 jako podtyp MFSK, a MSHV pisze pasmo wielkimi literami.
+// Bez ujednolicenia emisji i pasma odciski treści się różniły i ta sama
+// łączność poszłaby na serwer dwa razy.
+const MSHV_TYP5 = Buffer.from(
+  'adbccbda0000000200000005000000044d5348560000000000258e8802330ca001000000'
+  + '06535138415a54000000000000000000d6d80000000003465434000000032b3032000000'
+  + '032b30350000000000000000000000000000000000258e88023222400100000000000000'
+  + '06535138425741000000064b4f3131454700000000000000000000000000000000000000'
+  + '0000000000', 'hex');
+
+const MSHV_TYP12 = Buffer.from(
+  'adbccbda000000020000000c000000044d5348560000012c0a3c414449465f5645523a35'
+  + '3e332e312e300a3c50524f4752414d49443a343e4d5348560a3c454f483e0a3c53544154'
+  + '494f4e5f43414c4c5349474e3a363e5351384257413c4d595f475249445351554152453a'
+  + '363e4b4f313145473c43414c4c3a363e535138415a543c475249445351554152453a303e'
+  + '3c44495354414e43453a303e3c4d4f44453a343e4d46534b3c5355424d4f44453a333e46'
+  + '54343c5253545f53454e543a333e2b30323c5253545f524356443a333e2b30353c51534f'
+  + '5f444154453a383e32303236313030363c54494d455f4f4e3a363e3130313430303c5153'
+  + '4f5f444154455f4f46463a383e32303236313030363c54494d455f4f46463a363e313031'
+  + '3530303c42414e443a333e32304d3c465245513a393e31342e3038303030303c454f523e', 'hex');
+
+describe('MSHV: jedna łączność, dwa komunikaty', () => {
+  test('oba opisują to samo QSO', () => {
+    const a = wsjtx.decode(MSHV_TYP5).adif;
+    const b = wsjtx.decode(MSHV_TYP12).adif;
+    assert.equal(a.call, 'SQ8AZT');
+    assert.equal(b.call, 'SQ8AZT');
+    assert.equal(a.time_on, b.time_on);
+  });
+
+  test('FT4 nie gubi się jako „MFSK"', () => {
+    // ADIF: MODE=MFSK + SUBMODE=FT4. Wysłanie samego „MFSK" na serwer znaczy
+    // tyle, co nic — operator pracował FT4 i tak ma być w logu akcji.
+    assert.equal(wsjtx.decode(MSHV_TYP12).adif.mode, 'FT4');
+    assert.equal(wsjtx.decode(MSHV_TYP5).adif.mode, 'FT4');
+  });
+
+  test('pasmo zapisane jednakowo, małymi literami', () => {
+    assert.equal(wsjtx.decode(MSHV_TYP12).adif.band, '20m');
+    assert.equal(wsjtx.decode(MSHV_TYP5).adif.band, '20m');
+  });
+
+  test('TEN SAM klucz — inaczej jedno QSO poszłoby dwa razy', () => {
+    assert.equal(wsjtx.decode(MSHV_TYP12).key, wsjtx.decode(MSHV_TYP5).key);
+  });
+
+  test('po programie nadawcy poznajemy MSHV', () => {
+    assert.equal(wsjtx.decode(MSHV_TYP12).meta.program, 'MSHV');
+    assert.equal(wsjtx.decode(MSHV_TYP5).meta.client, 'MSHV');
+  });
+
+  test('surowe SUBMODE nie wycieka dalej', () => {
+    // Serwer go nie zna, a zostawione obok znormalizowanej emisji myliłoby
+    // przy czytaniu zgłoszeń.
+    assert.equal(wsjtx.decode(MSHV_TYP12).adif.submode, undefined);
+  });
+});

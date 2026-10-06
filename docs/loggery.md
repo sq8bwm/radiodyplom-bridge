@@ -67,16 +67,27 @@ Mostek rozumie **oba** i nie policzy łączności dwa razy, bo oba dają ten sam
 treści. Ma to znaczenie praktyczne:
 
 - **WSJT-X** wysyła oba naraz — nic nie trzeba ustawiać,
-- **MSHV** w oknie *Network Configuration* ma dwa osobne przełączniki:
-  **„Enable Logged QSO ADIF"** (typ 12) i **„Enable Logged QSO"** (podpowiedź
-  programu mówi przy nim „Logger32, etc."). Do **0.1.38** mostek czytał wyłącznie
-  typ 5, więc przy zaznaczonym tylko „…ADIF" QSO z MSHV nie dochodziły, a jedynym
-  śladem był wpis w logu na poziomie debug. Od **0.1.39** typ 12 jest rozumiany.
+- **MSHV** w oknie *Network Configuration* ma dwa osobne przełączniki wysyłki QSO.
+  Zmierzone na żywych łącznościach FT4 (MSHV 2.76.3, 2026-10-06):
 
-  > Czego jeszcze nie sprawdziliśmy: **nie mamy przechwyconej żadnej łączności
-  > z MSHV** (loguje automatycznie, bez ręcznego zapisu, więc potrzeba prawdziwego
-  > QSO). Nie wiemy więc, co dokładnie wysyła w którym trybie. Opis powyżej opisuje
-  > nasze przełączniki, nie zmierzone zachowanie MSHV.
+  | zaznaczone | co wysyła |
+  |---|---|
+  | tylko **Enable Logged QSO ADIF** | wyłącznie **typ 12** |
+  | tylko **Enable Logged QSO** (podpowiedź: „Logger32, etc.") | wyłącznie **typ 5** |
+  | oba | **oba naraz**, tę samą łączność |
+
+  Do **0.1.38** mostek czytał tylko typ 5 — przy pierwszym ustawieniu QSO z MSHV
+  nie dochodziły wcale, a jedynym śladem był wpis w logu na poziomie debug.
+
+**FT4 przychodzi jako MFSK.** ADIF trzyma FT4 jako `MODE=MFSK` + `SUBMODE=FT4`,
+bo formalnie jest podtypem MFSK. Tak wysyła MSHV (w komunikacie ADIF) **i QLog**;
+WSJT-X idzie na skróty i wpisuje wprost `MODE=FT8`. Do **0.1.38** czytaliśmy samo
+`MODE`, więc **każda łączność FT4 szła na radiodyplom.pl jako „MFSK"** — przechodziła,
+ale z emisją, która nic nie znaczy. Od **0.1.39** `SUBMODE` ma pierwszeństwo.
+
+To samo dotyczy zapisu pasma: MSHV w rekordzie ADIF podaje `20M`, a wyliczenie
+z częstotliwości daje `20m`. Ujednolicamy do małych liter — inaczej ta sama łączność
+z dwóch komunikatów tego samego programu miała różny odcisk treści i szła **dwa razy**.
 
 **Multicast to nie kolizja.** WSJT-X i MSHV nadają domyślnie na grupę
 `224.0.0.222:2239`, a multicast daje **każdemu słuchaczowi własną kopię** — mostek

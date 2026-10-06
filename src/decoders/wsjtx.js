@@ -22,8 +22,8 @@
 // WSJT-X wysyła OBA naraz i to nie grozi podwójnym QSO: dają ten sam odcisk
 // treści, więc drugi wpada w deduplikację. Sprawdzone na przechwyconej parze
 // z jednego kliknięcia „Log QSO" (test/wsjtx-logged-adif.test.js).
-import { bandFromHz, bandFromMHz } from '../bands.js';
-import { normalizeMode } from '../modes.js';
+import { bandFromHz, bandFromMHz, normalizujPasmo } from '../bands.js';
+import { normalizeMode, modeZRekordu } from '../modes.js';
 import { qsoKey } from '../dedupkey.js';
 import { parseAdif, koniecRekordu } from '../adif.js';
 
@@ -123,7 +123,13 @@ function zLoggedAdif(r, clientId) {
   adif.call = adif.call.toUpperCase();
   if (adif.station_callsign) adif.station_callsign = adif.station_callsign.toUpperCase();
   adif.operator = (adif.operator || adif.station_callsign || '').toUpperCase();
-  if (adif.mode) adif.mode = normalizeMode(adif.mode);
+  // Emisja z uwzględnieniem SUBMODE i pasmo małymi literami — bez tego TA SAMA
+  // łączność z typu 5 i typu 12 ma różny odcisk treści i idzie na serwer dwa razy
+  // (zmierzone na parze komunikatów z MSHV, 2026-10-06).
+  const m = modeZRekordu(adif);
+  if (m) adif.mode = m;
+  delete adif.submode;
+  if (adif.band) adif.band = normalizujPasmo(adif.band);
 
   // Pasmo bywa puste (WSJT-X bez podłączonego radia wysyła `<band:0>`), więc
   // liczymy je z częstotliwości — tak samo jak przy typie 5.

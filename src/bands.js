@@ -68,3 +68,16 @@ export function pasmoZawiera(nazwa, mhz) {
   const wiersz = BANDS.find(([name]) => name === n);
   return !!wiersz && mhz >= wiersz[1] && mhz <= wiersz[2];
 }
+
+/**
+ * Pasmo zapisane tak, jak chce ADIF: małymi literami („20m").
+ *
+ * Loggery piszą różnie — MSHV w rekordzie ADIF daje „20M", nasze własne
+ * wyliczenie z częstotliwości daje „20m". Bez ujednolicenia ta sama łączność
+ * z dwóch komunikatów tego samego programu miała różny odcisk treści i szła
+ * na serwer dwa razy (zmierzone 2026-10-06).
+ */
+export function normalizujPasmo(pasmo) {
+  const p = String(pasmo ?? '').trim().toLowerCase();
+  return czyNazwaPasma(p) ? p : String(pasmo ?? '').trim();
+}

@@ -574,6 +574,61 @@ zamknięciu".
 Repozytorium `apt` dla `.deb` byłoby „właściwą" drogą dystrybucji, ale to własny
 serwer albo PPA, klucze GPG i utrzymanie — nieproporcjonalne do skali.
 
+### Lista emisji w PING — prośba do autora platformy
+
+**Stan (2026-10-06):** mostek NIE ma listy obsługiwanych emisji i mieć jej nie
+musi. Wysyła wiernie to, co podał logger, a przy `INVALID_MODE` ponawia QSO
+z rodziną (`JS8` → `MFSK`). Decyzję, czego serwis nie obsługuje, podejmuje więc
+serwer — zgodnie z zasadą, że jesteśmy pośrednikiem, a nie instancją oceniającą.
+
+Przez chwilę mieliśmy listę wpisaną w kod (`PRZYJMOWANE_PRZEZ_SERWER`). Marek
+podważył to podejście i słusznie: lista zestarzałaby się przy pierwszej zmianie
+u nich, a my braliśmy na siebie decyzję, która do nas nie należy.
+
+**Co zostaje do rozważenia:** poprosić autora radiodyplom.pl, żeby odpowiedź
+`action=PING` zawierała listę przyjmowanych emisji (dziś ma `operator`,
+`stations`, `activeActions`, `pinExpires`, `apiEnabled`, `timestamp`). Zysk
+byłby po obu stronach: moglibyśmy ostrzec użytkownika **przed** wysyłką, zamiast
+dowiadywać się z odmowy, a serwis miałby mniej odrzuconych QSO.
+
+*Zastrzeżenie Marka: na wcześniejsze pytania do autora nie dostaliśmy
+odpowiedzi, więc nie ma co na tym opierać planu — ponowienie działa bez niczyjej
+zgody.*
+
+### Uzupełnianie brakującego SUBMODE wartością z ustawień — do przemyślenia
+
+**Pomysł Marka (2026-10-06), nieprzesądzony.** W „Ustawieniach zaawansowanych"
+dałoby się pozwolić na stałe uzupełnianie podtypu, gdy logger go nie poda:
+`MFSK → FT4`, `DIGITALVOICE → DMR` i podobnie.
+
+**Skąd się wziął.** Tego dnia zmierzyliśmy, że emisja decyduje o punktacji:
+organizator zaznacza *dozwolone emisje*, a lista ma `FT4`, `JS8`, `C4FM`, `DMR`,
+`DSTAR`, `PSK31` i `MFSK` jako **osobne pozycje**. Łączność przysłana jako gołe
+`MFSK` nie policzy się do dyplomu, w którym zaznaczono `FT4` — będzie w logu,
+ale bez punktów, i nikt nie powiąże tego z mostkiem. Dziś przekazujemy to, co
+dostaliśmy (`src/modes.js`, `modeZRekordu`), bo podtypu nie mamy z czego odtworzyć.
+
+**Za:** operator pracujący wyłącznie jedną emisją z rodziny (a tak jest prawie
+zawsze — ktoś robi FT4 albo DMR, nie „MFSK w ogóle") odzyskałby punkty bez
+zmieniania czegokolwiek w loggerze.
+
+**Przeciw, i to poważnie:** to jest **zgadywanie wpisane do cudzego dyplomu**.
+Serwer niczego nie waliduje — zapisuje dosłownie to, co wyślemy (zmierzone na
+akcji testowej). Zła wartość nie zostanie więc wyłapana ani przez nas, ani przez
+organizatora. Jedna sesja JS8 u kogoś, kto ma ustawione `MFSK → FT4`, da log
+pełen nieprawdziwych FT4. Łamie to zasadę zapisaną w `src/modes.js`: *mapujemy
+wyłącznie to, co jest jednoznaczne*.
+
+**Gdyby robić, to tak:** domyślnie wyłączone; osobno dla każdej rodziny; nazwa
+mówiąca wprost, że to podstawianie, a nie wykrywanie; każde podstawienie
+**widoczne w logu** (nie debug), żeby dało się dojść, skąd w dyplomie wzięła
+się taka emisja; opis w interfejsie mówiący, że zapis trafia do cudzego dyplomu
+i nikt go nie sprawdzi.
+
+**Warto najpierw zmierzyć, czy problem w ogóle występuje:** ile łączności
+w dotychczasowych akcjach ma emisję `MFSK`, `DIGITALVOICE` albo `PSK` bez
+podtypu. Jeśli to pojedyncze sztuki — szkoda zachodu i ryzyka.
+
 ## Techniczne / jakościowe
 
 ### Okno automatycznego ponawiania

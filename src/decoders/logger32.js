@@ -21,6 +21,8 @@
 // Dekoder jest oddzielony od transportu celowo: ten sam ADIF przyjmiemy też
 // datagramem UDP, gdyby ktoś podał go skryptem.
 import { parseAdif } from '../adif.js';
+import { modeZRekordu, rodzinaEmisji } from '../modes.js';
+import { normalizujPasmo } from '../bands.js';
 import { qsoKey } from '../dedupkey.js';
 import { log } from '../log.js';
 
@@ -48,6 +50,16 @@ const uprzedzeni = new Set();
 export function decode(buf) {
   const tekst = buf.toString('utf8');
   const adif = parseAdif(tekst);
+
+  // Emisja i pasmo ujednolicone jak w pozostałych dekoderach: SUBMODE ma
+  // pierwszeństwo (ADIF trzyma FT4 jako MODE=MFSK + SUBMODE=FT4), a pasmo idzie
+  // małymi literami. Bez tego ta sama łączność z dwóch źródeł ma różny odcisk
+  // treści — a na tym stoi deduplikacja.
+  const emisja = modeZRekordu(adif);
+  const rodzina = rodzinaEmisji(adif);
+  if (emisja) adif.mode = emisja;
+  delete adif.submode;
+  if (adif.band) adif.band = normalizujPasmo(adif.band);
 
   // Sam nagłówek pliku ADIF (`<adif_ver:5>3.1.4<eoh>`) nie jest QSO.
   if (!adif.call) return null;
@@ -77,6 +89,11 @@ export function decode(buf) {
     // (jak przy WSJT-X).
     key: qsoKey('logger32', adif.app_logger32_qso_number || null, adif),
     adif,
-    meta: { source: name, ...(zOperatora ? { stacjaZOperatora: true } : {}) },
+    meta: {
+      source: name,
+      ...(zOperatora ? { stacjaZOperatora: true } : {}),
+      // Zapas na wypadek INVALID_MODE — patrz rodzinaEmisji() w src/modes.js.
+      modeRodzina: rodzina || undefined,
+    },
   };
 }

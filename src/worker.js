@@ -178,6 +178,23 @@ export class Worker {
     if (!res.permanent) this.online = false;
     this.lastError = { callsign: call, error: res.error, code: res.code || null, at: new Date().toISOString() };
 
+    // Serwer nie zna tej emisji, a mamy czym ją zastąpić: logger podał podtyp
+    // (np. JS8) i rodzinę (MFSK). NIE decydujemy sami, co serwis obsługuje —
+    // wysyłamy to, co podał logger, a dopiero jego odmowa każe nam cofnąć się
+    // do rodziny. Bez tego QSO przepadłoby w failed/, mimo że jako MFSK
+    // zostałoby przyjęte (zmierzone 2026-10-06: JS8 i Q65 odrzucane trwale).
+    if (res.permanent && res.code === 'INVALID_MODE'
+        && item.meta?.modeRodzina && item.payload.mode !== item.meta.modeRodzina) {
+      const odrzucona = item.payload.mode;
+      item.payload.mode = item.meta.modeRodzina;
+      this.store.update?.(item);
+      log.warn(`QSO ${call}: serwer nie zna emisji ${odrzucona}, ponawiam jako `
+        + `${item.payload.mode} (rodzina z rekordu loggera)`);
+      this._event('retry-mode', item, { odrzucona, zamiast: item.payload.mode });
+      item.nextAt = Date.now();
+      return;
+    }
+
     if (res.permanent) {
       // Serwer odrzucił dane – ponawianie nic nie zmieni.
       this.counters.failed += 1;

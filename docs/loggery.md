@@ -13,7 +13,7 @@ obsługuje mieszane źródła jednocześnie.
 |---|---|---|
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
 | `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, **RUMlogNG**, **Log4OM**, **BBLogger** (tryb XML), **QARTest** |
-| `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 | WSJT-X, JTDX ≥ 2.2.158, MSHV |
+| `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 i 12 | WSJT-X, JTDX ≥ 2.2.158, **MSHV** |
 | `Logger32` | goły rekord ADIF | Logger32 ≥ 4.0.344 (**po TCP**), **BBLogger** (tryb ADIF, po UDP) |
 
 Rozpoznanie jest jednoznaczne, bo rodziny różnią się początkiem: `{` → JSON,
@@ -60,6 +60,81 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 
 WSJT-X wysyła „QSO Logged” dopiero po zatwierdzeniu okna **Log QSO** — to celowe
 zachowanie samego WSJT-X, nie ograniczenie daemona.
+
+**Dwa komunikaty o jednej łączności.** Ta rodzina zna dwa sposoby zgłoszenia QSO:
+typ 5 („QSO Logged", pola binarne) i typ 12 („Logged ADIF", pełny rekord ADIF).
+Mostek rozumie **oba** i nie policzy łączności dwa razy, bo oba dają ten sam odcisk
+treści. Ma to znaczenie praktyczne:
+
+- **WSJT-X** wysyła oba naraz — nic nie trzeba ustawiać,
+- **MSHV** w oknie *Network Configuration* ma dwa osobne przełączniki wysyłki QSO.
+  Zmierzone na żywych łącznościach FT4 (MSHV 2.76.3, 2026-10-06):
+
+  | zaznaczone | co wysyła |
+  |---|---|
+  | tylko **Enable Logged QSO ADIF** | wyłącznie **typ 12** |
+  | tylko **Enable Logged QSO** (podpowiedź: „Logger32, etc.") | wyłącznie **typ 5** |
+  | oba | **oba naraz**, tę samą łączność |
+
+  Do **0.1.38** mostek czytał tylko typ 5 — przy pierwszym ustawieniu QSO z MSHV
+  nie dochodziły wcale, a jedynym śladem był wpis w logu na poziomie debug.
+
+**FT4 przychodzi jako MFSK.** ADIF trzyma FT4 jako `MODE=MFSK` + `SUBMODE=FT4`,
+bo formalnie jest podtypem MFSK. Tak wysyła MSHV (w komunikacie ADIF) **i QLog**;
+WSJT-X idzie na skróty i wpisuje wprost `MODE=FT8`. Do **0.1.38** czytaliśmy samo
+`MODE`, więc **każda łączność FT4 szła na radiodyplom.pl jako „MFSK"** — przechodziła,
+ale z emisją, która nic nie znaczy. Od **0.1.39** `SUBMODE` ma pierwszeństwo.
+
+**Emisja decyduje o punktacji.** W konfiguracji akcji organizator zaznacza
+*dozwolone emisje*, a lista ma `FT8`, `FT4`, `MFSK`, `FT2`, `PSK31`, `C4FM` i inne
+jako **osobne pozycje**. Jeśli organizator zaznaczy `FT4`, a mostek wyśle `MFSK`,
+łączność **nie zostanie punktowana** — będzie widoczna w logu, ale nie policzy się
+do dyplomu. Zgłoszenia takiego nikt by z mostkiem nie powiązał.
+
+**Serwer SPRAWDZA emisję i odrzuca nieznane — trwale.** Zmierzone 2026-10-06
+uploadami na akcję testową:
+
+| wysłane | wynik |
+|---|---|
+| `FT4`, `MFSK`, `C4FM`, `PSK31`, `DIGI`, `NXDN`, `FT2` | przyjęte, zapisane dosłownie |
+| `JS8`, `Q65`, wymyślone `ZZTEST` | **odrzucone**: `INVALID_MODE — Nieprawidłowa lub nieobsługiwana emisja (mode/submode)` |
+
+Odrzucenie jest **trwałe**: QSO ląduje w `failed/` i do dyplomu nie trafia wcale.
+Lista przyjmowanych pokrywa się z tą z panelu organizatora.
+
+Ma to bezpośredni skutek dla podtypów: łączność **JS8** przychodzi jako
+`MODE=MFSK` + `SUBMODE=JS8`, a serwer `JS8` odrzuca.
+
+**Mostek nie decyduje, co serwis obsługuje.** Wysyłamy wiernie to, co podał
+logger — podtyp jest dokładniejszy, więc idzie pierwszy. Gdy serwer odpowie
+`INVALID_MODE`, mostek **ponawia to samo QSO z rodziną** (`JS8` → `MFSK`)
+i odnotowuje to w logu:
+
+```
+QSO SP9ABC: serwer nie zna emisji JS8, ponawiam jako MFSK (rodzina z rekordu loggera)
+```
+
+Dzięki temu nie ma w kodzie listy obsługiwanych emisji, która i tak zestarzałaby
+się przy pierwszej zmianie po stronie serwisu — a nowe emisje zaczną działać bez
+aktualizacji mostka.
+
+**Czego ponowienie nie uratuje.** Gdy logger poda emisję bez podtypu, a serwer
+jej nie zna, nie mamy czym jej zastąpić — i nie wymyślamy zamiennika. Tak jest
+z **Q65**: WSJT-X wysyła go jako `MODE=Q65`, bez `SUBMODE`, więc po odmowie
+serwera QSO trafia do `failed/`. Trzeba je wtedy dodać ręcznie albo poprosić
+organizatora o dopisanie tej emisji do akcji. Przy JS8 jest czym ratować, bo
+przychodzi jako `MODE=MFSK` + `SUBMODE=JS8`.
+
+To samo dotyczy zapisu pasma: MSHV w rekordzie ADIF podaje `20M`, a wyliczenie
+z częstotliwości daje `20m`. Ujednolicamy do małych liter — inaczej ta sama łączność
+z dwóch komunikatów tego samego programu miała różny odcisk treści i szła **dwa razy**.
+
+**Multicast to nie kolizja.** WSJT-X i MSHV nadają domyślnie na grupę
+`224.0.0.222:2239`, a multicast daje **każdemu słuchaczowi własną kopię** — mostek
+może więc odbierać równolegle z QLogiem czy innym programem i nikt nikomu nic nie
+zabiera (inaczej niż przy unicaście na 12060, patrz wyżej). Żeby odbierać
+bezpośrednio z grupy, ustaw `udp.host: "0.0.0.0"`, `udp.port: 2239` i
+`udp.multicastGroups: ["224.0.0.222"]`.
 
 
 ## Dwa programy odbierające QSO na jednym porcie

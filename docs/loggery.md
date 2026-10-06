@@ -13,7 +13,7 @@ obsługuje mieszane źródła jednocześnie.
 |---|---|---|
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
 | `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, **RUMlogNG**, **Log4OM**, **BBLogger** (tryb XML), **QARTest** |
-| `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 | WSJT-X, JTDX ≥ 2.2.158, MSHV |
+| `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 i 12 | WSJT-X, JTDX ≥ 2.2.158, **MSHV** |
 | `Logger32` | goły rekord ADIF | Logger32 ≥ 4.0.344 (**po TCP**), **BBLogger** (tryb ADIF, po UDP) |
 
 Rozpoznanie jest jednoznaczne, bo rodziny różnią się początkiem: `{` → JSON,
@@ -60,6 +60,30 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 
 WSJT-X wysyła „QSO Logged” dopiero po zatwierdzeniu okna **Log QSO** — to celowe
 zachowanie samego WSJT-X, nie ograniczenie daemona.
+
+**Dwa komunikaty o jednej łączności.** Ta rodzina zna dwa sposoby zgłoszenia QSO:
+typ 5 („QSO Logged", pola binarne) i typ 12 („Logged ADIF", pełny rekord ADIF).
+Mostek rozumie **oba** i nie policzy łączności dwa razy, bo oba dają ten sam odcisk
+treści. Ma to znaczenie praktyczne:
+
+- **WSJT-X** wysyła oba naraz — nic nie trzeba ustawiać,
+- **MSHV** w oknie *Network Configuration* ma dwa osobne przełączniki:
+  **„Enable Logged QSO ADIF"** (typ 12) i **„Enable Logged QSO"** (podpowiedź
+  programu mówi przy nim „Logger32, etc."). Do **0.1.38** mostek czytał wyłącznie
+  typ 5, więc przy zaznaczonym tylko „…ADIF" QSO z MSHV nie dochodziły, a jedynym
+  śladem był wpis w logu na poziomie debug. Od **0.1.39** typ 12 jest rozumiany.
+
+  > Czego jeszcze nie sprawdziliśmy: **nie mamy przechwyconej żadnej łączności
+  > z MSHV** (loguje automatycznie, bez ręcznego zapisu, więc potrzeba prawdziwego
+  > QSO). Nie wiemy więc, co dokładnie wysyła w którym trybie. Opis powyżej opisuje
+  > nasze przełączniki, nie zmierzone zachowanie MSHV.
+
+**Multicast to nie kolizja.** WSJT-X i MSHV nadają domyślnie na grupę
+`224.0.0.222:2239`, a multicast daje **każdemu słuchaczowi własną kopię** — mostek
+może więc odbierać równolegle z QLogiem czy innym programem i nikt nikomu nic nie
+zabiera (inaczej niż przy unicaście na 12060, patrz wyżej). Żeby odbierać
+bezpośrednio z grupy, ustaw `udp.host: "0.0.0.0"`, `udp.port: 2239` i
+`udp.multicastGroups: ["224.0.0.222"]`.
 
 
 ## Dwa programy odbierające QSO na jednym porcie

@@ -52,11 +52,13 @@ const ODMOWA = {
   error: 'Nieprawidłowa lub nieobsługiwana emisja (mode/submode): JS8',
 };
 
+// UWAGA na wartości domyślne: `modeRodzina: undefined` w wywołaniu URUCHAMIA
+// wartość domyślną parametru, więc do oznaczenia „brak zapasu" służy `null`.
 function qso({ mode = 'JS8', modeRodzina = 'MFSK' } = {}) {
   return {
     key: 'k-1', attempts: 0, nextAt: 0,
     payload: { callsign: 'SP9ABC', station_callsign: 'SQ8BWM', mode, api_key: 'X' },
-    meta: { source: 'QLog', modeRodzina },
+    meta: { source: 'QLog', modeRodzina: modeRodzina ?? undefined },
   };
 }
 
@@ -89,12 +91,16 @@ describe('serwer odmawia emisji, wracamy do rodziny', () => {
   });
 
   test('bez zapasu odrzucenie zostaje odrzuceniem', async () => {
-    // Logger podał samo MFSK — nie ma czego podstawić, więc nie udajemy,
-    // że da się to uratować.
-    const c = klient(ODMOWA);
+    // Przykład z życia: Q65. WSJT-X wysyła go jako MODE=Q65, BEZ SUBMODE —
+    // nie ma więc rodziny, do której można się cofnąć. Nie wymyślamy
+    // zamiennika; QSO trafia do failed/ i trzeba je dodać ręcznie albo
+    // poprosić organizatora o dopisanie tej emisji do akcji.
+    const c = klient({ ...ODMOWA, error: 'Nieprawidłowa lub nieobsługiwana emisja (mode/submode): Q65' });
     const [w, store] = worker(c);
-    await w._process(qso({ mode: 'MFSK', modeRodzina: undefined }));
+    const item = qso({ mode: 'Q65', modeRodzina: null });
+    await w._process(item);
     assert.equal(store.failed, 1);
+    assert.equal(item.payload.mode, 'Q65', 'emisji nie podmieniamy na siłę');
   });
 
   test('nie zapętlamy się, gdy serwer odmawia także rodzinie', async () => {

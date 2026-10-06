@@ -116,8 +116,14 @@ QSO SP9ABC: serwer nie zna emisji JS8, ponawiam jako MFSK (rodzina z rekordu log
 
 Dzięki temu nie ma w kodzie listy obsługiwanych emisji, która i tak zestarzałaby
 się przy pierwszej zmianie po stronie serwisu — a nowe emisje zaczną działać bez
-aktualizacji mostka. Gdy rodziny też nie ma (logger podał samo `MFSK`),
-odrzucenie zostaje odrzuceniem; niczego nie podstawiamy „na wszelki wypadek".
+aktualizacji mostka.
+
+**Czego ponowienie nie uratuje.** Gdy logger poda emisję bez podtypu, a serwer
+jej nie zna, nie mamy czym jej zastąpić — i nie wymyślamy zamiennika. Tak jest
+z **Q65**: WSJT-X wysyła go jako `MODE=Q65`, bez `SUBMODE`, więc po odmowie
+serwera QSO trafia do `failed/`. Trzeba je wtedy dodać ręcznie albo poprosić
+organizatora o dopisanie tej emisji do akcji. Przy JS8 jest czym ratować, bo
+przychodzi jako `MODE=MFSK` + `SUBMODE=JS8`.
 
 To samo dotyczy zapisu pasma: MSHV w rekordzie ADIF podaje `20M`, a wyliczenie
 z częstotliwości daje `20m`. Ujednolicamy do małych liter — inaczej ta sama łączność

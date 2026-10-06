@@ -91,12 +91,22 @@ jako **osobne pozycje**. Jeśli organizator zaznaczy `FT4`, a mostek wyśle `MFS
 łączność **nie zostanie punktowana** — będzie widoczna w logu, ale nie policzy się
 do dyplomu. Zgłoszenia takiego nikt by z mostkiem nie powiązał.
 
-**Serwer zapisuje emisję dosłownie — nie sprawdza jej i nie poprawia.** Zmierzone
-2026-10-06 na akcji testowej: wysłaliśmy trzy łączności z `FT4`, `MFSK` i `FT4`
-(powstałym z `MFSK`+`SUBMODE`) — wszystkie zostały przyjęte i zapisane dokładnie
-tak, jak je podaliśmy. Czyli to **my** decydujemy, co znajdzie się w logu akcji,
-i nikt tego po nas nie naprawi. Stąd waga poprzedniego akapitu: „MFSK" w dyplomie
-nie mówi, czym operator pracował.
+**Serwer SPRAWDZA emisję i odrzuca nieznane — trwale.** Zmierzone 2026-10-06
+uploadami na akcję testową:
+
+| wysłane | wynik |
+|---|---|
+| `FT4`, `MFSK`, `C4FM`, `PSK31`, `DIGI`, `NXDN`, `FT2` | przyjęte, zapisane dosłownie |
+| `JS8`, `Q65`, wymyślone `ZZTEST` | **odrzucone**: `INVALID_MODE — Nieprawidłowa lub nieobsługiwana emisja (mode/submode)` |
+
+Odrzucenie jest **trwałe**: QSO ląduje w `failed/` i do dyplomu nie trafia wcale.
+Lista przyjmowanych pokrywa się z tą z panelu organizatora.
+
+Ma to bezpośredni skutek dla podtypów: łączność **JS8** przychodzi jako
+`MODE=MFSK` + `SUBMODE=JS8`, a serwer `JS8` odrzuca. Dlatego pierwszeństwo
+`SUBMODE` jest **warunkowe** — podstawiamy go tylko wtedy, gdy serwer tę wartość
+zna (`PRZYJMOWANE_PRZEZ_SERWER` w `src/modes.js`). Inaczej zamienialibyśmy QSO
+zapisane w dyplomie na QSO przepadnięte.
 
 To samo dotyczy zapisu pasma: MSHV w rekordzie ADIF podaje `20M`, a wyliczenie
 z częstotliwości daje `20m`. Ujednolicamy do małych liter — inaczej ta sama łączność

@@ -18,7 +18,6 @@ import { modeZRekordu } from '../src/modes.js';
 describe('podtyp wygrywa, bo to on jest na liście organizatora', () => {
   for (const [mode, submode, oczekiwane] of [
     ['MFSK', 'FT4', 'FT4'],
-    ['MFSK', 'JS8', 'JS8'],
     ['DIGITALVOICE', 'C4FM', 'C4FM'],
     ['DIGITALVOICE', 'DMR', 'DMR'],
     ['DIGITALVOICE', 'DSTAR', 'DSTAR'],
@@ -34,6 +33,39 @@ describe('podtyp wygrywa, bo to on jest na liście organizatora', () => {
     // ale alias i tak sprowadza go z powrotem do SSB.
     assert.equal(modeZRekordu({ mode: 'SSB', submode: 'USB' }), 'SSB');
     assert.equal(modeZRekordu({ mode: 'SSB', submode: 'LSB' }), 'SSB');
+  });
+});
+
+describe('podtyp NIEZNANY serwerowi zostaje przy rodzinie', () => {
+  // ZMIERZONE 2026-10-06 na akcji testowej: radiodyplom.pl WALIDUJE emisje
+  // i odrzuca je trwale komunikatem
+  //   INVALID_MODE: Nieprawidłowa lub nieobsługiwana emisja (mode/submode): JS8
+  // Odrzucone QSO ląduje w failed/ i do dyplomu nie trafia wcale.
+  //
+  // Dlatego pierwszeństwo podtypu MUSI być warunkowe. Łączność JS8 przychodzi
+  // jako MODE=MFSK + SUBMODE=JS8: samo MFSK serwer przyjmuje, JS8 odrzuca.
+  // Podstawiając podtyp na ślepo zamienilibyśmy QSO zapisane w dyplomie na
+  // QSO przepadnięte — czyli pogorszyli stan sprzed poprawki.
+  test('JS8 nie jest przyjmowany przez serwer, więc zostaje MFSK', () => {
+    assert.equal(modeZRekordu({ mode: 'MFSK', submode: 'JS8' }), 'MFSK');
+  });
+
+  test('Q65 tak samo', () => {
+    assert.equal(modeZRekordu({ mode: 'MFSK', submode: 'Q65' }), 'MFSK');
+  });
+
+  test('wymyślona wartość nie przesłania rodziny', () => {
+    assert.equal(modeZRekordu({ mode: 'DIGITALVOICE', submode: 'ZZTEST' }), 'DIGITALVOICE');
+  });
+
+  test('wszystkie podtypy z listy organizatora PRZECHODZĄ', () => {
+    // Sprawdzone uploadami: C4FM, PSK31, DIGI, NXDN i FT2 zostały przyjęte.
+    for (const [rodzina, podtyp] of [
+      ['MFSK', 'FT4'], ['DIGITALVOICE', 'C4FM'], ['DIGITALVOICE', 'DMR'],
+      ['DIGITALVOICE', 'DSTAR'], ['PSK', 'PSK31'], ['PSK', 'PSK63'],
+    ]) {
+      assert.equal(modeZRekordu({ mode: rodzina, submode: podtyp }), podtyp);
+    }
   });
 });
 

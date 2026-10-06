@@ -60,7 +60,7 @@ i aktywnych akcji; niczego tam nie zmienia poza dopisaniem QSO.
 | Protokół | Loggery |
 |---|---|
 | JSON (Notifications) | **QLog** |
-| XML `<contactinfo>` | **N1MM+**, DXLog, **RUMlogNG**, Log4OM (tryb N1MM), BBLogger (tryb XML) |
+| XML `<contactinfo>` | **N1MM+**, DXLog, **RUMlogNG**, Log4OM (tryb N1MM), BBLogger (tryb XML), **QARTest** |
 | binarny QDataStream | **WSJT-X**, JTDX ≥ 2.2.158, MSHV |
 | ADIF po TCP | **Logger32** ≥ 4.0.344 (nasłuch włącza się w Konfiguracji) |
 

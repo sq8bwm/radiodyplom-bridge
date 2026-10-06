@@ -12,7 +12,7 @@ obsługuje mieszane źródła jednocześnie.
 | Dekoder | Format | Loggery |
 |---|---|---|
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
-| `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, **RUMlogNG**, **Log4OM**, **BBLogger** (tryb XML) |
+| `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, **RUMlogNG**, **Log4OM**, **BBLogger** (tryb XML), **QARTest** |
 | `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 | WSJT-X, JTDX ≥ 2.2.158, MSHV |
 | `Logger32` | goły rekord ADIF | Logger32 ≥ 4.0.344 (**po TCP**), **BBLogger** (tryb ADIF, po UDP) |
 
@@ -21,7 +21,7 @@ Rozpoznanie jest jednoznaczne, bo rodziny różnią się początkiem: `{` → JS
 Kolejność sprawdzania ma znaczenie: ADIF i XML zaczynają się tym samym znakiem,
 więc ADIF (węższy wzorzec, z deklarowaną długością) jest sprawdzany pierwszy.
 
-**Nieobsługiwane** (własne, odrębne protokoły): QARTest (9458), Swisslog (2333),
+**Nieobsługiwane** (własne, odrębne protokoły): Swisslog (2333),
 Win-Test (9871), Ham Radio Deluxe, WriteLog, LogHX. Każdy wymaga własnego dekodera —
 dodanie polega na dopisaniu jednego pliku w `src/decoders/` i wpisaniu go do rejestru.
 
@@ -54,6 +54,7 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 - **N1MM+ / DXLog** — broadcast na porcie 12060 (domyślny dla tej rodziny)
 - **Log4OM** — `Settings → Program Configuration → Software integration → Connections`, zakładka UDP, sekcja **UDP OUTBOUND**, typ usługi **N1MM_CONTACT** (szczegóły niżej)
 - **BBLogger** — `Tools → Configuration/Maintenance → QSO UDP Broadcast`, format **ADIF** albo **XML (N1MM)** (szczegóły niżej)
+- **QARTest** — `Options → External data broadcast`, zaznaczone **QSO** (szczegóły niżej)
 - **WSJT-X / JTDX / MSHV** — `Settings → Reporting → UDP Server` + port
 - **Logger32** — patrz niżej, bo jako jedyny nie używa UDP
 
@@ -127,6 +128,38 @@ i znak stacji — czyli komplet potrzebny do wysyłki.
 i steruje pasmem. Dopóki jest puste albo niepoprawne, Log4OM **nie zapisze QSO**
 i nic nie wyśle — a komunikat o tym jest dyskretny (żółty trójkąt przy polu *Band*).
 
+
+## QARTest — przez protokół N1MM
+
+**Potwierdzone na żywym programie** (2026-10-05, QARTest 16.9.1 na Windowsie 11):
+QSO dochodzi do mostka i przechodzi całą drogę, **bez żadnej zmiany po naszej
+stronie**. Przechwycony datagram jest w testach (`test/qartest.test.js`).
+
+Do tego dnia ten dokument wymieniał QARTest wśród **nieobsługiwanych**, z adnotacją
+„własny, odrębny protokół (9458)". To nieprawda — twierdzenie pochodziło
+z pierwszego commitu (31 sierpnia) i nigdy nie zostało sprawdzone. QARTest wysyła
+zwykły XML `<contactinfo>`, czyli dokładnie to, co rozumiemy od początku.
+
+Konfiguracja:
+
+1. **Options ➪ External data broadcast** (w wersji włoskiej: *Opzioni ➪ Broadcast
+   esterno dati*).
+2. Zaznacz **QSO**, wpisz adres `127.0.0.1` i port `12060`.
+3. Opcja **also send QSO's received from the network** dotyczy pracy
+   wielostanowiskowej — decyduje, czy wysyłać dalej także QSO zalogowane na innych
+   stanowiskach połączonych w sieć QARTesta. Przy jednym komputerze nie zmienia nic.
+
+Czego QARTest **nie** podaje, a my sobie z tym radzimy:
+
+| pole | jak jest | co robimy |
+|---|---|---|
+| `<operator>` | puste | bierzemy znak z `<mycall>` |
+| `<app>` | puste | nazwę programu czytamy z `<logger>` („QARTest 16.9.1") |
+| `<band>` | `160` — metry jako goła liczba, nie MHz-y ani nazwa ADIF | pasmo liczymy z częstotliwości |
+| grid | brak | pole zostaje puste |
+
+Jednostka `<txfreq>` jest tu taka jak w N1MM+ (setne części kHz: `180000` to
+1,8 MHz), więc pułapka znana z BBLoggera tu nie występuje.
 
 ## RUMlogNG (macOS) — przez protokół N1MM
 

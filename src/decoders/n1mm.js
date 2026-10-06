@@ -123,7 +123,11 @@ export function decode(buf) {
   return {
     key,
     adif,
-    meta: { source: 'N1MM', app: tag(xml, 'app'), id: id || null },
+    // `app` służy do diagnozy: po nim poznajemy, który program przysłał QSO.
+    // N1MM+ i BBLogger wypełniają <app>, QARTest zostawia je puste i przedstawia
+    // się w <logger> („QARTest 16.9.1") — bez tego zapasu zgłoszenie użytkownika
+    // nie mówiłoby, z czego w ogóle przyszły datagramy.
+    meta: { source: 'N1MM', app: tag(xml, 'app') || tag(xml, 'logger'), id: id || null },
   };
 }
 

@@ -85,6 +85,13 @@ WSJT-X idzie na skróty i wpisuje wprost `MODE=FT8`. Do **0.1.38** czytaliśmy s
 `MODE`, więc **każda łączność FT4 szła na radiodyplom.pl jako „MFSK"** — przechodziła,
 ale z emisją, która nic nie znaczy. Od **0.1.39** `SUBMODE` ma pierwszeństwo.
 
+**Serwer zapisuje emisję dosłownie — nie sprawdza jej i nie poprawia.** Zmierzone
+2026-10-06 na akcji testowej: wysłaliśmy trzy łączności z `FT4`, `MFSK` i `FT4`
+(powstałym z `MFSK`+`SUBMODE`) — wszystkie zostały przyjęte i zapisane dokładnie
+tak, jak je podaliśmy. Czyli to **my** decydujemy, co znajdzie się w logu akcji,
+i nikt tego po nas nie naprawi. Stąd waga poprzedniego akapitu: „MFSK" w dyplomie
+nie mówi, czym operator pracował.
+
 To samo dotyczy zapisu pasma: MSHV w rekordzie ADIF podaje `20M`, a wyliczenie
 z częstotliwości daje `20m`. Ujednolicamy do małych liter — inaczej ta sama łączność
 z dwóch komunikatów tego samego programu miała różny odcisk treści i szła **dwa razy**.

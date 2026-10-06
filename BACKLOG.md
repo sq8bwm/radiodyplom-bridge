@@ -574,6 +574,40 @@ zamknięciu".
 Repozytorium `apt` dla `.deb` byłoby „właściwą" drogą dystrybucji, ale to własny
 serwer albo PPA, klucze GPG i utrzymanie — nieproporcjonalne do skali.
 
+### Uzupełnianie brakującego SUBMODE wartością z ustawień — do przemyślenia
+
+**Pomysł Marka (2026-10-06), nieprzesądzony.** W „Ustawieniach zaawansowanych"
+dałoby się pozwolić na stałe uzupełnianie podtypu, gdy logger go nie poda:
+`MFSK → FT4`, `DIGITALVOICE → DMR` i podobnie.
+
+**Skąd się wziął.** Tego dnia zmierzyliśmy, że emisja decyduje o punktacji:
+organizator zaznacza *dozwolone emisje*, a lista ma `FT4`, `JS8`, `C4FM`, `DMR`,
+`DSTAR`, `PSK31` i `MFSK` jako **osobne pozycje**. Łączność przysłana jako gołe
+`MFSK` nie policzy się do dyplomu, w którym zaznaczono `FT4` — będzie w logu,
+ale bez punktów, i nikt nie powiąże tego z mostkiem. Dziś przekazujemy to, co
+dostaliśmy (`src/modes.js`, `modeZRekordu`), bo podtypu nie mamy z czego odtworzyć.
+
+**Za:** operator pracujący wyłącznie jedną emisją z rodziny (a tak jest prawie
+zawsze — ktoś robi FT4 albo DMR, nie „MFSK w ogóle") odzyskałby punkty bez
+zmieniania czegokolwiek w loggerze.
+
+**Przeciw, i to poważnie:** to jest **zgadywanie wpisane do cudzego dyplomu**.
+Serwer niczego nie waliduje — zapisuje dosłownie to, co wyślemy (zmierzone na
+akcji testowej). Zła wartość nie zostanie więc wyłapana ani przez nas, ani przez
+organizatora. Jedna sesja JS8 u kogoś, kto ma ustawione `MFSK → FT4`, da log
+pełen nieprawdziwych FT4. Łamie to zasadę zapisaną w `src/modes.js`: *mapujemy
+wyłącznie to, co jest jednoznaczne*.
+
+**Gdyby robić, to tak:** domyślnie wyłączone; osobno dla każdej rodziny; nazwa
+mówiąca wprost, że to podstawianie, a nie wykrywanie; każde podstawienie
+**widoczne w logu** (nie debug), żeby dało się dojść, skąd w dyplomie wzięła
+się taka emisja; opis w interfejsie mówiący, że zapis trafia do cudzego dyplomu
+i nikt go nie sprawdzi.
+
+**Warto najpierw zmierzyć, czy problem w ogóle występuje:** ile łączności
+w dotychczasowych akcjach ma emisję `MFSK`, `DIGITALVOICE` albo `PSK` bez
+podtypu. Jeśli to pojedyncze sztuki — szkoda zachodu i ryzyka.
+
 ## Techniczne / jakościowe
 
 ### Okno automatycznego ponawiania

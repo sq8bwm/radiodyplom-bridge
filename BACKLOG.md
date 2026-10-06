@@ -574,6 +574,41 @@ zamknięciu".
 Repozytorium `apt` dla `.deb` byłoby „właściwą" drogą dystrybucji, ale to własny
 serwer albo PPA, klucze GPG i utrzymanie — nieproporcjonalne do skali.
 
+### Lista emisji przyjmowanych przez serwer — dziś przepisana ręcznie
+
+**Stan (2026-10-06):** `PRZYJMOWANE_PRZEZ_SERWER` w `src/modes.js` to **lista
+wpisana w kod**, przepisana z panelu organizatora i potwierdzona uploadami na akcję
+testową (przeszły `FT4`, `MFSK`, `C4FM`, `PSK31`, `DIGI`, `NXDN`, `FT2`; odrzucone
+`JS8`, `Q65`, wymyślone `ZZTEST`). Służy do jednego: podtyp podstawiamy tylko wtedy,
+gdy serwer go zna, bo inaczej QSO zostaje odrzucone trwale i ląduje w `failed/`.
+
+**Dlaczego to niewygodne.** Lista z natury się zestarzeje — gdy radiodyplom doda
+emisję albo zmieni nazwę, nasz kod będzie kłamać, a objaw (`INVALID_MODE` w logu,
+QSO w `failed/`) zobaczy dopiero użytkownik. Marek zgłosił też zastrzeżenie
+ogólniejsze: przepisywanie emisji po stronie mostka mu się nie podoba.
+
+**Trzy drogi, w kolejności od najlepszej:**
+
+1. **Serwer podaje listę w `PING`.** Dziś odpowiedź zawiera `operator`, `stations`,
+   `activeActions`, `pinExpires`, `apiEnabled`, `timestamp` — emisji **nie ma**.
+   Wymaga prośby do autora platformy. *Zastrzeżenie Marka: na wcześniejsze pytania
+   nie dostaliśmy odpowiedzi, więc nie ma co na tym opierać planu.*
+2. **Ponowienie przy `INVALID_MODE`** — wysyłamy podtyp, a gdy serwer go nie zna,
+   powtarzamy to samo QSO z rodziną (`FT4` → `MFSK`). Lista w kodzie przestaje być
+   potrzebna, a nowe emisje zaczynają działać bez aktualizacji mostka. Koszt: jedno
+   dodatkowe żądanie w rzadkim przypadku i rozróżnienie w workerze „odrzucone, ale
+   da się uratować" od „odrzucone naprawdę" — dziś `INVALID_MODE` jest błędem
+   trwałym. Minus: to też jest przepisywanie emisji, tylko sterowane odpowiedzią
+   serwera zamiast listą.
+3. **Zostawić listę w kodzie** (stan obecny). Działa, jest zmierzona i opisana,
+   ale wymaga pamiętania o niej przy zmianach po stronie platformy.
+
+**Czego NIE robić:** nie rozszerzać listy „na zapas" o wartości, których nie
+sprawdziliśmy uploadem. Każda pozycja ma pochodzić z pomiaru, nie z ADIF-a.
+
+Zobacz też wpis o uzupełnianiu brakującego `SUBMODE` — to ten sam temat widziany
+z drugiej strony.
+
 ### Uzupełnianie brakującego SUBMODE wartością z ustawień — do przemyślenia
 
 **Pomysł Marka (2026-10-06), nieprzesądzony.** W „Ustawieniach zaawansowanych"

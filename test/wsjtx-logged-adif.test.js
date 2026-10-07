@@ -14,6 +14,14 @@
 //
 // Oba datagramy niżej pochodzą z JEDNEGO kliknięcia „Log QSO" w WSJT-X 2.7
 // na Linuksie, przechwycone na grupie 224.0.0.222:2239. Wklejone bajt w bajt.
+//
+// WAŻNE DLA WARTOŚCI DOWODOWEJ TYCH BAJTÓW: maszyna, na której powstały, ma
+// `LC_NUMERIC="pl_PL.UTF-8"` (w /etc/locale.conf i w środowisku sesji, więc
+// programy z pulpitu to dziedziczą). Pod tym ustawieniem biblioteka C pisze
+// liczby PRZECINKIEM. Mimo to pole FREQ w obu rekordach ma KROPKĘ — i to jest
+// pomiar, nie przypadek: rodzina WSJT-X nie przepuszcza locale do ADIF-a,
+// w przeciwieństwie do N1MM+, który na polskim Windowsie wysyła <band>1,8</band>
+// (patrz n1mm-plus.test.js). Bez tej adnotacji te bajty nie dowodziłyby niczego.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 

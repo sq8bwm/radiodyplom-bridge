@@ -294,6 +294,39 @@ w ogóle nie występuje; rozstrzygnęło dopiero QSO na paśmie ułamkowym.
 
 Wszystkie cztery przechodzą poprawnie, bo każdy wysyła `<txfreq>`.
 
+### Czy przecinek dotyczy też formatów ADIF
+
+Nie. **Zmierzone, nie wywnioskowane** — i to na programach uruchomionych pod polskim
+locale numerycznym.
+
+Maszyna, na której łapaliśmy datagramy ADIF-owe, ma `LC_NUMERIC="pl_PL.UTF-8"`
+w `/etc/locale.conf` oraz w środowisku sesji użytkownika, więc programy startowane
+z pulpitu to ustawienie dziedziczą. Pod nim biblioteka C formatuje liczby
+przecinkiem. To jest warunek, bez którego poniższe bajty niczego by nie dowodziły:
+
+| program | pole `FREQ` w ADIF | separator |
+|---|---|---|
+| WSJT-X (typ 12) | `0.002458` | kropka |
+| MSHV 2.76.3 (typ 12) | `14.080000` | kropka |
+| QLog | `0.002458` | kropka |
+
+Trzy niezależne programy, polski locale numeryczny, wszystkie piszą kropkę — zgodnie
+ze specyfikacją ADIF, która kropki wymaga. Dlatego **nie normalizujemy przecinka
+w `FREQ`**: nie ma czego naprawiać, a zmiana we wspólnym parserze ADIF-a byłaby
+łataniem przez analogię do XML-a.
+
+Gdyby kiedyś jednak się pojawił, podatne są dwa miejsca i warto o nich wiedzieć:
+
+- **WSJT-X typ 12** liczy pasmo z `FREQ`, gdy `<band>` jest puste — a puste bywa
+  naprawdę (WSJT-X bez podłączonego radia wysyła `<band:0>`; nasz przechwycony
+  datagram właśnie tak wygląda, stąd `freq` równe samemu offsetowi audio).
+  Przecinek kosztowałby wtedy pasmo.
+- **Logger32, BBLogger i QLog** nie liczą pasma z częstotliwości w ogóle, więc
+  pasma by nie straciły — ale przecinek pojechałby w `freq` dosłownie na serwer.
+
+Nie sprawdziliśmy Logger32 ani BBLoggera (oba tylko na Windowsie, nie mamy ich
+zainstalowanych).
+
 ## Log4OM 2 — przez protokół N1MM
 
 **Potwierdzone na żywym programie** (2026-10-05, Log4OM 2 v.2.41.0.0 na Windowsie 11):

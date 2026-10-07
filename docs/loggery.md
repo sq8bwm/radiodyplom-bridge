@@ -224,6 +224,16 @@ Log4OM jako jedyny z przechwyconych loggerów wysyła XML **sformatowany** — z
 `<?xml?>`, wcięciami i złamaniami linii CRLF między tagami. Dla dekodera bez znaczenia,
 ale przy podglądaniu ruchu widać to od razu.
 
+**Dwie rzeczy, które zaskakują przy zmianie portu** (obie kosztowały nas czas 07.10):
+
+- Log4OM **przepisuje `config.json` przy wyjściu**, z ustawień trzymanych w pamięci.
+  Podmiana pliku przy działającym programie nie da więc nic — trzeba najpierw zamknąć
+  Log4OM, a dopiero potem przywracać plik. Odwrotna kolejność wygląda na skuteczną,
+  bo plik faktycznie się zmienia; program po prostu cofa to kilka minut później.
+- Proces **nie nazywa się „Log4OM" tylko `L4ONG`**. `Get-Process Log4OM*` nie znajduje
+  nic i wygląda to jak potwierdzenie, że program jest zamknięty. Sprawdzać po oknie
+  albo po `L4ONG`.
+
 
 ## QARTest — przez protokół N1MM
 

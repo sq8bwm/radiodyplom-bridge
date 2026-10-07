@@ -12,7 +12,17 @@
 // zalogowanej łączności (loguje automatycznie, bez ręcznego zapisu), więc nie
 // wiemy, co dokładnie wysyła w którym trybie. Bajty niżej są z WSJT-X.
 //
-// Oba datagramy niżej pochodzą z JEDNEGO kliknięcia „Log QSO" w WSJT-X 2.7
+// Oba datagramy niżej pochodzą z JEDNEGO kliknięcia „Log QSO" w WSJT-X improved
+// 3.1.0 (DG2YCB) — NIE w mainlinowym WSJT-X 2.7, jak stało tu do 07.10.2026.
+//
+// Sprostowanie z pomiaru: pakiet `wsjtx` na tej maszynie ma Maintainer
+// dg2ycb@gmx.de i wersję 3.1.0 (mainline ma numerację 2.7.x), a w binarce są
+// `actionWSJT_X_improved_Home_Page` i adres wsjt-x-improved.sourceforge.io.
+// Binarka jest z 2026-02-25, czyli to ona zrobiła te bajty 2026-10-06.
+//
+// Co to zmienia: mainlinowego WSJT-X NIE MAMY przechwyconego ani razu. Protokół
+// UDP improved dziedziczy po mainlinie i niemal na pewno jest identyczny — ale
+// „niemal na pewno" to nie pomiar, więc nie wolno tego pisać jako faktu.
 // na Linuksie, przechwycone na grupie 224.0.0.222:2239. Wklejone bajt w bajt.
 //
 // WAŻNE DLA WARTOŚCI DOWODOWEJ TYCH BAJTÓW: maszyna, na której powstały, ma

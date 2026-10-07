@@ -306,9 +306,14 @@ przecinkiem. To jest warunek, bez którego poniższe bajty niczego by nie dowodz
 
 | program | pole `FREQ` w ADIF | separator |
 |---|---|---|
-| WSJT-X (typ 12) | `0.002458` | kropka |
-| MSHV 2.76.3 (typ 12) | `14.080000` | kropka |
+| WSJT-X **improved 3.1.0** (typ 12) | `0.002458` | kropka |
+| MSHV 2.763 (typ 12) | `14.080000` | kropka |
 | QLog | `0.002458` | kropka |
+
+Uwaga na pierwszy wiersz: to **WSJT-X improved** (DG2YCB), a nie mainline. Pakiet
+`wsjtx` na maszynie pomiarowej ma `Maintainer: dg2ycb@gmx.de` i wersję 3.1.0, przy
+mainlinowej numeracji 2.7.x. **Mainlinowego WSJT-X nie mamy przechwyconego ani razu** —
+protokół UDP improved dziedziczy po mainlinie, ale to wniosek, nie pomiar.
 
 Trzy niezależne programy, polski locale numeryczny, wszystkie piszą kropkę — zgodnie
 ze specyfikacją ADIF, która kropki wymaga. Dlatego **nie normalizujemy przecinka

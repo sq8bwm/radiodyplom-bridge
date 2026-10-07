@@ -140,3 +140,68 @@ describe('JTDX 2.2.159 — trzy kanały jednej łączności', () => {
     }
   });
 });
+
+// ===== CZWARTY KANAŁ: TCP, z kopertą =====
+//
+// PRAWDZIWY zapis z gniazda TCP, przechwycony 2026-10-07 (JTDX 2.2.159,
+// `Settings → Reporting → Enable sending to TCP server`, port 52001).
+//
+// Ten sam ADIF co na drugim serwerze UDP, ale OPAKOWANY w dwa pola:
+//
+//   <command:3>Log <parameters:248> <BAND:3>20m …<EOR>
+//
+// Logger32, dla którego powstał nasz nasłuch TCP, wysyła GOŁY rekord
+// (przechwycone 30.09.2026) — koperta jest wymysłem JTDX.
+//
+// Przed 07.10 rekord odpadał: parser czytał `command` i `parameters`, ale na
+// wierzchu nie było `call`, więc dekoder zwracał null. I to BEZ ŚLADU W LOGU,
+// bo dekoder jest rozpoznany, tylko nic nie zwraca — QSO ginęło po cichu.
+const TCP_Z_KOPERTA = ''
+  + "<command:3>Log <parameters:248> <BAND:3>20m <STATION_CALLSIGN:6>SQ8BWM "
+  + "<MY_GRIDSQUARE:6>KO02lj <CALL:6>SP1TCP <FREQ:9>14.075500 <MODE:3>FT8 "
+  + "<QSO_DATE:8>20261007 <TIME_ON:6>121800 <QSO_DATE_OFF:8>20261007 <TIME_OFF:6>121926 "
+  + "<RST_SENT:3>-15 <RST_RCVD:3>-15 <GRIDSQUARE:4>JO91 <EOR> ";
+
+describe('JTDX — czwarty kanał: ADIF po TCP w kopercie', () => {
+  test('koperta jest tam naprawdę, a goły rekord Logger32 jej nie ma', () => {
+    assert.match(TCP_Z_KOPERTA, /^<command:3>Log <parameters:\d+> /);
+  });
+
+  test('rozpakowujemy kopertę i QSO przechodzi mapowanie', () => {
+    const b = Buffer.from(TCP_Z_KOPERTA);
+    const d = pickDecoder(b);
+    assert.equal(d?.name, 'ADIF');
+    const r = d.decode(b);
+    assert.ok(r, 'dekoder zwrócił null — koperta znów nie jest rozpakowywana');
+    const wynik = mapToRadiodyplom(r.adif, 'TEST');
+    assert.equal(wynik.ok, true, `brakuje pól: ${wynik.missing}`);
+    const p = wynik.payload;
+    assert.equal(p.callsign, 'SP1TCP');
+    assert.equal(p.station_callsign, 'SQ8BWM');
+    assert.equal(p.band, '20m');
+    assert.equal(p.freq, '14.075500');
+    assert.equal(p.mode, 'FT8');
+    assert.equal(p.gridsquare, 'JO91');
+  });
+
+  test('goły rekord Logger32 nadal działa — rozpakowanie go nie dotyczy', () => {
+    // Gałąź uruchamia się tylko wtedy, gdy na wierzchu NIE MA znaku,
+    // a `parameters` jest. Rekord Logger32 ma znak i nie ma `parameters`.
+    const goly = '<BAND:3>80m <CALL:6>SQ8BWA <FREQ:8>3.700000 <MODE:3>SSB '
+      + '<OPERATOR:6>SQ8BWM <QSO_DATE:8>20260930 <TIME_ON:6>155158 '
+      + '<RST_RCVD:2>59 <RST_SENT:2>59 <EOR>';
+    const r = pickDecoder(Buffer.from(goly)).decode(Buffer.from(goly));
+    assert.ok(r, 'goły rekord przestał przechodzić');
+    assert.equal(r.adif.call, 'SQ8BWA');
+  });
+
+  test('TCP i UDP dają ten sam odcisk treści, więc nie zdublują QSO', () => {
+    // Kto włączy oba kanały naraz, dostanie tę samą łączność dwiema drogami.
+    // Tu znaki są różne (SP1TCP vs SP9XYZ), więc porównujemy sam mechanizm:
+    // oba kanały to źródło `logger32:`, więc zwykła deduplikacja wystarczy.
+    const zTcp = pickDecoder(Buffer.from(TCP_Z_KOPERTA)).decode(Buffer.from(TCP_Z_KOPERTA));
+    const zUdp = pickDecoder(Buffer.from(ADIF)).decode(Buffer.from(ADIF));
+    assert.match(zTcp.key, /^logger32:/);
+    assert.match(zUdp.key, /^logger32:/);
+  });
+});

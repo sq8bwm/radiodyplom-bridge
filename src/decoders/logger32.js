@@ -49,7 +49,24 @@ const uprzedzeni = new Set();
 
 export function decode(buf) {
   const tekst = buf.toString('utf8');
-  const adif = parseAdif(tekst);
+  let adif = parseAdif(tekst);
+
+  // KOPERTA JTDX. Logger32 wysyła po TCP goły rekord (sprawdzone na żywym
+  // programie 30.09.2026), ale JTDX w `Settings → Reporting → Enable sending to
+  // TCP server` opakowuje ten sam ADIF w dwa pola:
+  //
+  //   <command:3>Log <parameters:248> <BAND:3>20m …<EOR>
+  //
+  // Parser czyta wtedy poprawnie `command` i `parameters`, ale na wierzchu nie
+  // ma `call`, więc rekord odpadał niżej jako „to nie QSO" — BEZ ŻADNEGO WPISU
+  // W LOGU, bo dekoder jest rozpoznany i tylko zwraca null. Zmierzone 07.10.2026
+  // na JTDX 2.2.159: QSO ginęło po cichu.
+  //
+  // Rozpakowujemy tylko wtedy, gdy na wierzchu NIE MA znaku, a `parameters`
+  // jest — więc dla gołego rekordu Logger32 ta gałąź się nie uruchamia.
+  if (!adif.call && adif.parameters) {
+    adif = parseAdif(adif.parameters);
+  }
 
   // Emisja i pasmo ujednolicone jak w pozostałych dekoderach: SUBMODE ma
   // pierwszeństwo (ADIF trzyma FT4 jako MODE=MFSK + SUBMODE=FT4), a pasmo idzie

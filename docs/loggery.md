@@ -357,10 +357,37 @@ widać, który program przysłał QSO.
 | Primary UDP Server | sekcja *Primary UDP Server*, domyślnie `127.0.0.1:2237` | binarny QDataStream, typ 5 | WSJT-X |
 | ten sam + haczyk **Enable sending logged QSO ADIF data** | tamże | binarny, typ 12 | WSJT-X |
 | **2nd UDP server** | sekcja *Send logged QSO ADIF data*, domyślnie `127.0.0.1:2333` | **goły rekord ADIF**, bez nagłówka | ADIF (jak Logger32) |
-| TCP server | tamże, domyślnie `127.0.0.1:52001` | ADIF po TCP | ADIF — **niesprawdzone** |
+| TCP server | tamże, domyślnie `127.0.0.1:52001` | ADIF po TCP, **w kopercie** | ADIF ✓ (od 07.10) |
 
-**Mostek rozumie wszystkie trzy przechwycone, bez żadnej zmiany w kodzie.**
-Do pracy wystarczy sam *Primary UDP Server* ustawiony na port mostka.
+**Mostek rozumie wszystkie cztery.** Trzy pierwsze działały od początku, bez
+żadnej zmiany w kodzie; czwarty wymagał jednej poprawki, opisanej niżej.
+Do pracy wystarczy jeden dowolny kanał ustawiony na port mostka.
+
+### Kanał TCP — jedyny bez UDP, i jedyny z kopertą
+
+To ta sama ścieżka, którą mostek przyjmuje QSO z **Logger32** (nasłuch TCP,
+domyślnie port 52005, domyślnie wyłączony — trzeba go włączyć w zakładce
+*Konfiguracja*). Jest cenna wtedy, gdy porty UDP są ciasne: jeśli QLog siedzi już
+na 2239, a HamConnect na 12060, TCP omija cały ten tłok.
+
+Dwie rzeczy zmierzone 07.10, obie nieoczywiste:
+
+- **JTDX opakowuje ADIF w kopertę**, czego Logger32 nie robi:
+
+  ```
+  <command:3>Log <parameters:248> <BAND:3>20m …<EOR>
+  ```
+
+  Do 07.10 taki rekord **ginął po cichu**: parser czytał poprawnie `command`
+  i `parameters`, ale na wierzchu nie było `call`, więc dekoder zwracał `null`
+  — a ponieważ dekoder jest rozpoznany, w logu nie pojawiało się NIC. Teraz
+  kopertę rozpakowujemy; dla gołego rekordu Logger32 ta gałąź się nie uruchamia.
+
+- **JTDX łączy się osobno na każde QSO.** Nie trzyma połączenia: otwiera je,
+  wysyła rekord, czeka sekundę i zamyka. Przy trzech łącznościach pod rząd będą
+  trzy połączenia z trzech różnych portów źródłowych. Nasz nasłuch to przyjmuje,
+  ale warto o tym wiedzieć przy diagnozie — brak stałego połączenia **nie** jest
+  objawem awarii.
 
 ### Uwaga: nie włączaj kilku kanałów naraz na ten sam port
 

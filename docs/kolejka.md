@@ -28,7 +28,7 @@ odrzucone, czyli droga ratunkowa przestałaby działać. Dlatego oba składniki 
 | Źródło | Identyfikator w kluczu |
 |---|---|
 | QLog | `{logid}#{rowid}` |
-| N1MM | `<ID>` z XML |
+| N1MM | `<ID>` z XML, a gdy go nie ma — `<guid>` (tak nazywa to DXLog we własnym formacie) |
 | WSJT-X | brak (`noid`) — sam odcisk treści |
 
 Do odcisku wchodzą tylko pola tożsamości łączności. Raporty, komentarz czy

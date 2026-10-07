@@ -51,7 +51,8 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 
 - **QLog** — `Settings → Network → Notifications → QSO Changes`
 - **RUMlogNG (macOS)** — `Preferences → UDP → RUMlog, N1MM & TR4W compatible` (szczegóły niżej)
-- **N1MM+ / DXLog** — `Config → Configure Ports…`, zakładka **Broadcast Data**, zaznaczone **Contacts** (szczegóły niżej)
+- **N1MM+** — `Config → Configure Ports…`, zakładka **Broadcast Data**, zaznaczone **Contacts** (szczegóły niżej)
+- **DXLog.net** — `Options → Broadcast → QSOs` (szczegóły niżej)
 - **Log4OM** — `Settings → Program Configuration → Software integration → Connections`, zakładka UDP, sekcja **UDP OUTBOUND**, typ usługi **N1MM_CONTACT** (szczegóły niżej)
 - **BBLogger** — `Tools → Configuration/Maintenance → QSO UDP Broadcast`, format **ADIF** albo **XML (N1MM)** (szczegóły niżej)
 - **QARTest** — `Options → External data broadcast`, zaznaczone **QSO** (szczegóły niżej)
@@ -208,6 +209,51 @@ Co N1MM+ wysyła, a czego nie widać u innych programów tej rodziny:
 **Ustawienia zapisują się przy wyjściu**, podobnie jak w Log4OM: plik
 `Documents\N1MM Logger+\N1MM Logger.ini` rośnie dopiero po zamknięciu programu.
 Podmiana ustawień „na żywo" zostanie więc cofnięta.
+
+## DXLog.net — dwa formaty, oba obsługiwane
+
+**Potwierdzone na żywym programie** (2026-10-07, DXLog.net v2.6.37 na Windowsie 11):
+QSO zalogowane w DXLogu dochodzi do mostka i przechodzi całą drogę. Przechwycone
+datagramy — oba formaty — są w testach (`test/dxlog.test.js`).
+
+Konfiguracja:
+
+1. **Options ➪ Broadcast ➪ QSOs** — zaznacz. To wystarczy.
+2. Adres i port siedzą w **Options ➪ Configure network**, sekcja **QSO UDP broadcast**.
+   Domyślnie `127.0.0.1` i port `12060` — **czyli nasz domyślny port**, więc przy
+   domyślnej konfiguracji mostka nie trzeba tam nic zmieniać.
+
+**Uwaga: DXLog ma dwa formaty transmisji.** Przełącza je osobna pozycja
+`Options ➪ Broadcast ➪ Use N1MM QSO format`, domyślnie **wyłączona**:
+
+| | wyłączone (domyślnie) | włączone |
+|---|---|---|
+| format | własny DXLoga | zgodny z N1MM+ |
+| nazwa programu | `<logger>DXLog.net v2.6.37</logger>` | `<app>N1MM</app>` — podszywa się pod N1MM |
+| identyfikator QSO | `<guid>` | `<ID>` |
+
+**Mostek rozumie oba** — nie trzeba niczego przełączać. Oba są zwykłym XML-em
+`<contactinfo>`, oba przechodzą mapowanie tak samo i oba trafiają na serwer
+z tym samym kompletem pól.
+
+Warto jednak wiedzieć, co ten przełącznik zmienia u nas:
+
+- **zostawiony wyłączony** (zalecane) — w logu mostka widać prawdziwą nazwę
+  programu, „DXLog.net v2.6.37". Identyfikator bierzemy z `<guid>`.
+- **włączony** — DXLog przedstawia się jako `N1MM` i po samym datagramie nie da
+  się go odróżnić od prawdziwego N1MM+. Dla wysyłki bez znaczenia, ale w logu
+  zobaczysz „N1MM" przy QSO, które przyszło z DXLoga.
+
+Do 07.10 czytaliśmy wyłącznie `<ID>`, więc format WŁASNY — czyli ten domyślny —
+tracił identyfikator i klucz deduplikacji opierał się na samym odcisku treści.
+Odcisk nie rozróżnia dwóch QSO z tym samym znakiem w tej samej sekundzie na tym
+samym paśmie, a DXLog jest programem zawodowym, więc to nie był przypadek
+teoretyczny. Teraz `<guid>` jest czytany jako zapas po `<ID>`.
+
+**Przecinek w `<band>`.** W trybie N1MM DXLog zapisuje pasmo separatorem
+dziesiętnym z ustawień systemu — na polskim Windowsie wychodzi `<band>1,8</band>`,
+a nie `1.8`. Nas to nie boli, bo pasmo i częstotliwość liczymy z `<txfreq>`,
+ale program, który ufałby polu `<band>`, dostałby tam liczbę nie do odczytania.
 
 ## Log4OM 2 — przez protokół N1MM
 

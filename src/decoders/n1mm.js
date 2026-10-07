@@ -117,7 +117,14 @@ export function decode(buf) {
 
   // <ID> N1MM plus odcisk treści — tak samo jak w QLog, żeby ewentualne
   // powtórzenie identyfikatora nie kasowało prawdziwego QSO.
-  const id = tag(xml, 'ID');
+  //
+  // DXLog we WŁASNYM formacie nie wysyła <ID>, tylko <guid> — ta sama rola,
+  // inna nazwa (zmierzone 07.10 na DXLog.net v2.6.37). Bez tego zapasu klucz
+  // spadał na sam odcisk treści, a odcisk nie rozróżnia dwóch QSO z tym samym
+  // znakiem w tej samej sekundzie na tym samym paśmie — w zawodach to się
+  // zdarza, a DXLog jest programem zawodowym. <ID> ma pierwszeństwo, więc dla
+  // wszystkich pozostałych programów nic się nie zmienia.
+  const id = tag(xml, 'ID') || tag(xml, 'guid');
   const key = qsoKey('n1mm', id || null, adif);
 
   return {

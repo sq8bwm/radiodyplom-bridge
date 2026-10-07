@@ -190,3 +190,98 @@ describe('<rxfreq> jako zapas, gdy nie ma <txfreq>', () => {
     assert.equal(adif.freq, '14');
   });
 });
+
+// Drugi PRAWDZIWY datagram N1MM+, przechwycony 2026-10-07 — to samo uruchomienie,
+// ale QSO na 160 m. Istnieje po to, żeby odpowiedzieć na jedno pytanie, którego
+// datagram z 14 MHz rozstrzygnąć NIE MÓGŁ: 14 to liczba całkowita, więc separator
+// dziesiętny w ogóle się w niej nie pojawia.
+//
+// Odpowiedź: N1MM+ zapisuje `<band>1,8</band>` — PRZECINKIEM, z ustawień systemu.
+// To nie jest dziwactwo DXLoga, tylko zachowanie samego N1MM na zlokalizowanym
+// Windowsie. Zmierzone na polskim Windowsie 11; ten sam komputer, ta sama chwila:
+//
+//   N1MM+ 1.0.11462          <band>1,8</band>   przecinek
+//   DXLog, tryb N1MM         <band>1,8</band>   przecinek
+//   DXLog, format własny     <band>1.8</band>   kropka
+//   Log4OM 2.41.0.0          <band>1.8</band>   kropka
+//
+// Czyli separator zależy od IMPLEMENTACJI, a nie od protokołu — i akurat dwa
+// najpopularniejsze programy zawodowe są po stronie przecinka.
+const QSO_160M = [
+  "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+  "<contactinfo>",
+  "\t<app>N1MM</app>",
+  "\t<contestname>DX</contestname>",
+  "\t<dbname>N1MM DXLog.s3db</dbname>",
+  "\t<contestnr>0</contestnr>",
+  "\t<timestamp>2026-10-07 09:36:51</timestamp>",
+  "\t<mycall>SQ8BWM</mycall>",
+  "\t<band>1,8</band>",
+  "\t<rxfreq>180000</rxfreq>",
+  "\t<txfreq>180000</txfreq>",
+  "\t<operator>SQ8BWM</operator>",
+  "\t<mode>LSB</mode>",
+  "\t<call>SP1BAND</call>",
+  "\t<countryprefix>SP</countryprefix>",
+  "\t<wpxprefix>SP1</wpxprefix>",
+  "\t<stationprefix>SQ8BWM</stationprefix>",
+  "\t<continent>EU</continent>",
+  "\t<snt>59</snt>",
+  "\t<sntnr>3</sntnr>",
+  "\t<rcv>59</rcv>",
+  "\t<rcvnr>0</rcvnr>",
+  "\t<gridsquare></gridsquare>",
+  "\t<exchange1></exchange1>",
+  "\t<section></section>",
+  "\t<comment></comment>",
+  "\t<qth></qth>",
+  "\t<name></name>",
+  "\t<power></power>",
+  "\t<misctext></misctext>",
+  "\t<zone>15</zone>",
+  "\t<prec></prec>",
+  "\t<ck>0</ck>",
+  "\t<ismultiplier1>1</ismultiplier1>",
+  "\t<ismultiplier2>0</ismultiplier2>",
+  "\t<ismultiplier3>0</ismultiplier3>",
+  "\t<points>1</points>",
+  "\t<radionr>1</radionr>",
+  "\t<run1run2>1</run1run2>",
+  "\t<RoverLocation></RoverLocation>",
+  "\t<RadioInterfaced>0</RadioInterfaced>",
+  "\t<NetworkedCompNr>0</NetworkedCompNr>",
+  "\t<IsOriginal>True</IsOriginal>",
+  "\t<NetBiosName>DESKTOP-P35FDV1</NetBiosName>",
+  "\t<IsRunQSO>0</IsRunQSO>",
+  "\t<StationName>DESKTOP-P35FDV1</StationName>",
+  "\t<ID>235699dc0b1a457bb02926d430aa8ff1</ID>",
+  "\t<IsClaimedQso>1</IsClaimedQso>",
+  "\t<oldtimestamp>2026-10-07 09:36:51</oldtimestamp>",
+  "\t<oldcall>SP1BAND</oldcall>",
+  "\t<SentExchange />",
+  "\t<CabrilloString>QSO:    1800 PH 2026-10-07 0936 SQ8BWM        59   SP1BAND       59                                                       </CabrilloString>",
+  "</contactinfo>",].join('\r\n');
+
+describe('N1MM+ na 160 m — separator dziesiętny w <band>', () => {
+  test('N1MM+ zapisuje pasmo PRZECINKIEM, tak jak DXLog w trybie N1MM', () => {
+    assert.match(QSO_160M, /<band>1,8<\/band>/,
+      'to jest cały powód istnienia tego datagramu w testach');
+  });
+
+  test('mimo przecinka pasmo i częstotliwość wychodzą poprawnie', () => {
+    // Bo liczymy je z <txfreq>, który jest liczbą całkowitą w jednostkach 10 Hz
+    // i żaden separator się w nim nie pojawia — niezależnie od wersji językowej.
+    const { adif } = n1mm.decode(Buffer.from(QSO_160M));
+    assert.equal(adif.band, '160m');
+    assert.equal(adif.freq, '1.8');
+    assert.equal(adif.call, 'SP1BAND');
+    assert.equal(adif.mode, 'SSB', 'LSB to wstęga, serwer zna emisję');
+  });
+
+  test('cały rekord przechodzi mapowanie', () => {
+    const { adif } = n1mm.decode(Buffer.from(QSO_160M));
+    const wynik = mapToRadiodyplom(adif, 'TEST');
+    assert.equal(wynik.ok, true, `brakuje pól: ${wynik.missing}`);
+    assert.equal(wynik.payload.band, '160m');
+  });
+});

@@ -277,11 +277,22 @@ ma pierwszeństwo, bo łączność opisuje częstotliwość nadawania — przy s
 `<rxfreq>` pokazuje stację DX, nie nas. Trzeciego pola częstotliwości w tej rodzinie
 nie ma: żadnego `<freq>` ani podobnego.
 
-**Czego o tym NIE wiemy.** Nie sprawdziliśmy, czy tak samo zachowuje się
-**N1MM+** i **Log4OM** — oba przechwyciliśmy na 14 MHz, czyli liczbie całkowitej,
-w której separator w ogóle nie występuje. Rozstrzygnęłoby to jedno QSO na paśmie
-ułamkowym (160 m, 80 m, 30 m). Niezależnie od wyniku przechodzą, dopóki wysyłają
-`<txfreq>` — a wysyłają.
+**To nie jest dziwactwo DXLoga.** Zmierzone QSO na 160 m, jeden komputer, polski
+Windows 11, ta sama chwila:
+
+| program | `<band>` przy 1,8 MHz | separator |
+|---|---|---|
+| N1MM Logger+ 1.0.11462 | `1,8` | przecinek |
+| DXLog.net, tryb N1MM | `1,8` | przecinek |
+| DXLog.net, format własny | `1.8` | kropka |
+| Log4OM 2 v.2.41.0.0 | `1.8` | kropka |
+
+Czyli separator zależy od **implementacji**, a nie od protokołu — i akurat dwa
+najczęściej używane programy zawodowe są po stronie przecinka. Pierwotne pomiary
+N1MM+ i Log4OM zrobiliśmy na 14 MHz, czyli liczbie całkowitej, w której separator
+w ogóle nie występuje; rozstrzygnęło dopiero QSO na paśmie ułamkowym.
+
+Wszystkie cztery przechodzą poprawnie, bo każdy wysyła `<txfreq>`.
 
 ## Log4OM 2 — przez protokół N1MM
 

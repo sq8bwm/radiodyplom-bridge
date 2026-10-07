@@ -171,6 +171,7 @@ numery były różne i żeby logger wysyłał do obu.
 
 **Potwierdzone na żywym programie** (2026-10-05, Log4OM 2 v.2.41.0.0 na Windowsie 11):
 QSO zalogowane w Log4OM dochodzi do mostka i przechodzi całą drogę aż do wysyłki.
+Datagram przechwycony 2026-10-07 leży w testach (`test/log4om.test.js`).
 
 Log4OM nie ma osobnego trybu „radiodyplom" — używamy jego **wyjścia N1MM**, bo wysyła
 dokładnie ten sam datagram XML `<contactinfo>`, który mostek już rozumie.
@@ -202,6 +203,26 @@ i znak stacji — czyli komplet potrzebny do wysyłki.
 **Uwaga na częstotliwość.** Pole *Freq* w Log4OM jest w kHz (`7100` to 7,1 MHz)
 i steruje pasmem. Dopóki jest puste albo niepoprawne, Log4OM **nie zapisze QSO**
 i nic nie wyśle — a komunikat o tym jest dyskretny (żółty trójkąt przy polu *Band*).
+
+Czego Log4OM **nie** podaje, a my sobie z tym radzimy (z przechwyconego datagramu,
+2026-10-07):
+
+| pole | jak jest | co robimy |
+|---|---|---|
+| `<operator>` | taga nie ma wcale | bierzemy znak z `<mycall>` |
+| `<id>` | brak | klucz deduplikacji liczymy z treści QSO |
+| `<band>` | `14` — MHz-y jako goła liczba, nie nazwa ADIF | pasmo liczymy z częstotliwości |
+| `<app>` | `LOG4OM2` | tego akurat nie brakuje — stąd nazwa programu w logu |
+
+Jednostka `<txfreq>` jest tu taka jak w N1MM+ (setne części kHz: `1407400` to
+14,074 MHz), więc pułapka znana z BBLoggera tu nie występuje. Uwaga: **nie rozstrzyga
+tego sąsiednie `<band>`** — „14" nie jest nazwą pasma ADIF, więc działa przelicznik
+domyślny. Gdyby Log4OM kiedyś przeszedł na jednostki BBLoggera, ta sama liczba
+dałaby 140,74 MHz; pilnuje tego test.
+
+Log4OM jako jedyny z przechwyconych loggerów wysyła XML **sformatowany** — z deklaracją
+`<?xml?>`, wcięciami i złamaniami linii CRLF między tagami. Dla dekodera bez znaczenia,
+ale przy podglądaniu ruchu widać to od razu.
 
 
 ## QARTest — przez protokół N1MM

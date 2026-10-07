@@ -51,7 +51,7 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 
 - **QLog** — `Settings → Network → Notifications → QSO Changes`
 - **RUMlogNG (macOS)** — `Preferences → UDP → RUMlog, N1MM & TR4W compatible` (szczegóły niżej)
-- **N1MM+ / DXLog** — broadcast na porcie 12060 (domyślny dla tej rodziny)
+- **N1MM+ / DXLog** — `Config → Configure Ports…`, zakładka **Broadcast Data**, zaznaczone **Contacts** (szczegóły niżej)
 - **Log4OM** — `Settings → Program Configuration → Software integration → Connections`, zakładka UDP, sekcja **UDP OUTBOUND**, typ usługi **N1MM_CONTACT** (szczegóły niżej)
 - **BBLogger** — `Tools → Configuration/Maintenance → QSO UDP Broadcast`, format **ADIF** albo **XML (N1MM)** (szczegóły niżej)
 - **QARTest** — `Options → External data broadcast`, zaznaczone **QSO** (szczegóły niżej)
@@ -167,6 +167,48 @@ Port odbioru w drugim programie zwykle też da się zmienić — HamConnect ma g
 w ustawieniach obok dwóch innych. Zmieniaj ten, który łatwiej zmienić; ważne, żeby
 numery były różne i żeby logger wysyłał do obu.
 
+## N1MM Logger+ — macierzysty protokół
+
+**Potwierdzone na żywym programie** (2026-10-07, N1MM Logger+ 1.0.11462 na Windowsie 11):
+QSO zalogowane w N1MM+ dochodzi do mostka i przechodzi całą drogę. Przechwycony
+datagram jest w testach (`test/n1mm-plus.test.js`).
+
+To od tego programu wziął nazwę nasz dekoder `n1mm` — ale jego własnych bajtów
+zobaczyliśmy dopiero tego dnia. Wszystko, co wcześniej mieliśmy przechwycone w tej
+rodzinie, pochodziło od **innych** programów mówiących tym protokołem: RUMlogNG,
+QARTest, Log4OM.
+
+Konfiguracja krok po kroku:
+
+1. **Config ➪ Configure Ports, Mode Control, Winkey, etc…** (menu okna wprowadzania).
+2. Zakładka **Broadcast Data**.
+3. Zaznacz **Contacts**. Pole adresu obok ma już wpisane `127.0.0.1:12060` —
+   **to jest nasz domyślny port**, więc przy domyślnej konfiguracji mostka nie
+   trzeba tam niczego zmieniać. Wystarczy sam haczyk.
+4. **OK**.
+
+Pozostałe pozycje (*Application Info*, *Radio*, *Spots*, *Score*) są dla mostka
+nieistotne — zaznaczenie samych *Contacts* wystarcza i nie zasypuje portu resztą ruchu.
+
+**Zanim zalogujesz pierwsze QSO**, wypełnij **Config ➪ Change Your Station Data**.
+Bez tego N1MM+ wita się okienkiem *Missing Station Info* i nie pracuje poprawnie.
+Pole **ARRL Section** jest wymagane także poza USA — wpisuje się tam `DX`, inaczej
+okno danych stacji nie da się zamknąć.
+
+Co N1MM+ wysyła, a czego nie widać u innych programów tej rodziny:
+
+| pole | jak jest | co z tego mamy |
+|---|---|---|
+| `<ID>` | GUID bez myślników | klucz deduplikacji nie musi liczyć odcisku treści |
+| `<operator>` | wypełnione | nie trzeba zapasu z `<mycall>` |
+| `<mode>` | wstęga (`USB`/`LSB`), nie `SSB` | sprowadzamy do `SSB`, bo serwer zna emisję, nie wstęgę |
+| `<txfreq>` | dziesiątki herca (`1420000` to 14,2 MHz) | zmierzone na jego własnych bajtach, nie przyjęte z dokumentacji |
+| `<SentExchange />` | tag zamknięty sam w sobie | jedyny taki w naszych zbiorach — parser musi go przejść |
+
+**Ustawienia zapisują się przy wyjściu**, podobnie jak w Log4OM: plik
+`Documents\N1MM Logger+\N1MM Logger.ini` rośnie dopiero po zamknięciu programu.
+Podmiana ustawień „na żywo" zostanie więc cofnięta.
+
 ## Log4OM 2 — przez protokół N1MM
 
 **Potwierdzone na żywym programie** (2026-10-05, Log4OM 2 v.2.41.0.0 na Windowsie 11):
@@ -220,9 +262,10 @@ tego sąsiednie `<band>`** — „14" nie jest nazwą pasma ADIF, więc działa 
 domyślny. Gdyby Log4OM kiedyś przeszedł na jednostki BBLoggera, ta sama liczba
 dałaby 140,74 MHz; pilnuje tego test.
 
-Log4OM jako jedyny z przechwyconych loggerów wysyła XML **sformatowany** — z deklaracją
-`<?xml?>`, wcięciami i złamaniami linii CRLF między tagami. Dla dekodera bez znaczenia,
-ale przy podglądaniu ruchu widać to od razu.
+Log4OM wysyła XML **sformatowany** — z deklaracją `<?xml?>`, wcięciami po dwie spacje
+i złamaniami linii CRLF między tagami. Tak samo robi N1MM+ (tylko tabulatorami);
+QARTest i BBLogger wysyłają wszystko w jednej linii. Dla dekodera bez znaczenia, ale
+przy podglądaniu ruchu widać to od razu.
 
 **Dwie rzeczy, które zaskakują przy zmianie portu** (obie kosztowały nas czas 07.10):
 

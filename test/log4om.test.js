@@ -11,7 +11,9 @@
 //
 // 1. XML jest SFORMATOWANY: deklaracja `<?xml?>`, złamania linii CRLF i wcięcia
 //    po dwie spacje. QARTest i BBLogger wysyłają wszystko w jednej linii, więc
-//    nasz dekoder nigdy nie dostał rekordu z białymi znakami między tagami.
+//    gdy ten plik powstawał, był to pierwszy rekord z białymi znakami między
+//    tagami, jaki dostał nasz dekoder. (Tego samego dnia doszedł drugi taki —
+//    N1MM+, wcięty tabulatorami; patrz `n1mm-plus.test.js`.)
 // 2. `<txfreq>1407400</txfreq>` jest w jednostkach 10 Hz (konwencja N1MM+),
 //    a `<band>14</band>` to MHz-y jako goła liczba. Uwaga: „14" NIE jest nazwą
 //    pasma ADIF, więc rozstrzygania jednostki przez pasmo tu nie ma — ratuje

@@ -61,7 +61,7 @@ i aktywnych akcji; niczego tam nie zmienia poza dopisaniem QSO.
 |---|---|
 | JSON (Notifications) | **QLog** |
 | XML `<contactinfo>` | **N1MM+**, DXLog, **RUMlogNG**, Log4OM (tryb N1MM), BBLogger (tryb XML), **QARTest** |
-| binarny QDataStream | **WSJT-X**, JTDX ≥ 2.2.158, MSHV |
+| binarny QDataStream | **WSJT-X**, **JTDX 2.2.159**, MSHV |
 | ADIF po TCP | **Logger32** ≥ 4.0.344 (nasłuch włącza się w Konfiguracji) |
 
 ---
@@ -156,7 +156,8 @@ zmieniać. PIN nigdy nie opuszcza programu w jawnej postaci, także przez API st
 | RUMlogNG | *Preferences → UDP → RUMlog, N1MM & TR4W compatible* ([opis](docs/loggery.md#rumlogng-macos--przez-protokół-n1mm)) |
 | Logger32 | inaczej: patrz [Loggery i dane](docs/loggery.md#logger32--jedyny-po-tcp) |
 | N1MM+ / DXLog | rozgłoszenie na porcie 12060 |
-| WSJT-X / JTDX / MSHV | *Settings → Reporting → UDP Server* |
+| WSJT-X / MSHV | *Settings → Reporting → UDP Server* |
+| JTDX | *Settings → Reporting → Primary UDP Server* (ma też trzy inne kanały — patrz `docs/loggery.md`) |
 
 > **Logger na innym komputerze albo wysyła rozgłoszeniowo?**
 > Zmień adres nasłuchu na `0.0.0.0` w zakładce Konfiguracja. To najczęstsza

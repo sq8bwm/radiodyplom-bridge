@@ -13,7 +13,7 @@ obsługuje mieszane źródła jednocześnie.
 |---|---|---|
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
 | `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, **RUMlogNG**, **Log4OM**, **BBLogger** (tryb XML), **QARTest** |
-| `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 i 12 | WSJT-X, JTDX ≥ 2.2.158, **MSHV** |
+| `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 i 12 | WSJT-X, **JTDX 2.2.159** (sprawdzone), **MSHV** |
 | `Logger32` | goły rekord ADIF | Logger32 ≥ 4.0.344 (**po TCP**), **BBLogger** (tryb ADIF, po UDP) |
 
 Rozpoznanie jest jednoznaczne, bo rodziny różnią się początkiem: `{` → JSON,
@@ -56,7 +56,8 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 - **Log4OM** — `Settings → Program Configuration → Software integration → Connections`, zakładka UDP, sekcja **UDP OUTBOUND**, typ usługi **N1MM_CONTACT** (szczegóły niżej)
 - **BBLogger** — `Tools → Configuration/Maintenance → QSO UDP Broadcast`, format **ADIF** albo **XML (N1MM)** (szczegóły niżej)
 - **QARTest** — `Options → External data broadcast`, zaznaczone **QSO** (szczegóły niżej)
-- **WSJT-X / JTDX / MSHV** — `Settings → Reporting → UDP Server` + port
+- **WSJT-X / MSHV** — `Settings → Reporting → UDP Server` + port
+- **JTDX** — `Settings → Reporting`, ale ma aż cztery kanały (szczegóły niżej)
 - **Logger32** — patrz niżej, bo jako jedyny nie używa UDP
 
 WSJT-X wysyła „QSO Logged” dopiero po zatwierdzeniu okna **Log QSO** — to celowe
@@ -309,6 +310,7 @@ przecinkiem. To jest warunek, bez którego poniższe bajty niczego by nie dowodz
 | WSJT-X **improved 3.1.0** (typ 12) | `0.002458` | kropka |
 | MSHV 2.763 (typ 12) | `14.080000` | kropka |
 | QLog | `0.002458` | kropka |
+| JTDX 2.2.159 (2. serwer UDP) | `14.075500` | kropka |
 
 Uwaga na pierwszy wiersz: to **WSJT-X improved** (DG2YCB), a nie mainline. Pakiet
 `wsjtx` na maszynie pomiarowej ma `Maintainer: dg2ycb@gmx.de` i wersję 3.1.0, przy
@@ -331,6 +333,63 @@ Gdyby kiedyś jednak się pojawił, podatne są dwa miejsca i warto o nich wiedz
 
 Nie sprawdziliśmy Logger32 ani BBLoggera (oba tylko na Windowsie, nie mamy ich
 zainstalowanych).
+
+## JTDX — cztery kanały na jedną łączność
+
+**Potwierdzone na żywym programie** (2026-10-07, JTDX 2.2.159 z pakietu Ubuntu
+`jtdx 2.2.159-2build2`, Ubuntu 24.04, bez podłączonego radia): QSO dochodzi do
+mostka i przechodzi całą drogę. Przechwycone datagramy są w testach
+(`test/jtdx.test.js`).
+
+Do tego dnia nasze „JTDX ≥ 2.2.158" stało w README, w tym dokumencie i w dwóch
+komentarzach w kodzie — **bez ani jednego sprawdzenia**, tak samo jak wcześniej
+QARTest, Log4OM i DXLog.
+
+W protokole WSJT-X JTDX przedstawia się polem `id` jako `JTDX`, więc w logu mostka
+widać, który program przysłał QSO.
+
+### Cztery drogi, wszystkie w jednej zakładce
+
+`Settings (F2) ➪ Reporting` ma dwie niezależne sekcje:
+
+| kanał | gdzie | co wysyła | nasz dekoder |
+|---|---|---|---|
+| Primary UDP Server | sekcja *Primary UDP Server*, domyślnie `127.0.0.1:2237` | binarny QDataStream, typ 5 | WSJT-X |
+| ten sam + haczyk **Enable sending logged QSO ADIF data** | tamże | binarny, typ 12 | WSJT-X |
+| **2nd UDP server** | sekcja *Send logged QSO ADIF data*, domyślnie `127.0.0.1:2333` | **goły rekord ADIF**, bez nagłówka | ADIF (jak Logger32) |
+| TCP server | tamże, domyślnie `127.0.0.1:52001` | ADIF po TCP | ADIF — **niesprawdzone** |
+
+**Mostek rozumie wszystkie trzy przechwycone, bez żadnej zmiany w kodzie.**
+Do pracy wystarczy sam *Primary UDP Server* ustawiony na port mostka.
+
+### Uwaga: nie włączaj kilku kanałów naraz na ten sam port
+
+Jedna łączność przychodzi wtedy **trzema datagramami z dwóch różnych źródeł**
+(`wsjtx:` i `logger32:`). Odcisk treści jest w nich identyczny, więc ratuje nas
+deduplikacja międzyźródłowa — sprawdzone na prawdziwych bajtach: trzy datagramy
+dają **jedno** QSO w kolejce. Ale to zabezpieczenie, a nie zaproszenie: włączenie
+jednego kanału jest prostsze i nie obciąża portu.
+
+Ciekawostka z pomiaru: częstotliwość w typie 5 liczymy z binarnych herców, więc
+wychodzi `14.0755`, a typ 12 i ADIF podają tekstem `14.075500`. Ta sama wartość,
+inny zapis — i dlatego dobrze, że częstotliwość **nie wchodzi** do odcisku treści.
+
+### Instalacja na Ubuntu — konflikt z WSJT-X spoza repo
+
+`apt install jtdx` ciągnie `wsjtx-data`, który kłóci się z WSJT-X zainstalowanym
+z paczki autorów (np. WSJT-X improved):
+
+```
+dpkg: error processing archive wsjtx-data…deb (--unpack):
+ trying to overwrite '/usr/share/pixmaps/wsjtx_icon.png',
+ which is also in package wsjtx 3.1.0
+```
+
+Kolidują **5 plików** z 7, w tym `/usr/share/wsjtx/cty.dat` i `JPLEPH` — czyli dane
+robocze WSJT-X. `--force-overwrite` **cofnąłby je** do wersji z pakietu Ubuntu, więc
+nie jest to nadpisanie ikony. Można za to uruchomić rozpakowany `/usr/bin/jtdx`
+bez konfigurowania pakietu: `cty.dat`, którego JTDX szuka, i tak już jest na dysku
+w nowszej wersji, a własne dane (`ALLCALL7.TXT`, `CALL3.TXT`) pakiet przynosi sam.
 
 ## Log4OM 2 — przez protokół N1MM
 

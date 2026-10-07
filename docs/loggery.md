@@ -252,8 +252,24 @@ teoretyczny. Teraz `<guid>` jest czytany jako zapas po `<ID>`.
 
 **Przecinek w `<band>`.** W trybie N1MM DXLog zapisuje pasmo separatorem
 dziesiętnym z ustawień systemu — na polskim Windowsie wychodzi `<band>1,8</band>`,
-a nie `1.8`. Nas to nie boli, bo pasmo i częstotliwość liczymy z `<txfreq>`,
-ale program, który ufałby polu `<band>`, dostałby tam liczbę nie do odczytania.
+a nie `1.8`. Zmierzone na DXLog.net v2.6.37; **w jego własnym formacie jest kropka**,
+więc robi to dopiero ścieżka zgodności z N1MM.
+
+Dla nas jest to nieszkodliwe, bo pasmo i częstotliwość liczymy z `<txfreq>`, a ten
+jest liczbą całkowitą w jednostkach 10 Hz — żaden separator się w nim nie pojawia
+i wersja językowa systemu nie ma znaczenia. `<txfreq>` był obecny w **każdym**
+datagramie rodziny N1MM, jaki przechwyciliśmy.
+
+Mimo to przecinek jest przyjmowany także w samym `<band>`, bo gałąź awaryjna (gdy
+`<txfreq>` zabraknie) zawodziłaby **po cichu**: `Number('1,8')` to `NaN`, więc QSO
+poszłoby na serwer bez pasma i bez częstotliwości, a serwer wymaga tylko znaku,
+daty i znaku stacji — nic by nie odrzucił i nikt by nie zauważył.
+
+**Czego o tym NIE wiemy.** Nie sprawdziliśmy, czy tak samo zachowuje się
+**N1MM+** i **Log4OM** — oba przechwyciliśmy na 14 MHz, czyli liczbie całkowitej,
+w której separator w ogóle nie występuje. Rozstrzygnęłoby to jedno QSO na paśmie
+ułamkowym (160 m, 80 m, 30 m). Niezależnie od wyniku przechodzą, dopóki wysyłają
+`<txfreq>` — a wysyłają.
 
 ## Log4OM 2 — przez protokół N1MM
 

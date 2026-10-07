@@ -148,3 +148,46 @@ describe('DXLog.net v2.6.37 — po włączeniu „Use N1MM QSO format"', () => {
     assert.equal(adif.call, 'SP9XYZ');
   });
 });
+
+describe('separator dziesiętny w <band>', () => {
+  // DXLog w trybie N1MM zapisuje pasmo separatorem z ustawień systemu, więc na
+  // polskim Windowsie wychodzi „1,8". Przy obecnym <txfreq> nie ma to znaczenia,
+  // bo pasmo i częstotliwość liczymy z niego — i tak było w KAŻDYM datagramie,
+  // jaki przechwyciliśmy. Te testy pilnują gałęzi awaryjnej: gdyby <txfreq>
+  // zabrakło, przecinek kosztowałby pasmo i częstotliwość, i to BEZ ŻADNEGO
+  // sygnału — serwer wymaga tylko znaku, daty i znaku stacji, więc przyjąłby
+  // takie okrojone QSO bez mrugnięcia.
+  const bez = (band) =>
+    '<?xml version="1.0"?><contactinfo><app>N1MM</app>'
+    + '<timestamp>2026-10-07 09:11:01</timestamp><mycall>SQ8BWM</mycall>'
+    + `<band>${band}</band>`
+    + '<operator>SQ8BWM</operator><mode>CW</mode><call>SP9XYZ</call>'
+    + '<snt>599</snt><rcv>599</rcv></contactinfo>';
+
+  for (const [zapis, mhz, pasmo] of [['1,8', '1.8', '160m'], ['3,5', '3.5', '80m'], ['10,1', '10.1', '30m']]) {
+    test(`bez <txfreq> pasmo „${zapis}" czytamy tak samo jak „${mhz}"`, () => {
+      const zPrzecinkiem = n1mm.decode(Buffer.from(bez(zapis))).adif;
+      const zKropka = n1mm.decode(Buffer.from(bez(mhz))).adif;
+      assert.equal(zPrzecinkiem.band, pasmo);
+      assert.equal(zPrzecinkiem.freq, mhz);
+      assert.deepEqual(zPrzecinkiem, zKropka, 'separator nie może zmieniać wyniku');
+    });
+  }
+
+  test('to jest cicha strata, a nie odrzucenie — stąd ten test', () => {
+    // Dowód, że serwer by się nie poskarżył: rekord BEZ pasma i częstotliwości
+    // przechodzi mapowanie. Dlatego przecinka nie wolno zostawić „do wyłapania
+    // przez błąd" — żadnego błędu by nie było.
+    const { adif } = n1mm.decode(Buffer.from(bez('20m')));
+    delete adif.band;
+    const wynik = mapToRadiodyplom(adif, 'TEST');
+    assert.equal(wynik.ok, true);
+    assert.equal(wynik.payload.band, undefined);
+    assert.equal(wynik.payload.freq, undefined);
+  });
+
+  test('nazwa pasma ADIF nadal działa — zamiana nie psuje „20m"', () => {
+    const { adif } = n1mm.decode(Buffer.from(bez('20m')));
+    assert.equal(adif.band, '20m');
+  });
+});

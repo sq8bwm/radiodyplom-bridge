@@ -46,7 +46,17 @@ function czestotliwoscMHz(xml) {
 
   // Bez txfreq zostaje samo `<band>`: u N1MM+ to MHz („3.5"), u BBLoggera nazwa
   // pasma („20m") — z nazwy częstotliwości nie wyliczymy, ale pasmo przetrwa niżej.
-  const wMhz = Number(pasmo);
+  //
+  // PRZECINEK: DXLog w trybie zgodności z N1MM zapisuje tu separator dziesiętny
+  // z ustawień systemu — na polskim Windowsie wychodzi „1,8" zamiast „1.8"
+  // (zmierzone 07.10 na DXLog.net v2.6.37). `Number('1,8')` to NaN, więc bez tej
+  // zamiany QSO szłoby na serwer BEZ pasma i BEZ częstotliwości — i to po cichu,
+  // bo serwer wymaga tylko znaku, daty i znaku stacji, więc nic by nie odrzucił.
+  //
+  // Dopóki logger wysyła <txfreq>, do tej gałęzi w ogóle nie dochodzimy (tak było
+  // w każdym datagramie, jaki przechwyciliśmy). To zabezpieczenie na wypadek, gdy
+  // go zabraknie — i zdejmuje zależność od wersji językowej Windowsa.
+  const wMhz = Number(String(pasmo).replace(',', '.'));
   return Number.isFinite(wMhz) && wMhz > 0 ? wMhz : NaN;
 }
 

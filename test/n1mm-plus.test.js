@@ -140,3 +140,53 @@ describe('N1MM Logger+ 1.0.11462', () => {
     assert.equal(meta.app, 'N1MM');
   });
 });
+
+describe('<rxfreq> jako zapas, gdy nie ma <txfreq>', () => {
+  // N1MM+, DXLog (oba formaty) i RUMlogNG wysyłają OBA pola; Log4OM i QARTest
+  // tylko <txfreq> (sprawdzone na przechwyconych datagramach 07.10). Trzeciego
+  // pola częstotliwości w tej rodzinie nie ma — żadnego <freq>.
+  //
+  // Łączność opisuje częstotliwość NADAWANIA, więc <txfreq> ma pierwszeństwo.
+  // <rxfreq> wchodzi dopiero, gdy go zabraknie: przy simpleksie jest identyczny,
+  // przy splicie różni się o kilka kHz i leży w tym samym paśmie — czyli jest
+  // nieporównanie lepszy niż zejście do samego <band>, które daje zaokrąglenie
+  // do pełnych MHz, a przy przecinku dziesiętnym nie daje nic.
+  const rekord = ({ tx, rx }) =>
+    '<?xml version="1.0"?><contactinfo><app>N1MM</app>'
+    + '<timestamp>2026-10-07 09:11:01</timestamp><mycall>SQ8BWM</mycall><band>14</band>'
+    + (tx == null ? '' : `<txfreq>${tx}</txfreq>`)
+    + (rx == null ? '' : `<rxfreq>${rx}</rxfreq>`)
+    + '<operator>SQ8BWM</operator><mode>CW</mode><call>SP9XYZ</call>'
+    + '<snt>599</snt><rcv>599</rcv></contactinfo>';
+
+  test('prawdziwy datagram N1MM+ ma oba pola i bierzemy z niego nadawanie', () => {
+    assert.match(QSO, /<rxfreq>1420000<\/rxfreq>/);
+    assert.match(QSO, /<txfreq>1420000<\/txfreq>/);
+    assert.equal(n1mm.decode(Buffer.from(QSO)).adif.freq, '14.2');
+  });
+
+  test('przy splicie wygrywa <txfreq>, bo to ono opisuje łączność', () => {
+    const { adif } = n1mm.decode(Buffer.from(rekord({ tx: '1425000', rx: '1425500' })));
+    assert.equal(adif.freq, '14.25', 'wzięte zostało nasłuchiwanie zamiast nadawania');
+  });
+
+  test('bez <txfreq> bierzemy <rxfreq>, zamiast schodzić do <band>', () => {
+    // Bez tego zapasu wynik to 14 MHz z <band> — pasmo by się zgadzało,
+    // ale częstotliwość byłaby zmyślona co do 250 kHz.
+    const { adif } = n1mm.decode(Buffer.from(rekord({ tx: null, rx: '1425000' })));
+    assert.equal(adif.freq, '14.25');
+    assert.equal(adif.band, '20m');
+  });
+
+  test('<txfreq> zerowe traktujemy jak brak', () => {
+    // N1MM wpisuje 0, gdy nie ma podłączonego radia i nie ustawiono częstotliwości.
+    const { adif } = n1mm.decode(Buffer.from(rekord({ tx: '0', rx: '1425000' })));
+    assert.equal(adif.freq, '14.25');
+  });
+
+  test('bez obu pól zostaje <band> — zachowanie bez zmian', () => {
+    const { adif } = n1mm.decode(Buffer.from(rekord({ tx: null, rx: null })));
+    assert.equal(adif.band, '20m');
+    assert.equal(adif.freq, '14');
+  });
+});

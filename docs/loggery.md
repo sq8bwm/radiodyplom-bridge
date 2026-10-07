@@ -260,10 +260,22 @@ jest liczbą całkowitą w jednostkach 10 Hz — żaden separator się w nim nie
 i wersja językowa systemu nie ma znaczenia. `<txfreq>` był obecny w **każdym**
 datagramie rodziny N1MM, jaki przechwyciliśmy.
 
-Mimo to przecinek jest przyjmowany także w samym `<band>`, bo gałąź awaryjna (gdy
-`<txfreq>` zabraknie) zawodziłaby **po cichu**: `Number('1,8')` to `NaN`, więc QSO
-poszłoby na serwer bez pasma i bez częstotliwości, a serwer wymaga tylko znaku,
-daty i znaku stacji — nic by nie odrzucił i nikt by nie zauważył.
+Mimo to przecinek jest przyjmowany także w samym `<band>`, bo gałąź awaryjna
+zawodziłaby **po cichu**: `Number('1,8')` to `NaN`, więc QSO poszłoby na serwer bez
+pasma i bez częstotliwości, a serwer wymaga tylko znaku, daty i znaku stacji — nic
+by nie odrzucił i nikt by nie zauważył.
+
+Stawką jest przy tym **pasmo**, a nie sama częstotliwość. Pasmo liczymy
+z częstotliwości (`bandFromMHz`), a `<band>` służy za zapas tylko wtedy, gdy zawiera
+nazwę ADIF w rodzaju `20m`. Przy `<band>1,8</band>` bez częstotliwości nie zostaje
+ani jedno, ani drugie — a w formularzu radiodyplom pasmo jest osobnym polem
+(potwierdzone uploadem QSO id 996530), więc jego brak to realna strata, nie kosmetyka.
+
+Dlatego częstotliwość ma dwa źródła: `<txfreq>`, a gdy go brak — `<rxfreq>`.
+Wysyłają go N1MM+, DXLog (oba formaty) i RUMlogNG; Log4OM i QARTest nie. `<txfreq>`
+ma pierwszeństwo, bo łączność opisuje częstotliwość nadawania — przy splicie
+`<rxfreq>` pokazuje stację DX, nie nas. Trzeciego pola częstotliwości w tej rodzinie
+nie ma: żadnego `<freq>` ani podobnego.
 
 **Czego o tym NIE wiemy.** Nie sprawdziliśmy, czy tak samo zachowuje się
 **N1MM+** i **Log4OM** — oba przechwyciliśmy na 14 MHz, czyli liczbie całkowitej,

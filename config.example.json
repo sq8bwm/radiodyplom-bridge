@@ -6,7 +6,7 @@
     "multicastGroups": []
   },
   "_udp_komentarz": "Nasluch UDP: QLog, N1MM+, WSJT-X i podobne. enabled=false zamyka ten port calkowicie - ma sens tylko wtedy, gdy QSO podaje wylacznie Logger32 po TCP.",
-  "_tcp_komentarz": "Nasluch TCP dla Logger32 (funkcja 'enable QSO export by TCP'). Domyslnie wylaczony - pozostale loggery go nie uzywaja.",
+  "_tcp_komentarz": "Nasluch TCP dla Logger32 ('enable QSO export by TCP') oraz JTDX ('Enable sending to TCP server'). Domyslnie wylaczony - pozostale loggery uzywaja UDP.",
   "tcp": {
     "enabled": false,
     "host": "127.0.0.1",

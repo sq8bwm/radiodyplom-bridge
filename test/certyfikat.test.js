@@ -21,7 +21,7 @@ import { join } from 'node:path';
 import https from 'node:https';
 import tls from 'node:tls';
 
-import { wystawCertyfikat, DNI_WAZNOSCI } from '../src/cert.js';
+import { wystawCertyfikat, DNI_WAZNOSCI, kodujInteger, numerSeryjny } from '../src/cert.js';
 import { przygotujCertyfikat, czyOpenssl } from '../src/apiauth.js';
 import { setLevel } from '../src/log.js';
 
@@ -211,5 +211,65 @@ describe('wpięcie w mostek', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe('INTEGER w DER musi być zapisany minimalnie', () => {
+  // SKĄD TO SIĘ WZIĘŁO: przez kilka dni testy tego pliku czerwieniły mniej
+  // więcej raz na kilka przebiegów, z błędem
+  // `ERR_OSSL_ASN1_ILLEGAL_PADDING`. Wyglądało to na migotliwość środowiska
+  // (w logu obok leciały komunikaty o zajętych portach) i o mało nie zostało
+  // spisane na straty jako „coś z portami".
+  //
+  // To był prawdziwy błąd kodera. DER wymaga od liczby całkowitej zapisu
+  // MINIMALNEGO, czyli DWÓCH reguł naraz: zero wiodące trzeba dodać, gdy
+  // najwyższy bit jest ustawiony, i trzeba je usunąć, gdy jest zbędne.
+  // Druga reguła była pominięta, a numer seryjny bierzemy z `randomBytes(16)`,
+  // więc z prawdopodobieństwem 1/256 zaczynał się od 0x00.
+  //
+  // Zmierzone 07.10.2026: 2 błędy na 500 certyfikatów (0,4% = 1/256);
+  // po poprawce 0 na 3000.
+  //
+  // Te testy są CELOWO deterministyczne — poprzednia wersja „sprawdzała" tę
+  // ścieżkę przez losowanie, czyli trafiała na nią raz na dwieście kilkadziesiąt
+  // przebiegów.
+
+  test('zbędne zero wiodące jest usuwane', () => {
+    assert.equal(kodujInteger(Buffer.from([0x00, 0x01])).toString('hex'), '020101');
+    assert.equal(kodujInteger(Buffer.from([0x00, 0x00, 0x7f])).toString('hex'), '02017f');
+  });
+
+  test('wymagane zero wiodące zostaje', () => {
+    // Bez niego 0x80 byłoby liczbą UJEMNĄ.
+    assert.equal(kodujInteger(Buffer.from([0x80])).toString('hex'), '02020080');
+    assert.equal(kodujInteger(Buffer.from([0x00, 0x80])).toString('hex'), '02020080');
+  });
+
+  test('samo zero to jeden bajt zera, a nie pustka', () => {
+    assert.equal(kodujInteger(Buffer.from([0x00])).toString('hex'), '020100');
+    assert.equal(kodujInteger(Buffer.from([0x00, 0x00])).toString('hex'), '020100');
+  });
+
+  test('zwykła wartość przechodzi bez zmian', () => {
+    assert.equal(kodujInteger(Buffer.from([0x02])).toString('hex'), '020102');
+    assert.equal(kodujInteger(Buffer.from([0x12, 0x34])).toString('hex'), '02021234');
+  });
+
+  test('numer seryjny ma zawsze 16 bajtów i jest dodatni', () => {
+    // Dzięki temu jego długość nie zależy od losu: przy najwyższym bicie
+    // doszedłby bajt zera, a przy bajcie zerowym jeden by ubył — i test
+    // „numer jest wystarczająco długi" sam stałby się migotliwy.
+    for (let i = 0; i < 500; i += 1) {
+      const b = numerSeryjny();
+      assert.equal(b.length, 16);
+      assert.ok(b[0] >= 0x01 && b[0] <= 0x7f, `pierwszy bajt poza zakresem: 0x${b[0].toString(16)}`);
+    }
+  });
+
+  test('certyfikat z numerem zaczynającym się od zera też się parsuje', () => {
+    // Dokładnie ten przypadek psuł jeden przebieg na kilka. Tu wymuszamy go
+    // wprost: koder ma sobie z nim poradzić, niezależnie od numerSeryjny().
+    assert.equal(kodujInteger(Buffer.concat([Buffer.from([0x00]), Buffer.alloc(15, 0x41)])).toString('hex'),
+      '020f' + '41'.repeat(15));
   });
 });

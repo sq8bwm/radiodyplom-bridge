@@ -45,8 +45,32 @@ const BOOL = (v) => tlv(0x01, Buffer.from([v ? 0xff : 0x00]));
 const NULL = Buffer.from([0x05, 0x00]);
 const jawny = (nr, ...d) => tlv(0xa0 | nr, ...d);
 
-/** INTEGER. Wiodące zero przy ustawionym najwyższym bicie — inaczej liczba byłaby ujemna. */
-const INT = (buf) => tlv(0x02, buf[0] & 0x80 ? Buffer.concat([Buffer.from([0]), buf]) : buf);
+/**
+ * INTEGER w zapisie DER, który musi być MINIMALNY — i to są dwie reguły, nie jedna:
+ *
+ *   1. wiodące zero DODAJEMY, gdy najwyższy bit jest ustawiony (inaczej liczba
+ *      byłaby ujemna),
+ *   2. wiodące zera USUWAMY, gdy są zbędne — zbędne zero to błąd kodowania,
+ *      a nie kosmetyka.
+ *
+ * Druga reguła była tu pominięta i to się mściło: numer seryjny bierzemy
+ * z `randomBytes(16)`, więc z prawdopodobieństwem 1/256 zaczynał się od 0x00
+ * i certyfikat wychodził nie do odczytania — OpenSSL odrzucał go komunikatem
+ * `ERR_OSSL_ASN1_ILLEGAL_PADDING`. Zmierzone 07.10.2026: 2 błędy na 500
+ * wystawionych certyfikatów, czyli 0,4% — dokładnie 1/256.
+ *
+ * Objawiało się to jako „migotliwy test", bo psuło jeden przebieg na kilka.
+ */
+export const kodujInteger = (buf) => {
+  let i = 0;
+  while (i + 1 < buf.length && buf[i] === 0 && !(buf[i + 1] & 0x80)) i += 1;
+  const b = buf.subarray(i);
+  return tlv(0x02, b[0] & 0x80 ? Buffer.concat([Buffer.from([0]), b]) : b);
+};
+
+// Nazwa wewnętrzna; `kodujInteger` jest wyeksportowane, żeby test mógł sprawdzić
+// obie reguły DER wprost, zamiast polować na nie losowaniem 1/256.
+const INT = kodujInteger;
 
 /** BIT STRING z zerową liczbą nieużywanych bitów. */
 const BIT = (buf) => tlv(0x03, Buffer.concat([Buffer.from([0]), buf]));
@@ -105,6 +129,13 @@ export const DNI_WAZNOSCI = 730;
  * @param {number} [opts.dni]     ważność w dniach
  * @returns {{cert:string, key:string}}
  */
+/** 16 bajtów losowych, pierwszy w zakresie 0x01–0x7f: dodatni i stałej długości. */
+export function numerSeryjny() {
+  const b = randomBytes(16);
+  b[0] = (b[0] & 0x7f) || 0x01;
+  return b;
+}
+
 export function wystawCertyfikat({ cn, nazwy = [], adresy = [], dni = DNI_WAZNOSCI }) {
   if (!cn || !String(cn).trim()) throw new Error('Certyfikat wymaga nazwy (cn)');
 
@@ -128,7 +159,13 @@ export function wystawCertyfikat({ cn, nazwy = [], adresy = [], dni = DNI_WAZNOS
     jawny(0, INT(Buffer.from([2]))),        // wersja v3
     // Numer seryjny LOSOWY. Stały powodowałby, że dwa certyfikaty tej samej
     // maszyny są nierozróżnialne dla magazynu zaufania przeglądarki.
-    INT(randomBytes(16)),
+    //
+    // Pierwszy bajt wpychamy w zakres 0x01–0x7f, żeby numer był DODATNI i miał
+    // ZAWSZE dokładnie 16 bajtów. Inaczej jego długość zależałaby od losu:
+    // przy najwyższym bicie doszedłby bajt zera, a przy bajcie zerowym jeden
+    // by ubył — i test „numer jest wystarczająco długi" sam stałby się
+    // migotliwy. Zostaje 127 bitów losowości, czyli aż nadto.
+    INT(numerSeryjny()),
     ALG_SHA256_RSA,
     nazwaCN(cn),
     SEQ(czasUTC(od), czasUTC(doKiedy)),

@@ -645,6 +645,25 @@ Sprawdzenie: przycisk **„Test the connection"** w event viewerze wysyła tekst
 dane docierają. Prawdziwe QSO daje wpis „Nowe QSO [ADIF]" — źródło nazywa się
 formatem, bo ten sam ADIF przysyła nam też BBLogger.
 
+**Gdy port 52005 jest „zajęty", a nic go nie trzyma.** Zakres portów
+efemerycznych (tych, które system przydziela połączeniom WYCHODZĄCYM) to na
+Linuksie domyślnie `32768–60999`, a na Windowsie `49152–65535` — i **52005 leży
+w środku obu**. Wychodzące połączenie dowolnego programu może więc na chwilę
+zająć akurat ten numer. Jeśli trafi to w moment startu mostka, nasłuch nie wstaje,
+a błąd przerywa start całego rdzenia — mimo że na stałe nikt tego portu nie
+trzyma i po restarcie wszystko działa.
+
+Rzadkie, ale nie zerowe: zmierzone 07.10.2026 na maszynie roboczej — 81 zajętych
+numerów z 28 232 w zakresie, czyli 0,29% w danej chwili. Dotyczy **tylko** tych,
+którzy włączyli nasłuch TCP; porty UDP (12060 i wyżej) leżą poniżej zakresu
+efemerycznego i problemu nie mają.
+
+Co zrobić, gdy to wystąpi: najpierw po prostu uruchomić mostek ponownie. Jeśli
+powtarza się, przestawić `tcp.port` na numer **poniżej 32768** (i wpisać ten sam
+w Logger32 albo JTDX) — wtedy system nigdy nie przydzieli go połączeniu
+wychodzącemu. Sprawdzić, kto trzyma port: `ss -tanp | grep 52005` (Linux),
+`netstat -ano | findstr 52005` (Windows).
+
 **Dwie instancje mostka a port 52005.** Bind TCP jest wyłączny, więc druga
 instancja z włączonym Logger32 na tym samym porcie nie wstanie — i to nie
 „częściowo": błąd nasłuchu przerywa start całego rdzenia, razem z UDP, a okno

@@ -15,8 +15,17 @@ import { qsoKey } from '../dedupkey.js';
 export const name = 'N1MM';
 
 /**
- * Częstotliwość w MHz z `<txfreq>`, z uwzględnieniem tego, że JEDNOSTKA NIE JEST
- * JEDNA. Zmierzone 2026-10-05 na przechwyconych datagramach:
+ * Częstotliwość w MHz z `<txfreq>`, a gdy go brak — z `<rxfreq>`.
+ *
+ * Łączność opisuje częstotliwość NADAWANIA, więc `<txfreq>` ma pierwszeństwo.
+ * `<rxfreq>` to zapas: przy pracy simpleksem jest identyczny, a przy splicie
+ * różni się o kilka kHz i prawie zawsze leży w tym samym paśmie — czyli jest
+ * nieporównanie lepszym przybliżeniem niż zejście do samego `<band>`.
+ * Wysyłają go N1MM+, DXLog (oba formaty) i RUMlogNG; Log4OM i QARTest nie
+ * (sprawdzone na przechwyconych datagramach 07.10).
+ *
+ * Dalej o jednostce — ta NIE JEST JEDNA. Zmierzone 2026-10-05 na przechwyconych
+ * datagramach:
  *
  *   N1MM+, DXLog, RUMlogNG → 10 Hz, czyli setne części kHz  (14250,00 kHz = 1425000)
  *   BBLogger               → 100 Hz, czyli dziesiąte kHz     (14250,0 kHz  =  142500)
@@ -30,7 +39,9 @@ export const name = 'N1MM';
  * Dopiero bez `<band>` zostaje 10 Hz — zachowanie sprzed tej zmiany.
  */
 function czestotliwoscMHz(xml) {
-  const surowa = Number(tag(xml, 'txfreq'));
+  const surowa = [tag(xml, 'txfreq'), tag(xml, 'rxfreq')]
+    .map(Number)
+    .find((n) => Number.isFinite(n) && n > 0);
   const pasmo = tag(xml, 'band');
   const kandydaci = Number.isFinite(surowa) && surowa > 0
     ? [surowa / 100000, surowa / 10000]
@@ -46,7 +57,18 @@ function czestotliwoscMHz(xml) {
 
   // Bez txfreq zostaje samo `<band>`: u N1MM+ to MHz („3.5"), u BBLoggera nazwa
   // pasma („20m") — z nazwy częstotliwości nie wyliczymy, ale pasmo przetrwa niżej.
-  const wMhz = Number(pasmo);
+  //
+  // PRZECINEK: DXLog w trybie zgodności z N1MM zapisuje tu separator dziesiętny
+  // z ustawień systemu — na polskim Windowsie wychodzi „1,8" zamiast „1.8"
+  // (zmierzone 07.10 na DXLog.net v2.6.37). `Number('1,8')` to NaN, więc bez tej
+  // zamiany QSO szłoby na serwer BEZ pasma i BEZ częstotliwości — i to po cichu,
+  // bo serwer wymaga tylko znaku, daty i znaku stacji, więc nic by nie odrzucił.
+  //
+  // Dopóki logger wysyła <txfreq> albo <rxfreq>, do tej gałęzi w ogóle nie
+  // dochodzimy (tak było w każdym datagramie, jaki przechwyciliśmy). To
+  // zabezpieczenie na wypadek, gdy zabraknie obu — i zdejmuje zależność od
+  // wersji językowej Windowsa.
+  const wMhz = Number(String(pasmo).replace(',', '.'));
   return Number.isFinite(wMhz) && wMhz > 0 ? wMhz : NaN;
 }
 
@@ -117,7 +139,14 @@ export function decode(buf) {
 
   // <ID> N1MM plus odcisk treści — tak samo jak w QLog, żeby ewentualne
   // powtórzenie identyfikatora nie kasowało prawdziwego QSO.
-  const id = tag(xml, 'ID');
+  //
+  // DXLog we WŁASNYM formacie nie wysyła <ID>, tylko <guid> — ta sama rola,
+  // inna nazwa (zmierzone 07.10 na DXLog.net v2.6.37). Bez tego zapasu klucz
+  // spadał na sam odcisk treści, a odcisk nie rozróżnia dwóch QSO z tym samym
+  // znakiem w tej samej sekundzie na tym samym paśmie — w zawodach to się
+  // zdarza, a DXLog jest programem zawodowym. <ID> ma pierwszeństwo, więc dla
+  // wszystkich pozostałych programów nic się nie zmienia.
+  const id = tag(xml, 'ID') || tag(xml, 'guid');
   const key = qsoKey('n1mm', id || null, adif);
 
   return {

@@ -1,13 +1,19 @@
 // SPDX-FileCopyrightText: 2026 SQ8BWM
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Nasłuch TCP dla Logger32.
+// Nasłuch TCP dla Logger32 — i, od 07.10.2026, także dla JTDX.
 //
 // Logger32 (od 4.0.344) nie rozgłasza QSO po UDP jak pozostałe loggery. Ma
 // „enable QSO export by TCP": sam, jako KLIENT, łączy się pod wskazany adres
 // i port (domyślnie 52005) i wysyła zalogowane QSO w ADIF-ie. Z działającego
 // wdrożenia (Node-RED, węzeł `tcp in` w trybie `single`) wynika, że robi to
 // per QSO: otwiera połączenie, wysyła rekord, zamyka.
+//
+// JTDX ma tę samą funkcję pod nazwą „Enable sending to TCP server" (Settings →
+// Reporting, domyślnie port 52001) i zachowuje się TAK SAMO — zmierzone
+// 07.10.2026 na 2.2.159: osobne połączenie na każde QSO, rekord, sekunda,
+// zamknięcie. Różni się jednym: opakowuje ADIF w kopertę
+// `<command:3>Log <parameters:N> …`, którą rozpakowuje dekoder `logger32`.
 //
 // Dlatego czytamy strumień na DWA sposoby naraz:
 //   1. na bieżąco, gdy tylko w buforze pojawi się kompletny rekord (`<eor>`),

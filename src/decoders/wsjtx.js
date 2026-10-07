@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2026 SQ8BWM
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Dekoder rodziny WSJT-X: binarny QDataStream (WSJT-X, JTDX >=2.2.158, MSHV).
+// Dekoder rodziny WSJT-X: binarny QDataStream (WSJT-X, JTDX, MSHV).
+//
+// Zmierzone wersje: JTDX 2.2.159 (07.10.2026, schema 2, typy 0/1/5/12),
+// MSHV 2.763 i WSJT-X improved 3.1.0 (06.10.2026). Dawne „JTDX >=2.2.158"
+// było twierdzeniem z pierwszego commitu, którego nikt nie sprawdził —
+// dolnej granicy NADAL nie znamy, bo mierzyliśmy tylko 2.2.159.
 // Nagłówek: magic 0xADBCCBDA (quint32) | schema (quint32) | type (quint32) | id (utf8)
 // Czytamy DWA typy komunikatu o zalogowanej łączności:
 //   typ 5  „QSO Logged"   — pola binarne, tak było od początku,

@@ -13,7 +13,7 @@ obsługuje mieszane źródła jednocześnie.
 |---|---|---|
 | `QLog` | JSON `{appid:"QLog", data:{value:"<ADIF>"}}` | QLog |
 | `N1MM` | XML `<contactinfo>` | N1MM+, DXLog, **RUMlogNG**, **Log4OM**, **BBLogger** (tryb XML), **QARTest** |
-| `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 i 12 | WSJT-X, JTDX ≥ 2.2.158, **MSHV** |
+| `WSJT-X` | binarny QDataStream, magic `0xADBCCBDA`, typ 5 i 12 | WSJT-X, **JTDX 2.2.159** (sprawdzone), **MSHV** |
 | `Logger32` | goły rekord ADIF | Logger32 ≥ 4.0.344 (**po TCP**), **BBLogger** (tryb ADIF, po UDP) |
 
 Rozpoznanie jest jednoznaczne, bo rodziny różnią się początkiem: `{` → JSON,
@@ -51,11 +51,13 @@ Ustaw wysyłkę UDP na `127.0.0.1:12060` (albo inny port, byle zgodny z `config.
 
 - **QLog** — `Settings → Network → Notifications → QSO Changes`
 - **RUMlogNG (macOS)** — `Preferences → UDP → RUMlog, N1MM & TR4W compatible` (szczegóły niżej)
-- **N1MM+ / DXLog** — broadcast na porcie 12060 (domyślny dla tej rodziny)
+- **N1MM+** — `Config → Configure Ports…`, zakładka **Broadcast Data**, zaznaczone **Contacts** (szczegóły niżej)
+- **DXLog.net** — `Options → Broadcast → QSOs` (szczegóły niżej)
 - **Log4OM** — `Settings → Program Configuration → Software integration → Connections`, zakładka UDP, sekcja **UDP OUTBOUND**, typ usługi **N1MM_CONTACT** (szczegóły niżej)
 - **BBLogger** — `Tools → Configuration/Maintenance → QSO UDP Broadcast`, format **ADIF** albo **XML (N1MM)** (szczegóły niżej)
 - **QARTest** — `Options → External data broadcast`, zaznaczone **QSO** (szczegóły niżej)
-- **WSJT-X / JTDX / MSHV** — `Settings → Reporting → UDP Server` + port
+- **WSJT-X / MSHV** — `Settings → Reporting → UDP Server` + port
+- **JTDX** — `Settings → Reporting`, ale ma aż cztery kanały (szczegóły niżej)
 - **Logger32** — patrz niżej, bo jako jedyny nie używa UDP
 
 WSJT-X wysyła „QSO Logged” dopiero po zatwierdzeniu okna **Log QSO** — to celowe
@@ -167,10 +169,260 @@ Port odbioru w drugim programie zwykle też da się zmienić — HamConnect ma g
 w ustawieniach obok dwóch innych. Zmieniaj ten, który łatwiej zmienić; ważne, żeby
 numery były różne i żeby logger wysyłał do obu.
 
+## N1MM Logger+ — macierzysty protokół
+
+**Potwierdzone na żywym programie** (2026-10-07, N1MM Logger+ 1.0.11462 na Windowsie 11):
+QSO zalogowane w N1MM+ dochodzi do mostka i przechodzi całą drogę. Przechwycony
+datagram jest w testach (`test/n1mm-plus.test.js`).
+
+To od tego programu wziął nazwę nasz dekoder `n1mm` — ale jego własnych bajtów
+zobaczyliśmy dopiero tego dnia. Wszystko, co wcześniej mieliśmy przechwycone w tej
+rodzinie, pochodziło od **innych** programów mówiących tym protokołem: RUMlogNG,
+QARTest, Log4OM.
+
+Konfiguracja krok po kroku:
+
+1. **Config ➪ Configure Ports, Mode Control, Winkey, etc…** (menu okna wprowadzania).
+2. Zakładka **Broadcast Data**.
+3. Zaznacz **Contacts**. Pole adresu obok ma już wpisane `127.0.0.1:12060` —
+   **to jest nasz domyślny port**, więc przy domyślnej konfiguracji mostka nie
+   trzeba tam niczego zmieniać. Wystarczy sam haczyk.
+4. **OK**.
+
+Pozostałe pozycje (*Application Info*, *Radio*, *Spots*, *Score*) są dla mostka
+nieistotne — zaznaczenie samych *Contacts* wystarcza i nie zasypuje portu resztą ruchu.
+
+**Zanim zalogujesz pierwsze QSO**, wypełnij **Config ➪ Change Your Station Data**.
+Bez tego N1MM+ wita się okienkiem *Missing Station Info* i nie pracuje poprawnie.
+Pole **ARRL Section** jest wymagane także poza USA — wpisuje się tam `DX`, inaczej
+okno danych stacji nie da się zamknąć.
+
+Co N1MM+ wysyła, a czego nie widać u innych programów tej rodziny:
+
+| pole | jak jest | co z tego mamy |
+|---|---|---|
+| `<ID>` | GUID bez myślników | klucz deduplikacji nie musi liczyć odcisku treści |
+| `<operator>` | wypełnione | nie trzeba zapasu z `<mycall>` |
+| `<mode>` | wstęga (`USB`/`LSB`), nie `SSB` | sprowadzamy do `SSB`, bo serwer zna emisję, nie wstęgę |
+| `<txfreq>` | dziesiątki herca (`1420000` to 14,2 MHz) | zmierzone na jego własnych bajtach, nie przyjęte z dokumentacji |
+| `<SentExchange />` | tag zamknięty sam w sobie | jedyny taki w naszych zbiorach — parser musi go przejść |
+
+**Ustawienia zapisują się przy wyjściu**, podobnie jak w Log4OM: plik
+`Documents\N1MM Logger+\N1MM Logger.ini` rośnie dopiero po zamknięciu programu.
+Podmiana ustawień „na żywo" zostanie więc cofnięta.
+
+## DXLog.net — dwa formaty, oba obsługiwane
+
+**Potwierdzone na żywym programie** (2026-10-07, DXLog.net v2.6.37 na Windowsie 11):
+QSO zalogowane w DXLogu dochodzi do mostka i przechodzi całą drogę. Przechwycone
+datagramy — oba formaty — są w testach (`test/dxlog.test.js`).
+
+Konfiguracja:
+
+1. **Options ➪ Broadcast ➪ QSOs** — zaznacz. To wystarczy.
+2. Adres i port siedzą w **Options ➪ Configure network**, sekcja **QSO UDP broadcast**.
+   Domyślnie `127.0.0.1` i port `12060` — **czyli nasz domyślny port**, więc przy
+   domyślnej konfiguracji mostka nie trzeba tam nic zmieniać.
+
+**Uwaga: DXLog ma dwa formaty transmisji.** Przełącza je osobna pozycja
+`Options ➪ Broadcast ➪ Use N1MM QSO format`, domyślnie **wyłączona**:
+
+| | wyłączone (domyślnie) | włączone |
+|---|---|---|
+| format | własny DXLoga | zgodny z N1MM+ |
+| nazwa programu | `<logger>DXLog.net v2.6.37</logger>` | `<app>N1MM</app>` — podszywa się pod N1MM |
+| identyfikator QSO | `<guid>` | `<ID>` |
+
+**Mostek rozumie oba** — nie trzeba niczego przełączać. Oba są zwykłym XML-em
+`<contactinfo>`, oba przechodzą mapowanie tak samo i oba trafiają na serwer
+z tym samym kompletem pól.
+
+Warto jednak wiedzieć, co ten przełącznik zmienia u nas:
+
+- **zostawiony wyłączony** (zalecane) — w logu mostka widać prawdziwą nazwę
+  programu, „DXLog.net v2.6.37". Identyfikator bierzemy z `<guid>`.
+- **włączony** — DXLog przedstawia się jako `N1MM` i po samym datagramie nie da
+  się go odróżnić od prawdziwego N1MM+. Dla wysyłki bez znaczenia, ale w logu
+  zobaczysz „N1MM" przy QSO, które przyszło z DXLoga.
+
+Do 07.10 czytaliśmy wyłącznie `<ID>`, więc format WŁASNY — czyli ten domyślny —
+tracił identyfikator i klucz deduplikacji opierał się na samym odcisku treści.
+Odcisk nie rozróżnia dwóch QSO z tym samym znakiem w tej samej sekundzie na tym
+samym paśmie, a DXLog jest programem zawodowym, więc to nie był przypadek
+teoretyczny. Teraz `<guid>` jest czytany jako zapas po `<ID>`.
+
+**Przecinek w `<band>`.** W trybie N1MM DXLog zapisuje pasmo separatorem
+dziesiętnym z ustawień systemu — na polskim Windowsie wychodzi `<band>1,8</band>`,
+a nie `1.8`. Zmierzone na DXLog.net v2.6.37; **w jego własnym formacie jest kropka**,
+więc robi to dopiero ścieżka zgodności z N1MM.
+
+Dla nas jest to nieszkodliwe, bo pasmo i częstotliwość liczymy z `<txfreq>`, a ten
+jest liczbą całkowitą w jednostkach 10 Hz — żaden separator się w nim nie pojawia
+i wersja językowa systemu nie ma znaczenia. `<txfreq>` był obecny w **każdym**
+datagramie rodziny N1MM, jaki przechwyciliśmy.
+
+Mimo to przecinek jest przyjmowany także w samym `<band>`, bo gałąź awaryjna
+zawodziłaby **po cichu**: `Number('1,8')` to `NaN`, więc QSO poszłoby na serwer bez
+pasma i bez częstotliwości, a serwer wymaga tylko znaku, daty i znaku stacji — nic
+by nie odrzucił i nikt by nie zauważył.
+
+Stawką jest przy tym **pasmo**, a nie sama częstotliwość. Pasmo liczymy
+z częstotliwości (`bandFromMHz`), a `<band>` służy za zapas tylko wtedy, gdy zawiera
+nazwę ADIF w rodzaju `20m`. Przy `<band>1,8</band>` bez częstotliwości nie zostaje
+ani jedno, ani drugie — a w formularzu radiodyplom pasmo jest osobnym polem
+(potwierdzone uploadem QSO id 996530), więc jego brak to realna strata, nie kosmetyka.
+
+Dlatego częstotliwość ma dwa źródła: `<txfreq>`, a gdy go brak — `<rxfreq>`.
+Wysyłają go N1MM+, DXLog (oba formaty) i RUMlogNG; Log4OM i QARTest nie. `<txfreq>`
+ma pierwszeństwo, bo łączność opisuje częstotliwość nadawania — przy splicie
+`<rxfreq>` pokazuje stację DX, nie nas. Trzeciego pola częstotliwości w tej rodzinie
+nie ma: żadnego `<freq>` ani podobnego.
+
+**To nie jest dziwactwo DXLoga.** Zmierzone QSO na 160 m, jeden komputer, polski
+Windows 11, ta sama chwila:
+
+| program | `<band>` przy 1,8 MHz | separator |
+|---|---|---|
+| N1MM Logger+ 1.0.11462 | `1,8` | przecinek |
+| DXLog.net, tryb N1MM | `1,8` | przecinek |
+| DXLog.net, format własny | `1.8` | kropka |
+| Log4OM 2 v.2.41.0.0 | `1.8` | kropka |
+
+Czyli separator zależy od **implementacji**, a nie od protokołu — i akurat dwa
+najczęściej używane programy zawodowe są po stronie przecinka. Pierwotne pomiary
+N1MM+ i Log4OM zrobiliśmy na 14 MHz, czyli liczbie całkowitej, w której separator
+w ogóle nie występuje; rozstrzygnęło dopiero QSO na paśmie ułamkowym.
+
+Wszystkie cztery przechodzą poprawnie, bo każdy wysyła `<txfreq>`.
+
+### Czy przecinek dotyczy też formatów ADIF
+
+Nie. **Zmierzone, nie wywnioskowane** — i to na programach uruchomionych pod polskim
+locale numerycznym.
+
+Maszyna, na której łapaliśmy datagramy ADIF-owe, ma `LC_NUMERIC="pl_PL.UTF-8"`
+w `/etc/locale.conf` oraz w środowisku sesji użytkownika, więc programy startowane
+z pulpitu to ustawienie dziedziczą. Pod nim biblioteka C formatuje liczby
+przecinkiem. To jest warunek, bez którego poniższe bajty niczego by nie dowodziły:
+
+| program | pole `FREQ` w ADIF | separator |
+|---|---|---|
+| WSJT-X **improved 3.1.0** (typ 12) | `0.002458` | kropka |
+| MSHV 2.763 (typ 12) | `14.080000` | kropka |
+| QLog | `0.002458` | kropka |
+| JTDX 2.2.159 (2. serwer UDP) | `14.075500` | kropka |
+
+Uwaga na pierwszy wiersz: to **WSJT-X improved** (DG2YCB), a nie mainline. Pakiet
+`wsjtx` na maszynie pomiarowej ma `Maintainer: dg2ycb@gmx.de` i wersję 3.1.0, przy
+mainlinowej numeracji 2.7.x. **Mainlinowego WSJT-X nie mamy przechwyconego ani razu** —
+protokół UDP improved dziedziczy po mainlinie, ale to wniosek, nie pomiar.
+
+Trzy niezależne programy, polski locale numeryczny, wszystkie piszą kropkę — zgodnie
+ze specyfikacją ADIF, która kropki wymaga. Dlatego **nie normalizujemy przecinka
+w `FREQ`**: nie ma czego naprawiać, a zmiana we wspólnym parserze ADIF-a byłaby
+łataniem przez analogię do XML-a.
+
+Gdyby kiedyś jednak się pojawił, podatne są dwa miejsca i warto o nich wiedzieć:
+
+- **WSJT-X typ 12** liczy pasmo z `FREQ`, gdy `<band>` jest puste — a puste bywa
+  naprawdę (WSJT-X bez podłączonego radia wysyła `<band:0>`; nasz przechwycony
+  datagram właśnie tak wygląda, stąd `freq` równe samemu offsetowi audio).
+  Przecinek kosztowałby wtedy pasmo.
+- **Logger32, BBLogger i QLog** nie liczą pasma z częstotliwości w ogóle, więc
+  pasma by nie straciły — ale przecinek pojechałby w `freq` dosłownie na serwer.
+
+Nie sprawdziliśmy Logger32 ani BBLoggera (oba tylko na Windowsie, nie mamy ich
+zainstalowanych).
+
+## JTDX — cztery kanały na jedną łączność
+
+**Potwierdzone na żywym programie** (2026-10-07, JTDX 2.2.159 z pakietu Ubuntu
+`jtdx 2.2.159-2build2`, Ubuntu 24.04, bez podłączonego radia): QSO dochodzi do
+mostka i przechodzi całą drogę. Przechwycone datagramy są w testach
+(`test/jtdx.test.js`).
+
+Do tego dnia nasze „JTDX ≥ 2.2.158" stało w README, w tym dokumencie i w dwóch
+komentarzach w kodzie — **bez ani jednego sprawdzenia**, tak samo jak wcześniej
+QARTest, Log4OM i DXLog.
+
+W protokole WSJT-X JTDX przedstawia się polem `id` jako `JTDX`, więc w logu mostka
+widać, który program przysłał QSO.
+
+### Cztery drogi, wszystkie w jednej zakładce
+
+`Settings (F2) ➪ Reporting` ma dwie niezależne sekcje:
+
+| kanał | gdzie | co wysyła | nasz dekoder |
+|---|---|---|---|
+| Primary UDP Server | sekcja *Primary UDP Server*, domyślnie `127.0.0.1:2237` | binarny QDataStream, typ 5 | WSJT-X |
+| ten sam + haczyk **Enable sending logged QSO ADIF data** | tamże | binarny, typ 12 | WSJT-X |
+| **2nd UDP server** | sekcja *Send logged QSO ADIF data*, domyślnie `127.0.0.1:2333` | **goły rekord ADIF**, bez nagłówka | ADIF (jak Logger32) |
+| TCP server | tamże, domyślnie `127.0.0.1:52001` | ADIF po TCP, **w kopercie** | ADIF ✓ (od 07.10) |
+
+**Mostek rozumie wszystkie cztery.** Trzy pierwsze działały od początku, bez
+żadnej zmiany w kodzie; czwarty wymagał jednej poprawki, opisanej niżej.
+Do pracy wystarczy jeden dowolny kanał ustawiony na port mostka.
+
+### Kanał TCP — jedyny bez UDP, i jedyny z kopertą
+
+To ta sama ścieżka, którą mostek przyjmuje QSO z **Logger32** (nasłuch TCP,
+domyślnie port 52005, domyślnie wyłączony — trzeba go włączyć w zakładce
+*Konfiguracja*). Jest cenna wtedy, gdy porty UDP są ciasne: jeśli QLog siedzi już
+na 2239, a HamConnect na 12060, TCP omija cały ten tłok.
+
+Dwie rzeczy zmierzone 07.10, obie nieoczywiste:
+
+- **JTDX opakowuje ADIF w kopertę**, czego Logger32 nie robi:
+
+  ```
+  <command:3>Log <parameters:248> <BAND:3>20m …<EOR>
+  ```
+
+  Do 07.10 taki rekord **ginął po cichu**: parser czytał poprawnie `command`
+  i `parameters`, ale na wierzchu nie było `call`, więc dekoder zwracał `null`
+  — a ponieważ dekoder jest rozpoznany, w logu nie pojawiało się NIC. Teraz
+  kopertę rozpakowujemy; dla gołego rekordu Logger32 ta gałąź się nie uruchamia.
+
+- **JTDX łączy się osobno na każde QSO.** Nie trzyma połączenia: otwiera je,
+  wysyła rekord, czeka sekundę i zamyka. Przy trzech łącznościach pod rząd będą
+  trzy połączenia z trzech różnych portów źródłowych. Nasz nasłuch to przyjmuje,
+  ale warto o tym wiedzieć przy diagnozie — brak stałego połączenia **nie** jest
+  objawem awarii.
+
+### Uwaga: nie włączaj kilku kanałów naraz na ten sam port
+
+Jedna łączność przychodzi wtedy **trzema datagramami z dwóch różnych źródeł**
+(`wsjtx:` i `logger32:`). Odcisk treści jest w nich identyczny, więc ratuje nas
+deduplikacja międzyźródłowa — sprawdzone na prawdziwych bajtach: trzy datagramy
+dają **jedno** QSO w kolejce. Ale to zabezpieczenie, a nie zaproszenie: włączenie
+jednego kanału jest prostsze i nie obciąża portu.
+
+Ciekawostka z pomiaru: częstotliwość w typie 5 liczymy z binarnych herców, więc
+wychodzi `14.0755`, a typ 12 i ADIF podają tekstem `14.075500`. Ta sama wartość,
+inny zapis — i dlatego dobrze, że częstotliwość **nie wchodzi** do odcisku treści.
+
+### Instalacja na Ubuntu — konflikt z WSJT-X spoza repo
+
+`apt install jtdx` ciągnie `wsjtx-data`, który kłóci się z WSJT-X zainstalowanym
+z paczki autorów (np. WSJT-X improved):
+
+```
+dpkg: error processing archive wsjtx-data…deb (--unpack):
+ trying to overwrite '/usr/share/pixmaps/wsjtx_icon.png',
+ which is also in package wsjtx 3.1.0
+```
+
+Kolidują **5 plików** z 7, w tym `/usr/share/wsjtx/cty.dat` i `JPLEPH` — czyli dane
+robocze WSJT-X. `--force-overwrite` **cofnąłby je** do wersji z pakietu Ubuntu, więc
+nie jest to nadpisanie ikony. Można za to uruchomić rozpakowany `/usr/bin/jtdx`
+bez konfigurowania pakietu: `cty.dat`, którego JTDX szuka, i tak już jest na dysku
+w nowszej wersji, a własne dane (`ALLCALL7.TXT`, `CALL3.TXT`) pakiet przynosi sam.
+
 ## Log4OM 2 — przez protokół N1MM
 
 **Potwierdzone na żywym programie** (2026-10-05, Log4OM 2 v.2.41.0.0 na Windowsie 11):
 QSO zalogowane w Log4OM dochodzi do mostka i przechodzi całą drogę aż do wysyłki.
+Datagram przechwycony 2026-10-07 leży w testach (`test/log4om.test.js`).
 
 Log4OM nie ma osobnego trybu „radiodyplom" — używamy jego **wyjścia N1MM**, bo wysyła
 dokładnie ten sam datagram XML `<contactinfo>`, który mostek już rozumie.
@@ -202,6 +454,37 @@ i znak stacji — czyli komplet potrzebny do wysyłki.
 **Uwaga na częstotliwość.** Pole *Freq* w Log4OM jest w kHz (`7100` to 7,1 MHz)
 i steruje pasmem. Dopóki jest puste albo niepoprawne, Log4OM **nie zapisze QSO**
 i nic nie wyśle — a komunikat o tym jest dyskretny (żółty trójkąt przy polu *Band*).
+
+Czego Log4OM **nie** podaje, a my sobie z tym radzimy (z przechwyconego datagramu,
+2026-10-07):
+
+| pole | jak jest | co robimy |
+|---|---|---|
+| `<operator>` | taga nie ma wcale | bierzemy znak z `<mycall>` |
+| `<id>` | brak | klucz deduplikacji liczymy z treści QSO |
+| `<band>` | `14` — MHz-y jako goła liczba, nie nazwa ADIF | pasmo liczymy z częstotliwości |
+| `<app>` | `LOG4OM2` | tego akurat nie brakuje — stąd nazwa programu w logu |
+
+Jednostka `<txfreq>` jest tu taka jak w N1MM+ (setne części kHz: `1407400` to
+14,074 MHz), więc pułapka znana z BBLoggera tu nie występuje. Uwaga: **nie rozstrzyga
+tego sąsiednie `<band>`** — „14" nie jest nazwą pasma ADIF, więc działa przelicznik
+domyślny. Gdyby Log4OM kiedyś przeszedł na jednostki BBLoggera, ta sama liczba
+dałaby 140,74 MHz; pilnuje tego test.
+
+Log4OM wysyła XML **sformatowany** — z deklaracją `<?xml?>`, wcięciami po dwie spacje
+i złamaniami linii CRLF między tagami. Tak samo robi N1MM+ (tylko tabulatorami);
+QARTest i BBLogger wysyłają wszystko w jednej linii. Dla dekodera bez znaczenia, ale
+przy podglądaniu ruchu widać to od razu.
+
+**Dwie rzeczy, które zaskakują przy zmianie portu** (obie kosztowały nas czas 07.10):
+
+- Log4OM **przepisuje `config.json` przy wyjściu**, z ustawień trzymanych w pamięci.
+  Podmiana pliku przy działającym programie nie da więc nic — trzeba najpierw zamknąć
+  Log4OM, a dopiero potem przywracać plik. Odwrotna kolejność wygląda na skuteczną,
+  bo plik faktycznie się zmienia; program po prostu cofa to kilka minut później.
+- Proces **nie nazywa się „Log4OM" tylko `L4ONG`**. `Get-Process Log4OM*` nie znajduje
+  nic i wygląda to jak potwierdzenie, że program jest zamknięty. Sprawdzać po oknie
+  albo po `L4ONG`.
 
 
 ## QARTest — przez protokół N1MM
@@ -361,6 +644,25 @@ Sprawdzenie: przycisk **„Test the connection"** w event viewerze wysyła tekst
 „nie rozpoznaję jako ADIF". Wbrew pozorom to **dobra wiadomość**: znaczy, że
 dane docierają. Prawdziwe QSO daje wpis „Nowe QSO [ADIF]" — źródło nazywa się
 formatem, bo ten sam ADIF przysyła nam też BBLogger.
+
+**Gdy port 52005 jest „zajęty", a nic go nie trzyma.** Zakres portów
+efemerycznych (tych, które system przydziela połączeniom WYCHODZĄCYM) to na
+Linuksie domyślnie `32768–60999`, a na Windowsie `49152–65535` — i **52005 leży
+w środku obu**. Wychodzące połączenie dowolnego programu może więc na chwilę
+zająć akurat ten numer. Jeśli trafi to w moment startu mostka, nasłuch nie wstaje,
+a błąd przerywa start całego rdzenia — mimo że na stałe nikt tego portu nie
+trzyma i po restarcie wszystko działa.
+
+Rzadkie, ale nie zerowe: zmierzone 07.10.2026 na maszynie roboczej — 81 zajętych
+numerów z 28 232 w zakresie, czyli 0,29% w danej chwili. Dotyczy **tylko** tych,
+którzy włączyli nasłuch TCP; porty UDP (12060 i wyżej) leżą poniżej zakresu
+efemerycznego i problemu nie mają.
+
+Co zrobić, gdy to wystąpi: najpierw po prostu uruchomić mostek ponownie. Jeśli
+powtarza się, przestawić `tcp.port` na numer **poniżej 32768** (i wpisać ten sam
+w Logger32 albo JTDX) — wtedy system nigdy nie przydzieli go połączeniu
+wychodzącemu. Sprawdzić, kto trzyma port: `ss -tanp | grep 52005` (Linux),
+`netstat -ano | findstr 52005` (Windows).
 
 **Dwie instancje mostka a port 52005.** Bind TCP jest wyłączny, więc druga
 instancja z włączonym Logger32 na tym samym porcie nie wstanie — i to nie

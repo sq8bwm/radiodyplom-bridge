@@ -189,6 +189,30 @@ Zwrócone `sha256:…` porównujemy z `release/SHA256SUMS`, a rozmiary z plikami
 lokalnymi. Zgodność jednego i drugiego znaczy, że odbiorca dostanie to samo,
 co zbudowaliśmy — i nie trzeba niczego pobierać.
 
+### Przez ~2 minuty wydanie jest publiczne, ale niekompletne
+
+Paczki macOS dokłada CI (`.github/workflows/wydanie-macos.yml`), a jego wyzwalaczem
+jest **opublikowanie wydania** — nie push tagu. Przez chwilę między `gh release create`
+a końcem tego przebiegu wydanie ma więc 6 załączników zamiast 10, a `SHA256SUMS`
+wymienia 5 plików zamiast 9. Zmierzone przy 0.1.40: **2,1 minuty**.
+
+To nie jest usterka, tylko skutek tego, że job dokłada pliki do wydania, które już
+istnieje (inaczej nie miałby czego uzupełniać). Nie diagnozować tego jako awarii CI.
+
+Okno da się zamknąć — `workflow_dispatch` przyjmuje tag i działa też na wydaniu
+roboczym, więc można utworzyć szkic, odpalić budowę ręcznie i opublikować dopiero
+komplet:
+
+```bash
+gh release create v0.1.41 --draft …
+gh workflow run wydanie-macos.yml -f tag=v0.1.41
+gh release edit v0.1.41 --draft=false
+```
+
+Świadomie **tego nie robimy**: trzy kroki zamiast jednego, przy czynności wykonywanej
+raz na kilka dni, to więcej miejsc na pomyłkę niż warte są dwie minuty. Zapisane tutaj,
+żeby nie trzeba było tego odkrywać drugi raz.
+
 ### Gdzie po instalacji leżą dane
 Katalog programu jest wtedy tylko do odczytu, więc konfiguracja i kolejka idą do
 katalogu użytkownika. Sterują tym dwie rzeczy: `RD_CONFIG_DIR` (Electron podstawia

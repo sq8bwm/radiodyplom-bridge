@@ -152,12 +152,21 @@
   main { padding:16px; }
   section { display:none; } section.active { display:block; }
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; }
+  /* Kafelki celowo NISKIE: stoją nad tabelami kolejki i zdarzeniami, więc każdy
+     zaoszczędzony piksel to jeden wiersz łączności więcej na ekranie. Przy
+     padding:12px i 1.375rem podpis „datagramów: … · nieodczytane: …" ŁAMAŁ SIĘ
+     na dwie linie i ten jeden kafelek był wyższy od pozostałych — rząd wyglądał
+     nierówno. Zmierzone 09.10.2026: ~35 px mniej na całym bloku. */
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
   .card .k { font-size:0.6875rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  .card .v { font-size:1.375rem; font-weight:600; margin-top:2px; }
+  .card .v { font-size:1.125rem; font-weight:600; margin-top:1px; }
   /* Druga linia karty: skąd ta liczba i ile z niej jest z tej sesji.
      Bez tego licznik trwały stał obok licznika procesu i wyglądał na to samo. */
-  .card .s { font-size:0.6875rem; color:var(--muted); margin-top:3px; min-height:14px; }
+  /* Drugi wiersz ZOSTAJE, nie idzie do dymka: bez niego licznik trwały („wysłane")
+     i licznik procesu („odebrane z loggera") wyglądały na to samo, pokazując
+     1119 przy 191. Dymek nie pomaga, bo problem jest przy PIERWSZYM spojrzeniu,
+     a na telefonie dymka nie ma wcale. */
+  .card .s { font-size:0.625rem; color:var(--muted); margin-top:1px; min-height:12px; }
   .card { cursor:help; }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px;
            padding:12px 14px; margin-top:12px; }
@@ -472,8 +481,8 @@
 </div>
 
 <nav>
-  <button data-tab="stan" class="active" data-i18n="tab.state">Stan</button>
-  <button data-tab="kolejka" data-i18n="tab.queue">Kolejka</button>
+  <button data-tab="stan" data-i18n="tab.state">Stan</button>
+  <button data-tab="qso" class="active" data-i18n="tab.qso">QSOs</button>
   <button data-tab="konfig" data-i18n="tab.config">Konfiguracja</button>
   <button data-tab="stats" data-i18n="tab.stats">Statystyki</button>
   <button data-tab="log" data-i18n="tab.log">Log</button>
@@ -482,14 +491,7 @@
 </div>
 
 <main>
-  <section id="stan" class="active">
-    <div class="cards">
-      <div class="card" id="kSent"><div class="k" data-i18n="card.sent"></div><div class="v" id="cSent">0</div><div class="s" id="sSent"></div></div>
-      <div class="card" id="kPending"><div class="k" data-i18n="card.pending"></div><div class="v" id="cPending">0</div><div class="s" id="sPending"></div></div>
-      <div class="card" id="kFailed"><div class="k" data-i18n="card.failed"></div><div class="v" id="cFailed">0</div><div class="s" id="sFailed"></div></div>
-      <div class="card" id="kRecv"><div class="k" data-i18n="card.received"></div><div class="v" id="cRecv">0</div><div class="s" id="sRecv"></div></div>
-      <div class="card" id="kSkipped"><div class="k" data-i18n="card.skipped"></div><div class="v" id="cSkipped">0</div><div class="s" id="sSkipped"></div></div>
-    </div>
+  <section id="stan">
     <div class="panel">
       <h2 data-i18n="panel.account"></h2>
       <div id="accountInfo" class="empty"></div>
@@ -517,13 +519,22 @@
       <h2 data-i18n="panel.sources"></h2>
       <div id="sources" class="empty"></div>
     </div>
+  </section>
+
+  <section id="qso" class="active">
+    <div class="cards">
+      <div class="card" id="kSent"><div class="k" data-i18n="card.sent"></div><div class="v" id="cSent">0</div><div class="s" id="sSent"></div></div>
+      <div class="card" id="kPending"><div class="k" data-i18n="card.pending"></div><div class="v" id="cPending">0</div><div class="s" id="sPending"></div></div>
+      <div class="card" id="kFailed"><div class="k" data-i18n="card.failed"></div><div class="v" id="cFailed">0</div><div class="s" id="sFailed"></div></div>
+      <div class="card" id="kRecv"><div class="k" data-i18n="card.received"></div><div class="v" id="cRecv">0</div><div class="s" id="sRecv"></div></div>
+      <div class="card" id="kSkipped"><div class="k" data-i18n="card.skipped"></div><div class="v" id="cSkipped">0</div><div class="s" id="sSkipped"></div></div>
+    </div>
+
     <div class="panel">
       <h2 data-i18n="panel.lastEvents"></h2>
       <div id="lastInfo"></div>
     </div>
-  </section>
 
-  <section id="kolejka">
     <div class="panel">
       <h2 data-i18n="panel.pending"></h2>
       <div class="tbl-scroll"><table role="table"><thead role="rowgroup"><tr role="row">

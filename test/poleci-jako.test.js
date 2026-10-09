@@ -90,7 +90,7 @@ describe('panel w oknie', () => {
   const S = readFileSync('ui/strings.js', 'utf8');
 
   test('panel jest na zakładce Stan, nie tylko w Konfiguracji', () => {
-    const stan = H.slice(H.indexOf('<section id="stan"'), H.indexOf('<section id="kolejka"'));
+    const stan = H.slice(H.indexOf('<section id="stan"'), H.indexOf('<section id="qso"'));
     assert.match(stan, /id="willSendInfo"/);
     assert.match(stan, /id="willSendWarn"/);
   });

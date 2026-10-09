@@ -4,7 +4,8 @@
 
 // Generuje SHA256SUMS dla artefaktów w release/.
 //
-// Po co: nie podpisujemy instalatorów certyfikatem (patrz BACKLOG), więc suma
+// Po co: instalatorów nie podpisujemy certyfikatem (świadoma decyzja: przy tej
+// skali pobrań certyfikat i tak nie zdjąłby ostrzeżenia SmartScreena), więc suma
 // kontrolna jest jedynym sposobem, w jaki odbiorca może sprawdzić, że pobrał
 // dokładnie to, co zbudowaliśmy.
 //

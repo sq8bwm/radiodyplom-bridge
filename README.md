@@ -269,8 +269,6 @@ zakładka *O programie*, jest przycisk **Zapisz zgłoszenie do wysłania**: ten
 plik ma PIN-y zamaskowane i nie zawiera hasła. Na maszynie bez pulpitu to samo
 robi `npm run report`.
 
-Znane usterki i plany: [BACKLOG.md](BACKLOG.md).
-
 ---
 
 Autor: **SQ8BWM** · port macOS: **Kamil Pawlak (SO8KP)** · licencja **GPL-3.0-or-later** ([pełny tekst](LICENSE))

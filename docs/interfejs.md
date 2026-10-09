@@ -242,8 +242,10 @@ zamknięciem, bo ono tylko planuje nowy proces.
 Baner pokazuje tam polecenie `sudo systemctl restart radiodyplom-bridge`.
 
 Na Windowsie mechanizm jest utwardzony pod dwa ryzyka (wersja portable
-rozpakowana do katalogu tymczasowego, wyścig o blokadę jednej instancji), ale
-**nietestowany na prawdziwej maszynie** — patrz BACKLOG.
+rozpakowana do katalogu tymczasowego, wyścig o blokadę jednej instancji)
+i **sprawdzony na prawdziwej maszynie** (2026-09-08): wersja z instalatora
+restartuje się poprawnie, a portable po dwóch restartach pod rząd zostawia
+JEDNĄ ikonę w zasobniku — czyli blokada jednej instancji jest oddawana.
 
 ### Zgłoszenie do wysłania
 

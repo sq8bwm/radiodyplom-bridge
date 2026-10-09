@@ -163,11 +163,13 @@ sprawdza pobranie jednym poleceniem:
 cd release && sha256sum -c SHA256SUMS
 ```
 
-Ma to znaczenie, bo **instalatorów nie podpisujemy certyfikatem** (uzasadnienie
-w `BACKLOG.md`) — suma kontrolna jest wtedy jedynym sposobem, w jaki odbiorca może
-stwierdzić, że pobrał dokładnie to, co zostało zbudowane. Pliki pomocnicze
-electron-buildera (`.blockmap`, `builder-debug.yml`, katalogi `*-unpacked`) są
-pomijane; liczone są tylko gotowe paczki.
+Ma to znaczenie, bo **instalatorów nie podpisujemy certyfikatem** (od marca 2024
+reputację SmartScreena buduje wyłącznie liczba pobrań, więc przy naszej skali żaden
+certyfikat nie zdjąłby ostrzeżenia o nieznanym wydawcy) — suma kontrolna jest wtedy
+jedynym sposobem, w jaki odbiorca może stwierdzić, że pobrał dokładnie to, co
+zostało zbudowane. Pliki pomocnicze electron-buildera (`.blockmap`,
+`builder-debug.yml`, katalogi `*-unpacked`) są pomijane; liczone są tylko
+gotowe paczki.
 
 ### Sprawdzenie wydania po wgraniu — bez ściągania 440 MB
 

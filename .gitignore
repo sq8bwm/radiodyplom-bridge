@@ -7,3 +7,6 @@ build/*.ico
 *.swp
 *.swo
 *~
+
+# Backlog trzymamy lokalnie, poza repozytorium (jest w historii do adca806)
+BACKLOG.md

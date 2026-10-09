@@ -15,5 +15,3 @@ Tutaj leżą szczegóły.
 | [Interfejs w sieci](interfejs-w-sieci.md) | okno z telefonu: hasło, HTTPS, tryb tylko do odczytu |
 | [Raspberry Pi / bez okna](malinka.md) | paczka headless, usługa systemd, sterowanie przez API |
 | [Rozwój](rozwoj.md) | wymagania, testy, budowanie paczek |
-
-Znane usterki i plany: [BACKLOG.md](../BACKLOG.md).

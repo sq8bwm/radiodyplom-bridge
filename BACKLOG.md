@@ -1,8 +1,225 @@
 # Backlog
 
-Stan na 2026-08-31. Pozycje uporządkowane wg tego, co blokuje wydanie.
+Spis zadań, decyzji i pomiarów. **Każda pozycja mówi nie tylko CO, ale DLACZEGO** —
+opisy zostają nawet po zrobieniu, bo właśnie one tłumaczą, czemu coś wygląda tak,
+jak wygląda.
 
-## Blokujące wydanie
+**Jak czytać:** twierdzenie bez słowa „zmierzone" albo „sprawdzone" jest
+przypuszczeniem, nie faktem. Ta różnica już raz kosztowała: QARTest przez miesiąc
+figurował tu jako nieobsługiwany „własny protokół 9458", a okazało się, że działa
+od pierwszego commitu i nigdy nie wymagał ani jednej linijki kodu.
+
+## Spis
+
+**Otwarte — możemy zrobić sami** — Nic tu nie czeka na cudzą decyzję ani na sprzęt. Kolejność dowolna.
+
+- [Kolejne dekodery loggerów](#kolejne-dekodery-loggerów)
+- [Uzupełnianie brakującego SUBMODE wartością z ustawień — do przemyślenia](#uzupełnianie-brakującego-submode-wartością-z-ustawień--do-przemyślenia)
+- [Okno automatycznego ponawiania](#okno-automatycznego-ponawiania)
+- [Zamykanie Electrona sygnałem — niepotwierdzone](#zamykanie-electrona-sygnałem--niepotwierdzone)
+- [Statystyki — zrobione, co jeszcze warto dołożyć](#statystyki--zrobione-co-jeszcze-warto-dołożyć)
+- [Wrzucanie spotów — pomysł, nie zamówienie](#wrzucanie-spotów--pomysł-nie-zamówienie)
+- [Rozgłoszenie programu — zaczęte 2026-09-30](#rozgłoszenie-programu--zaczęte-2026-09-30)
+
+**Otwarte — czeka na sprzęt albo na kogoś** — Tych nie domkniemy sami: potrzebna maszyna z loggerem albo odpowiedź drugiej strony.
+
+- [Test na prawdziwym Windows — częściowo zrobiony](#test-na-prawdziwym-windows--częściowo-zrobiony)
+- [Lista emisji w PING — prośba do autora platformy](#lista-emisji-w-ping--prośba-do-autora-platformy)
+- [Wykorzystanie API do walidacji — czekamy na dwie zmiany w serwisie](#wykorzystanie-api-do-walidacji--czekamy-na-dwie-zmiany-w-serwisie)
+- [Ostrzeżenie o złym znaku operatora — bez własnego wzorca znaku](#ostrzeżenie-o-złym-znaku-operatora--bez-własnego-wzorca-znaku)
+
+**Świadomie nie robimy** — Decyzje podjęte i uzasadnione. Nie wracamy do nich bez nowego argumentu.
+
+- [Przepisanie historii commitów — NIE robimy](#przepisanie-historii-commitów--nie-robimy)
+- [Stary PIN SQ8BWA w obiektach GitHuba — zamknięte, zostaje jak jest](#stary-pin-sq8bwa-w-obiektach-githuba--zamknięte-zostaje-jak-jest)
+- [Podpis kodu dla Windows — nie podpisujemy](#podpis-kodu-dla-windows--nie-podpisujemy)
+- [Dymki nieosiągalne na telefonie — NIE naprawiamy](#dymki-nieosiągalne-na-telefonie--nie-naprawiamy)
+- [Rozstrzyganie PHONE po bandplanie — nie robimy](#rozstrzyganie-phone-po-bandplanie--nie-robimy)
+- [Pole „Klucz: (COMMENT)" — zostaje jak jest](#pole-klucz-comment--zostaje-jak-jest)
+- [Windows 7 i 8 — nie obsługujemy i nie da się](#windows-7-i-8--nie-obsługujemy-i-nie-da-się)
+- [Autostart — NIE robimy](#autostart--nie-robimy)
+- [Aktualizacje aplikacji — powiadomienie zrobione, samoaktualizacji NIE robimy](#aktualizacje-aplikacji--powiadomienie-zrobione-samoaktualizacji-nie-robimy)
+
+**Zrobione — opis zostaje dla kontekstu** — Wpisy trzymamy, bo tłumaczą, DLACZEGO coś wygląda tak, jak wygląda.
+
+- [Interfejs w sieci: zewnętrzny adres, HTTPS i logowanie — ZROBIONE w 0.1.15](#interfejs-w-sieci-zewnętrzny-adres-https-i-logowanie--zrobione-w-0115)
+- [Interfejs responsywny — etap 1 ZROBIONY w 0.1.25](#interfejs-responsywny--etap-1-zrobiony-w-0125)
+- [Powiększanie widoku — ZROBIONE w 0.1.26, dostępność szerzej otwarta](#powiększanie-widoku--zrobione-w-0126-dostępność-szerzej-otwarta)
+- [QLog wysyła DWA datagramy na jedną edycję — zmierzone, zamknięte](#qlog-wysyła-dwa-datagramy-na-jedną-edycję--zmierzone-zamknięte)
+
+**[Zamknięte — pomiary i ustalenia](#zamknięte-dla-pamięci--potwierdzone-testem)** — to, czego dowiedzieliśmy się pomiarem. Nie zadania; wiedza.
+
+
+## Otwarte — możemy zrobić sami
+
+Nic tu nie czeka na cudzą decyzję ani na sprzęt. Kolejność dowolna.
+
+### Kolejne dekodery loggerów
+
+**Obsługiwane, każdy potwierdzony przechwyconym datagramem:** QLog, N1MM+ (1.0.11462),
+DXLog.net (2.6.37, oba formaty), Log4OM 2 (2.41), BBLogger (14.7, ADIF i XML),
+QARTest (16.9.1), Logger32 (po TCP), WSJT-X improved (3.1.0), JTDX (2.2.159, trzy
+z czterech kanałów), MSHV (2.763). Dekoderów są **cztery**: `wsjtx`, `qlog`,
+`logger32`, `n1mm` — jeden dekoder obsługuje całą rodzinę.
+
+**Niesprawdzony:** mainlinowy WSJT-X. Mamy wyłącznie wersję *improved* (DG2YCB);
+protokół UDP improved dziedziczy po mainlinie i niemal na pewno jest identyczny,
+ale to wniosek, nie pomiar.
+
+**Nie wiemy, czy wymagają pracy — do SPRAWDZENIA, nie do pisania:**
+Swisslog (2333), Win-Test (9871), Ham Radio Deluxe, WriteLog, LogHX.
+
+Te same pięć wymienia HamConnect jako obsługiwane, więc ktoś idący od nich może
+ich u nas szukać. **Ale ta lista jest przypuszczeniem, nie pomiarem.** Do 05.10.2026
+stał na niej również QARTest, z adnotacją „własny protokół 9458" — i okazało się,
+że wysyła zwykły `<contactinfo>`, działa od pierwszego commitu i **nie wymagał ani
+jednej linijki kodu**. Twierdzenie pochodziło z pierwszego commitu i przez miesiąc
+nikt go nie sprawdził.
+
+Dlatego **najpierw czytamy ich dokumentację** pod jednym kątem: czy mają wyjście
+UDP w formacie N1MM albo ADIF. Wiele loggerów zawodowych dorobiło sobie „N1MM
+broadcast", bo to stał się nieformalny standard — a tę rodzinę rozumiemy. Dopiero
+to, co zostanie po tym przeglądzie, jest realną pracą.
+
+Dodanie = jeden plik w `src/decoders/` (`name`, `detect`, `decode`) + wpis do
+rejestru. Reszta pipeline'u bez zmian.
+
+### Uzupełnianie brakującego SUBMODE wartością z ustawień — do przemyślenia
+
+**Pomysł Marka (2026-10-06), nieprzesądzony.** W „Ustawieniach zaawansowanych"
+dałoby się pozwolić na stałe uzupełnianie podtypu, gdy logger go nie poda:
+`MFSK → FT4`, `DIGITALVOICE → DMR` i podobnie.
+
+**Skąd się wziął.** Tego dnia zmierzyliśmy, że emisja decyduje o punktacji:
+organizator zaznacza *dozwolone emisje*, a lista ma `FT4`, `JS8`, `C4FM`, `DMR`,
+`DSTAR`, `PSK31` i `MFSK` jako **osobne pozycje**. Łączność przysłana jako gołe
+`MFSK` nie policzy się do dyplomu, w którym zaznaczono `FT4` — będzie w logu,
+ale bez punktów, i nikt nie powiąże tego z mostkiem. Dziś przekazujemy to, co
+dostaliśmy (`src/modes.js`, `modeZRekordu`), bo podtypu nie mamy z czego odtworzyć.
+
+**Za:** operator pracujący wyłącznie jedną emisją z rodziny (a tak jest prawie
+zawsze — ktoś robi FT4 albo DMR, nie „MFSK w ogóle") odzyskałby punkty bez
+zmieniania czegokolwiek w loggerze.
+
+**Przeciw, i to poważnie:** to jest **zgadywanie wpisane do cudzego dyplomu**.
+Serwer niczego nie waliduje — zapisuje dosłownie to, co wyślemy (zmierzone na
+akcji testowej). Zła wartość nie zostanie więc wyłapana ani przez nas, ani przez
+organizatora. Jedna sesja JS8 u kogoś, kto ma ustawione `MFSK → FT4`, da log
+pełen nieprawdziwych FT4. Łamie to zasadę zapisaną w `src/modes.js`: *mapujemy
+wyłącznie to, co jest jednoznaczne*.
+
+**Gdyby robić, to tak:** domyślnie wyłączone; osobno dla każdej rodziny; nazwa
+mówiąca wprost, że to podstawianie, a nie wykrywanie; każde podstawienie
+**widoczne w logu** (nie debug), żeby dało się dojść, skąd w dyplomie wzięła
+się taka emisja; opis w interfejsie mówiący, że zapis trafia do cudzego dyplomu
+i nikt go nie sprawdzi.
+
+**Warto najpierw zmierzyć, czy problem w ogóle występuje:** ile łączności
+w dotychczasowych akcjach ma emisję `MFSK`, `DIGITALVOICE` albo `PSK` bez
+podtypu. Jeśli to pojedyncze sztuki — szkoda zachodu i ryzyka.
+
+### Okno automatycznego ponawiania
+Domyślnie ~3,4 h (5 s → 15 min, 20 prób). Po wyczerpaniu QSO idzie do `data/failed/`
+i wymaga jednego kliknięcia „Ponów odrzucone". Rozważyć wyższe `maxAttempts`
+domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
+
+### Zamykanie Electrona sygnałem — niepotwierdzone
+`ui/main.js` ma teraz `tray.destroy()` na ścieżkach wyjścia i handlery
+`SIGTERM`/`SIGINT`/`SIGHUP`, ale **nie udało się potwierdzić, że handlery faktycznie
+się wykonują**: Electron na Linuksie przeładowuje proces (zmiana PID), a Chromium
+instaluje własną obsługę sygnałów, która może omijać handlery Node.
+
+Objaw przy braku poprawnego zamknięcia: ikona w zasobniku nie jest wyrejestrowana
+i panel (u nas XFCE, wtyczka „Obszar powiadomień") pokazuje ostrzeżenie, że wtyczka
+nieoczekiwanie zniknęła. Przy kilkunastu takich zgonach panel zaczyna protestować.
+
+Pewna ścieżka: „Zakończ" w menu ikony (`shutdown()` → `tray.destroy()` → `app.quit()`).
+
+**Nie jest to kwestia teoretyczna, choć autostartu nie robimy** (decyzja wyżej).
+Powód jest inny i już realny: **pakiet headless z 0.1.13 działa jako usługa
+systemd**, a `systemctl stop` to dokładnie `SIGTERM`. Tam zasobnika nie ma, więc
+nie o ikonę chodzi — ale kolejka i dziennik zasługują na czyste domknięcie
+zamiast ubicia procesu. Do sprawdzenia:
+`app.on('will-quit')`, `powerMonitor`, ewentualnie proces nadzorujący, który woła
+`app.quit()` przez IPC zamiast wysyłać sygnał.
+
+Na czas testów jest `RD_NO_TRAY=1` (start bez ikony). Uwaga: zmienna musi dotrzeć
+do samego procesu Electrona — przy `xvfb-run` potrafi się zgubić.
+
+### Statystyki — zrobione, co jeszcze warto dołożyć
+Zakładka i importer historii gotowe w 0.1.10 —
+[docs/statystyki.md](docs/statystyki.md). Historia z logów wczytana: 1114 kopii,
+372 QSO, 31.08–03.09 (z 1119 wpisów logu odsiane 2 przejścia próbne i 3 kopie
+QSO testowego `SN0TEST`).
+
+Do rozważenia, gdy pojawi się potrzeba:
+
+- **Eksport do CSV/ADIF** — dziennik jest w JSON Lines, więc to kilka linii kodu.
+- **Wykres w czasie** zamiast listy pasków; dziś przy 14 dniach lista wystarcza.
+- **Porównanie z serwisem** — ile QSO widzi radiodyplom na danej akcji. Wymaga
+  endpointu, którego nie ma; sensowne dopiero razem z resztą zapytania do autora.
+- **Wygasanie dziennika.** Przy tempie 300 QSO/dzień to ~1 MB na miesiąc, więc
+  jeszcze długo nie problem. Podział na pliki miesięczne jest już zrobiony, więc
+  usuwanie starych będzie trywialne.
+
+### Wrzucanie spotów — pomysł, nie zamówienie
+Zgłoszone 2026-09-04 jako „może kiedyś". Nic nie było jeszcze ustalane, więc
+zapisuję tylko to, co trzeba będzie rozstrzygnąć NA POCZĄTKU, żeby nie zacząć
+od budowania złej rzeczy:
+
+- **Gdzie spotować.** Klaster DX (telnet, protokół tekstowy), SOTAwatch/POTA
+  (HTTP), czy radiodyplom, gdyby dorobił u siebie spoty? To trzy różne
+  rozwiązania i różne dane logowania.
+- **Kogo spotować: siebie czy korespondenta.** Aktywator spotuje siebie
+  („jestem na 7.144"), a to znaczy, że dane NIE pochodzą z QSO, tylko ze
+  stanu radia albo z ręcznego wpisu. Kolejka QSO jest tu bez znaczenia.
+- **Czy z automatu.** Spot po każdym QSO to zaśmiecanie klastra; realnie
+  potrzebne jest „wrzuć spot teraz" na żądanie albo po zmianie pasma.
+
+Loggery wysyłają nam tylko zalogowane QSO, więc częstotliwość bieżąca jest
+znana wyłącznie wtedy, gdy właśnie coś zalogowano. Jeśli spot ma być
+niezależny od QSO, trzeba będzie osobnego źródła (CAT z radia albo pole
+w oknie) — i to jest największa nieznana tej pozycji.
+
+### Rozgłoszenie programu — zaczęte 2026-09-30
+
+Do 30.09 program był nieznany: **62 pobrania łącznie**, z czego wszystkie wyglądają
+na nasze własne testy, **0 pobrań** wydań 0.1.25–0.1.29, 0 odsłon repozytorium,
+0 gwiazdek. Marek: „chyba nikt nie używa naszej wspaniałej aplikacji".
+
+Zrobione tego dnia:
+
+- **Wpis na stronie Puławskiej Grupy Krótkofalowców** —
+  <https://krotkofalowcy.pulawy.pl/radiodyplom-bridge/> (wpis 4662, konto SQ8BWM,
+  kategorie Akcja dyplomowa i Klub, trzy zrzuty z 0.1.29). Źródło treści leży
+  w katalogu projektu strony: `wpis-radiodyplom-bridge.html`.
+- **Post na Facebooku** — wrzucony przez Piotra SP8X z naszym opisem
+  (`wpis-radiodyplom-bridge-facebook.txt`, wersja główna).
+- **README poprawione**: świeże zrzuty i przepisana sekcja „Do czego to jest".
+
+**Ważne ustalenie merytoryczne, które zmieniło cały przekaz:** alternatywą dla
+mostka NIE jest wgrywanie ADIF-a, tylko wpisywanie QSO wprost na radiodyplom.pl
+w przeglądarce. Prawdziwa wartość to swoboda pracy we własnym loggerze plus dwie
+rzeczy niemożliwe inaczej — kilka znaków stacji naraz i emisje cyfrowe.
+Dokumentacja twierdziła inaczej i to ona wprowadzała w błąd.
+
+**Punkt odniesienia (30.09, ok. godzinę po publikacji):** 555 odsłon artykułu,
+**1** pobranie nowych wydań. Proporcja odsłon do pobrań jest tu liczbą do
+obserwowania: jeśli po kilku dniach będzie 2000 odsłon i 5 pobrań, problem nie
+leży w widoczności, tylko w tym, co widać PO kliknięciu (wpis, README, strona
+wydań z sześcioma plikami do wyboru).
+
+**Odłożone:** mail do Tobiasza (autora radiodyplom.pl) z prośbą o kafelek
+w Managerze i stronę o mostku w serwisie — draft gotowy, ale API serwisu nie ma
+dziś innych klientów poza nami, więc kanał jest wąski. Decyzja: poczekać na
+wynik Facebooka. Gdyby wracać do tematu: wejściem ma być strona W SERWISIE
+(a generowanie PIN-u krokiem w jej środku, nie odwrotnie), a argumentem dla
+autora to, że jego wrześniowe rozszerzenie API dostaje wreszcie klienta.
+
+
+## Otwarte — czeka na sprzęt albo na kogoś
+
+Tych nie domkniemy sami: potrzebna maszyna z loggerem albo odpowiedź drugiej strony.
 
 ### Test na prawdziwym Windows — częściowo zrobiony
 Wersja instalacyjna przetestowana na Windows (2026-08-31). **Potwierdzone działa:**
@@ -76,8 +293,96 @@ Zostaje do sprawdzenia:
   program go nie tworzy i nie usuwa, robi to launcher, więc może zostawać;
 - **restart pod obciążeniem**, z loggerem nadającym QSO.
 
+### Lista emisji w PING — prośba do autora platformy
 
-## Świadomie odłożone
+**Stan (2026-10-06):** mostek NIE ma listy obsługiwanych emisji i mieć jej nie
+musi. Wysyła wiernie to, co podał logger, a przy `INVALID_MODE` ponawia QSO
+z rodziną (`JS8` → `MFSK`). Decyzję, czego serwis nie obsługuje, podejmuje więc
+serwer — zgodnie z zasadą, że jesteśmy pośrednikiem, a nie instancją oceniającą.
+
+Przez chwilę mieliśmy listę wpisaną w kod (`PRZYJMOWANE_PRZEZ_SERWER`). Marek
+podważył to podejście i słusznie: lista zestarzałaby się przy pierwszej zmianie
+u nich, a my braliśmy na siebie decyzję, która do nas nie należy.
+
+**Co zostaje do rozważenia:** poprosić autora radiodyplom.pl, żeby odpowiedź
+`action=PING` zawierała listę przyjmowanych emisji (dziś ma `operator`,
+`stations`, `activeActions`, `pinExpires`, `apiEnabled`, `timestamp`). Zysk
+byłby po obu stronach: moglibyśmy ostrzec użytkownika **przed** wysyłką, zamiast
+dowiadywać się z odmowy, a serwis miałby mniej odrzuconych QSO.
+
+*Zastrzeżenie Marka: na wcześniejsze pytania do autora nie dostaliśmy
+odpowiedzi, więc nie ma co na tym opierać planu — ponowienie działa bez niczyjej
+zgody.*
+
+### Wykorzystanie API do walidacji — czekamy na dwie zmiany w serwisie
+Autor serwisu **rozszerzył API 2026-09-04** (`stations`, `activeActions`,
+`pinExpires`, `apiEnabled` w `PING`/`STATUS`, plus `action=VALIDATE`).
+Sprawdzanie konfiguracji **jest już zrobione** — patrz
+[docs/konfiguracja.md](docs/konfiguracja.md#sprawdzanie-konfiguracji-wobec-konta-od-019).
+
+Zgłoszenie **wysłane 2026-09-04**, czekamy na odpowiedź. Zmierzone i zgłoszone,
+blokuje dalsze kroki:
+
+1. **`is_validation_only` tylko przy sukcesie.** Gdy walidacja stwierdza, że QSO
+   nigdzie nie wejdzie, odpowiedź jest bajt w bajt taka jak przy nieudanym
+   PRAWDZIWYM zapisie — a to właśnie ten przypadek jest wart sprawdzania.
+   Dopóki tak jest, nie użyjemy VALIDATE do przycisku „sprawdź to QSO".
+2. **Brak `reason`.** „Stacja bez uprawnień" i „data poza zakresem akcji" dają
+   identyczny komunikat, więc nie da się użytkownikowi powiedzieć, co poprawić.
+   Poprosiliśmy o `NO_STATION_RIGHTS` / `NO_ACTIVE_ACTION` / `ACTION_CLOSED` /
+   `WOULD_BE_DUPLICATE`, przy VALIDATE i przy zwykłym zapisie.
+
+Dwie mniejsze prośby w tym samym zgłoszeniu: `INVALID_CALLSIGN` wraca dla trzech
+różnych pól (korespondent, stacja, operator) i rozróżnia je tylko polski tekst —
+prosiliśmy o `field` albo osobne kody; `savedTo: []` przy `success: true` nadal
+nie ma kodu błędu.
+
+Otwarte pytania do autora: czy `PING` wchodzi w limit 10/min razem z zapisami
+(dziś zakładamy ostrożnie, że tak — cudze konta odpytujemy tylko na starcie
+i po zapisie), oraz czy `PING` i `STATUS` mają celowo zwracać to samo.
+
+**Ustalone przy okazji:** PIN nie ma daty ważności (`pinExpires: null`) poza
+banem/blokadą konta. Nie można logować do akcji zakończonej dawniej niż 7 dni —
+to dotyczy naszego ponawiania: QSO leżące długo w `failed/` może już nie wejść.
+Pole `operator` jest walidowane jako znak krótkofalarski (max 15 znaków,
+ucinane), z żadną listą nie jest wiązane.
+
+### Ostrzeżenie o złym znaku operatora — bez własnego wzorca znaku
+Pole `operator` jest walidowane przez serwis jako znak krótkofalarski: wartość
+niebędąca znakiem odbija QSO (`INVALID_CALLSIGN`, HTTP 400), a dłuższa niż
+15 znaków jest po cichu **ucinana**. Dziś mostek wysyła to bez ostrzeżenia.
+
+**Nie piszemy własnego wzorca znaku.** Ustalone 2026-09-04, po pytaniu „jak
+chcesz rozpoznawać zły znak":
+
+- Regexa serwisu nie znamy. Każda reguła strukturalna (prefiks litera+cyfra,
+  długość sufiksu) ma dziesiątki wyjątków: znaki okolicznościowe, `/P`, `/MM`,
+  `3Z0X`. Autor serwisu wprost mówi, że przechodzą `SP1ZOSIA` i `SP1BLABLABLA`.
+- Koszty są niesymetryczne: uznanie poprawnego znaku za zły to zablokowane albo
+  opóźnione QSO, a przepuszczenie złego to jedno odbicie do `failed/`, ratowane
+  jednym kliknięciem. Surowość jest więc droższa od pobłażliwości.
+
+Co robić, w kolejności wartości:
+
+1. **Znaki poza `A–Z`, `0–9`, `/`** — ostrzegać. To jedyne, co zmierzyliśmy jako
+   odrzucone (`NIE ZNAK!` — spacja i wykrzyknik).
+2. **Dłuższe niż 15 znaków** — ostrzegać, i to jest ważniejsze od punktu 1:
+   serwer nie odrzuca, tylko ucina, więc QSO zapisuje się pod **innym**
+   operatorem niż zamierzony, bez żadnego sygnału błędu.
+3. **W polu „Operator" w oknie konfiguracji** surowość jest bezpieczna —
+   wpisuje je człowiek, więc pytanie przy zapisie (jak przy znakach stacji) to
+   czysty zysk. Nic nie leci, nic nie ginie.
+4. **Dla wartości z loggera — żadnej blokady wysyłki.** Tylko wpis w zdarzeniach
+   i w logu.
+
+**Docelowo właściwe rozwiązanie:** nie odtwarzać reguł serwisu, a zapytać go
+przez `action=VALIDATE`. To jedyne źródło prawdy o tym, co przyjmie. Czeka na
+`is_validation_only` na ścieżce odrzucenia — patrz pozycja o walidacji wyżej.
+
+
+## Świadomie nie robimy
+
+Decyzje podjęte i uzasadnione. Nie wracamy do nich bez nowego argumentu.
 
 ### Przepisanie historii commitów — NIE robimy
 **Decyzja (2026-09-03).** Historia zostaje jaka jest, z widocznym okresem ISC.
@@ -176,7 +481,7 @@ Gdyby kiedyś wracać: rozwiązaniem NIE jest wypisanie tekstu na stałe pod ka�
 wierszem — przy pięciu celach zrobiłoby to ze formularza ścianę. Raczej
 kliknięcie znacznika rozwijające wyjaśnienie tylko dla tego wiersza.
 
-### Rozstrzyganie `PHONE` po bandplanie — nie robimy
+### Rozstrzyganie PHONE po bandplanie — nie robimy
 **Decyzja (2026-08-31): nie wchodzimy w to.** `PHONE` przechodzi surowe.
 
 Powód, żeby nie wracać: na 2 m i 70 cm fonia bywa i FM, i SSB, więc odwzorowanie
@@ -201,72 +506,94 @@ wartością z konfiguracji, zamiast tekstem od operatora.
 **Pytanie zadane autorowi serwisu 2026-09-03** (razem z pytaniem, czy pole
 `operator` jest w ogóle walidowane). Czekamy na odpowiedź — nie zgadujemy dalej.
 
-## Funkcjonalne
+### Windows 7 i 8 — nie obsługujemy i nie da się
+Zgłoszone 2026-09-05: na 64-bitowym Windows 7 program nie startuje ani
+zainstalowany, ani przenośny — *„nie jest prawidłową aplikacją systemu Win32"*.
+To komunikat systemu, nie programu; Windows odmawia wczytania pliku, zanim nasz
+kod wystartuje.
 
-### Wykorzystanie API do walidacji — czekamy na dwie zmiany w serwisie
-Autor serwisu **rozszerzył API 2026-09-04** (`stations`, `activeActions`,
-`pinExpires`, `apiEnabled` w `PING`/`STATUS`, plus `action=VALIDATE`).
-Sprawdzanie konfiguracji **jest już zrobione** — patrz
-[docs/konfiguracja.md](docs/konfiguracja.md#sprawdzanie-konfiguracji-wobec-konta-od-019).
+Sprawdzone w README samego Electrona, nie z pamięci:
 
-Zgłoszenie **wysłane 2026-09-04**, czekamy na odpowiedź. Zmierzone i zgłoszone,
-blokuje dalsze kroki:
+| | |
+|---|---|
+| Electron 22 | `Windows (Windows 7 and up)` — ostatni, bez wsparcia od X 2023 |
+| Electron 23+ | `Windows (Windows 10 and up)` |
+| u nas | 44 |
 
-1. **`is_validation_only` tylko przy sukcesie.** Gdy walidacja stwierdza, że QSO
-   nigdzie nie wejdzie, odpowiedź jest bajt w bajt taka jak przy nieudanym
-   PRAWDZIWYM zapisie — a to właśnie ten przypadek jest wart sprawdzania.
-   Dopóki tak jest, nie użyjemy VALIDATE do przycisku „sprawdź to QSO".
-2. **Brak `reason`.** „Stacja bez uprawnień" i „data poza zakresem akcji" dają
-   identyczny komunikat, więc nie da się użytkownikowi powiedzieć, co poprawić.
-   Poprosiliśmy o `NO_STATION_RIGHTS` / `NO_ACTIVE_ACTION` / `ACTION_CLOSED` /
-   `WOULD_BE_DUPLICATE`, przy VALIDATE i przy zwykłym zapisie.
+**Tryb bez okna też nie ratuje**: Node 16 wymaga Windows 8.1, Node 18+ wymaga
+Windows 10 (tabela w `BUILDING.md` Node'a). Nasz kod używa `AbortSignal.timeout`
+i ustawień Happy Eyeballs, czyli rzeczy nowszych niż Node 16.
 
-Dwie mniejsze prośby w tym samym zgłoszeniu: `INVALID_CALLSIGN` wraca dla trzech
-różnych pól (korespondent, stacja, operator) i rozróżnia je tylko polski tekst —
-prosiliśmy o `field` albo osobne kody; `savedTo: []` przy `success: true` nadal
-nie ma kodu błędu.
+Budowa na Electronie 22 odpada: Chromium bez łatek od dwóch lat plus
+przepisywanie kodu pod stary Node. Nieproporcjonalne i szkodliwe.
 
-Otwarte pytania do autora: czy `PING` wchodzi w limit 10/min razem z zapisami
-(dziś zakładamy ostrożnie, że tak — cudze konta odpytujemy tylko na starcie
-i po zapisie), oraz czy `PING` i `STATUS` mają celowo zwracać to samo.
+**Rozwiązanie dla użytkownika:** mostek na innej maszynie w tej samej sieci,
+logger wysyła UDP przez sieć. Opisane w
+[docs/windows-i-siec.md](docs/windows-i-siec.md#windows-7-i-8--program-się-nie-uruchomi),
+a od 0.1.13 jest do tego gotowy pakiet bez interfejsu
+([docs/malinka.md](docs/malinka.md)) — 120 kB, `Architecture: all`, usługa systemd.
 
-**Ustalone przy okazji:** PIN nie ma daty ważności (`pinExpires: null`) poza
-banem/blokadą konta. Nie można logować do akcji zakończonej dawniej niż 7 dni —
-to dotyczy naszego ponawiania: QSO leżące długo w `failed/` może już nie wejść.
-Pole `operator` jest walidowane jako znak krótkofalarski (max 15 znaków,
-ucinane), z żadną listą nie jest wiązane.
+**Nasza wina była jedna i już naprawiona:** nigdzie nie było napisane, jakiego
+Windowsa program wymaga. Użytkownik pobierał i dostawał komunikat, z którego nic
+nie wynika.
 
-### Ostrzeżenie o złym znaku operatora — bez własnego wzorca znaku
-Pole `operator` jest walidowane przez serwis jako znak krótkofalarski: wartość
-niebędąca znakiem odbija QSO (`INVALID_CALLSIGN`, HTTP 400), a dłuższa niż
-15 znaków jest po cichu **ucinana**. Dziś mostek wysyła to bez ostrzeżenia.
+### Autostart — NIE robimy
+**Decyzja (2026-09-07).** Program nie będzie się uruchamiał z systemem.
+Zostaje `docs/windows-i-siec.md` jako opis dla kogoś, kto sam tego chce
+(Harmonogram zadań / systemd), ale opcji w instalatorze ani
+`app.setLoginItemSettings()` nie dodajemy.
 
-**Nie piszemy własnego wzorca znaku.** Ustalone 2026-09-04, po pytaniu „jak
-chcesz rozpoznawać zły znak":
+Powód, żeby nie wracać: **włączenie mostka musi być świadomym krokiem**, bo
+przekazywanie QSO jest nieodwracalne — wysłane QSO trafia do cudzego dziennika
+akcji i nie da się go „odwysłać".
 
-- Regexa serwisu nie znamy. Każda reguła strukturalna (prefiks litera+cyfra,
-  długość sufiksu) ma dziesiątki wyjątków: znaki okolicznościowe, `/P`, `/MM`,
-  `3Z0X`. Autor serwisu wprost mówi, że przechodzą `SP1ZOSIA` i `SP1BLABLABLA`.
-- Koszty są niesymetryczne: uznanie poprawnego znaku za zły to zablokowane albo
-  opóźnione QSO, a przepuszczenie złego to jedno odbicie do `failed/`, ratowane
-  jednym kliknięciem. Surowość jest więc droższa od pobłażliwości.
+Rozstrzyga proporcja: akcje dyplomowe są **od czasu do czasu**, a logowanie
+lokalne odbywa się **znacznie częściej**. Mostek startujący z systemem stałby
+więc bezczynnie przez większość dni — a w te dni czekałby z włączonym celem na
+QSO, które nie należą do żadnej akcji.
 
-Co robić, w kolejności wartości:
+Rozważony wariant „start zawsze wstrzymany" odrzucony jako pozorny: skoro i tak
+trzeba kliknąć, żeby ruszył, to autostart nie oszczędza kroku, a dokłada proces
+w tle i pytanie „czy on teraz nasłuchuje, czy nie".
 
-1. **Znaki poza `A–Z`, `0–9`, `/`** — ostrzegać. To jedyne, co zmierzyliśmy jako
-   odrzucone (`NIE ZNAK!` — spacja i wykrzyknik).
-2. **Dłuższe niż 15 znaków** — ostrzegać, i to jest ważniejsze od punktu 1:
-   serwer nie odrzuca, tylko ucina, więc QSO zapisuje się pod **innym**
-   operatorem niż zamierzony, bez żadnego sygnału błędu.
-3. **W polu „Operator" w oknie konfiguracji** surowość jest bezpieczna —
-   wpisuje je człowiek, więc pytanie przy zapisie (jak przy znakach stacji) to
-   czysty zysk. Nic nie leci, nic nie ginie.
-4. **Dla wartości z loggera — żadnej blokady wysyłki.** Tylko wpis w zdarzeniach
-   i w logu.
+**Wzmacniało to inną potrzebę: widoczności, którym znakiem stacji poleci QSO —
+ZROBIONE w 0.1.19.** Zakładka Stan ma panel „Poleci jako" (włączone cele wraz
+z operatorem, liczba wyłączonych albo wprost „ze znakiem z loggera"), a do tego
+ostrzeżenie, gdy ŻADEN włączony cel nie loguje na znak przychodzący z loggera.
+Warunek jest właśnie taki, a nie „znaki się różnią": przy rozmnażaniu QSO na
+kilka stacji rozjazd jest normalny i zamierzony, więc ostrzeganie o nim zawsze
+zrobiłoby z tego szum, który się ignoruje.
 
-**Docelowo właściwe rozwiązanie:** nie odtwarzać reguł serwisu, a zapytać go
-przez `action=VALIDATE`. To jedyne źródło prawdy o tym, co przyjmie. Czeka na
-`is_validation_only` na ścieżce odrzucenia — patrz pozycja o walidacji wyżej.
+To była osobna sprawa od ostrzeżenia o **złym znaku operatora** (niżej): tam
+chodzi o wartość, której serwis nie przyjmie albo ją utnie, tutaj o poprawny
+znak użyty w niewłaściwym momencie. Zapisane omyłkowo jako jedno 2026-09-07.
+
+### Aktualizacje aplikacji — powiadomienie zrobione, samoaktualizacji NIE robimy
+Od 0.1.11 program sprawdza, czy jest nowsze wydanie, i mówi o tym w oknie
+(odznaka + zakładka „O programie"). Nie pobiera i nie instaluje niczego sam.
+
+**Samoaktualizacji świadomie nie wprowadzamy**, ustalone 2026-09-04:
+
+1. Mostek pracuje godzinami w trakcie akcji. Restart przerywa nasłuch UDP,
+   a QSO wysłane przez logger w tym oknie **nie ma jak wrócić** — UDP nie
+   ponawia. To jedyny powód, który wystarcza sam.
+2. Objęłaby dwie postacie z czterech: `latest.yml` opisuje wyłącznie instalator
+   NSIS, `latest-linux.yml` wyłącznie AppImage (sprawdzone w wygenerowanych
+   plikach). `.deb` i wersja przenośna i tak zostają z powiadomieniem.
+3. Bez podpisu kodu pobrany instalator trafi na SmartScreen.
+
+Gdyby kiedyś wracać do tematu: `electron-updater` + sekcja `publish`
+w `electron-builder.yml` + wgrywanie `latest*.yml` do wydania (dziś ich NIE
+wgrywamy) — i twarda reguła „nigdy nie restartuj sam, tylko zaproponuj po
+zamknięciu".
+
+Repozytorium `apt` dla `.deb` byłoby „właściwą" drogą dystrybucji, ale to własny
+serwer albo PPA, klucze GPG i utrzymanie — nieproporcjonalne do skali.
+
+
+## Zrobione — opis zostaje dla kontekstu
+
+Wpisy trzymamy, bo tłumaczą, DLACZEGO coś wygląda tak, jak wygląda.
 
 ### Interfejs w sieci: zewnętrzny adres, HTTPS i logowanie — ZROBIONE w 0.1.15
 
@@ -368,76 +695,6 @@ rosną razem ze skalą i z ustawieniem systemowym.
 - **ograniczenie animacji** (`prefers-reduced-motion`) — nie mamy animacji poza
   przewijaniem, więc prawdopodobnie nic do zrobienia; do potwierdzenia.
 
-### Rozgłoszenie programu — zaczęte 2026-09-30
-
-Do 30.09 program był nieznany: **62 pobrania łącznie**, z czego wszystkie wyglądają
-na nasze własne testy, **0 pobrań** wydań 0.1.25–0.1.29, 0 odsłon repozytorium,
-0 gwiazdek. Marek: „chyba nikt nie używa naszej wspaniałej aplikacji".
-
-Zrobione tego dnia:
-
-- **Wpis na stronie Puławskiej Grupy Krótkofalowców** —
-  <https://krotkofalowcy.pulawy.pl/radiodyplom-bridge/> (wpis 4662, konto SQ8BWM,
-  kategorie Akcja dyplomowa i Klub, trzy zrzuty z 0.1.29). Źródło treści leży
-  w katalogu projektu strony: `wpis-radiodyplom-bridge.html`.
-- **Post na Facebooku** — wrzucony przez Piotra SP8X z naszym opisem
-  (`wpis-radiodyplom-bridge-facebook.txt`, wersja główna).
-- **README poprawione**: świeże zrzuty i przepisana sekcja „Do czego to jest".
-
-**Ważne ustalenie merytoryczne, które zmieniło cały przekaz:** alternatywą dla
-mostka NIE jest wgrywanie ADIF-a, tylko wpisywanie QSO wprost na radiodyplom.pl
-w przeglądarce. Prawdziwa wartość to swoboda pracy we własnym loggerze plus dwie
-rzeczy niemożliwe inaczej — kilka znaków stacji naraz i emisje cyfrowe.
-Dokumentacja twierdziła inaczej i to ona wprowadzała w błąd.
-
-**Punkt odniesienia (30.09, ok. godzinę po publikacji):** 555 odsłon artykułu,
-**1** pobranie nowych wydań. Proporcja odsłon do pobrań jest tu liczbą do
-obserwowania: jeśli po kilku dniach będzie 2000 odsłon i 5 pobrań, problem nie
-leży w widoczności, tylko w tym, co widać PO kliknięciu (wpis, README, strona
-wydań z sześcioma plikami do wyboru).
-
-**Odłożone:** mail do Tobiasza (autora radiodyplom.pl) z prośbą o kafelek
-w Managerze i stronę o mostku w serwisie — draft gotowy, ale API serwisu nie ma
-dziś innych klientów poza nami, więc kanał jest wąski. Decyzja: poczekać na
-wynik Facebooka. Gdyby wracać do tematu: wejściem ma być strona W SERWISIE
-(a generowanie PIN-u krokiem w jej środku, nie odwrotnie), a argumentem dla
-autora to, że jego wrześniowe rozszerzenie API dostaje wreszcie klienta.
-
-### Statystyki — zrobione, co jeszcze warto dołożyć
-Zakładka i importer historii gotowe w 0.1.10 —
-[docs/statystyki.md](docs/statystyki.md). Historia z logów wczytana: 1114 kopii,
-372 QSO, 31.08–03.09 (z 1119 wpisów logu odsiane 2 przejścia próbne i 3 kopie
-QSO testowego `SN0TEST`).
-
-Do rozważenia, gdy pojawi się potrzeba:
-
-- **Eksport do CSV/ADIF** — dziennik jest w JSON Lines, więc to kilka linii kodu.
-- **Wykres w czasie** zamiast listy pasków; dziś przy 14 dniach lista wystarcza.
-- **Porównanie z serwisem** — ile QSO widzi radiodyplom na danej akcji. Wymaga
-  endpointu, którego nie ma; sensowne dopiero razem z resztą zapytania do autora.
-- **Wygasanie dziennika.** Przy tempie 300 QSO/dzień to ~1 MB na miesiąc, więc
-  jeszcze długo nie problem. Podział na pliki miesięczne jest już zrobiony, więc
-  usuwanie starych będzie trywialne.
-
-### Wrzucanie spotów — pomysł, nie zamówienie
-Zgłoszone 2026-09-04 jako „może kiedyś". Nic nie było jeszcze ustalane, więc
-zapisuję tylko to, co trzeba będzie rozstrzygnąć NA POCZĄTKU, żeby nie zacząć
-od budowania złej rzeczy:
-
-- **Gdzie spotować.** Klaster DX (telnet, protokół tekstowy), SOTAwatch/POTA
-  (HTTP), czy radiodyplom, gdyby dorobił u siebie spoty? To trzy różne
-  rozwiązania i różne dane logowania.
-- **Kogo spotować: siebie czy korespondenta.** Aktywator spotuje siebie
-  („jestem na 7.144"), a to znaczy, że dane NIE pochodzą z QSO, tylko ze
-  stanu radia albo z ręcznego wpisu. Kolejka QSO jest tu bez znaczenia.
-- **Czy z automatu.** Spot po każdym QSO to zaśmiecanie klastra; realnie
-  potrzebne jest „wrzuć spot teraz" na żądanie albo po zmianie pasma.
-
-Loggery wysyłają nam tylko zalogowane QSO, więc częstotliwość bieżąca jest
-znana wyłącznie wtedy, gdy właśnie coś zalogowano. Jeśli spot ma być
-niezależny od QSO, trzeba będzie osobnego źródła (CAT z radia albo pole
-w oknie) — i to jest największa nieznana tej pozycji.
-
 ### QLog wysyła DWA datagramy na jedną edycję — zmierzone, zamknięte
 **Rozstrzygnięte 2026-09-04 pomiarem.** Jedna poprawka rekordu w QLogu daje
 **dwa** datagramy z `operation: "update"`.
@@ -460,181 +717,6 @@ i dlatego jest o tym podpowiedź w oknie oraz wzmianka w `docs/loggery.md`.
 Nie sprawdzone i na razie bez potrzeby: czy `delete` też daje dwa datagramy
 i czy inne loggery mają podobne zachowanie.
 
-### Windows 7 i 8 — nie obsługujemy i nie da się
-Zgłoszone 2026-09-05: na 64-bitowym Windows 7 program nie startuje ani
-zainstalowany, ani przenośny — *„nie jest prawidłową aplikacją systemu Win32"*.
-To komunikat systemu, nie programu; Windows odmawia wczytania pliku, zanim nasz
-kod wystartuje.
-
-Sprawdzone w README samego Electrona, nie z pamięci:
-
-| | |
-|---|---|
-| Electron 22 | `Windows (Windows 7 and up)` — ostatni, bez wsparcia od X 2023 |
-| Electron 23+ | `Windows (Windows 10 and up)` |
-| u nas | 44 |
-
-**Tryb bez okna też nie ratuje**: Node 16 wymaga Windows 8.1, Node 18+ wymaga
-Windows 10 (tabela w `BUILDING.md` Node'a). Nasz kod używa `AbortSignal.timeout`
-i ustawień Happy Eyeballs, czyli rzeczy nowszych niż Node 16.
-
-Budowa na Electronie 22 odpada: Chromium bez łatek od dwóch lat plus
-przepisywanie kodu pod stary Node. Nieproporcjonalne i szkodliwe.
-
-**Rozwiązanie dla użytkownika:** mostek na innej maszynie w tej samej sieci,
-logger wysyła UDP przez sieć. Opisane w
-[docs/windows-i-siec.md](docs/windows-i-siec.md#windows-7-i-8--program-się-nie-uruchomi),
-a od 0.1.13 jest do tego gotowy pakiet bez interfejsu
-([docs/malinka.md](docs/malinka.md)) — 120 kB, `Architecture: all`, usługa systemd.
-
-**Nasza wina była jedna i już naprawiona:** nigdzie nie było napisane, jakiego
-Windowsa program wymaga. Użytkownik pobierał i dostawał komunikat, z którego nic
-nie wynika.
-
-### Kolejne dekodery loggerów
-Obsłużone: QLog, N1MM/DXLog/BBlogger/Log4OM, WSJT-X/JTDX/MSHV.
-Nieobsłużone (własne protokoły, **specyfikacji nie weryfikowałam**):
-QARTest (9458), Swisslog (2333), Win-Test (9871), Ham Radio Deluxe, WriteLog, LogHX.
-Dodanie = jeden plik w `src/decoders/` (`name`, `detect`, `decode`) + wpis do rejestru.
-Reszta pipeline'u bez zmian.
-
-### Zamykanie Electrona sygnałem — niepotwierdzone
-`ui/main.js` ma teraz `tray.destroy()` na ścieżkach wyjścia i handlery
-`SIGTERM`/`SIGINT`/`SIGHUP`, ale **nie udało się potwierdzić, że handlery faktycznie
-się wykonują**: Electron na Linuksie przeładowuje proces (zmiana PID), a Chromium
-instaluje własną obsługę sygnałów, która może omijać handlery Node.
-
-Objaw przy braku poprawnego zamknięcia: ikona w zasobniku nie jest wyrejestrowana
-i panel (u nas XFCE, wtyczka „Obszar powiadomień") pokazuje ostrzeżenie, że wtyczka
-nieoczekiwanie zniknęła. Przy kilkunastu takich zgonach panel zaczyna protestować.
-
-Pewna ścieżka: „Zakończ" w menu ikony (`shutdown()` → `tray.destroy()` → `app.quit()`).
-
-**Nie jest to kwestia teoretyczna, choć autostartu nie robimy** (decyzja wyżej).
-Powód jest inny i już realny: **pakiet headless z 0.1.13 działa jako usługa
-systemd**, a `systemctl stop` to dokładnie `SIGTERM`. Tam zasobnika nie ma, więc
-nie o ikonę chodzi — ale kolejka i dziennik zasługują na czyste domknięcie
-zamiast ubicia procesu. Do sprawdzenia:
-`app.on('will-quit')`, `powerMonitor`, ewentualnie proces nadzorujący, który woła
-`app.quit()` przez IPC zamiast wysyłać sygnał.
-
-Na czas testów jest `RD_NO_TRAY=1` (start bez ikony). Uwaga: zmienna musi dotrzeć
-do samego procesu Electrona — przy `xvfb-run` potrafi się zgubić.
-
-### Autostart — NIE robimy
-**Decyzja (2026-09-07).** Program nie będzie się uruchamiał z systemem.
-Zostaje `docs/windows-i-siec.md` jako opis dla kogoś, kto sam tego chce
-(Harmonogram zadań / systemd), ale opcji w instalatorze ani
-`app.setLoginItemSettings()` nie dodajemy.
-
-Powód, żeby nie wracać: **włączenie mostka musi być świadomym krokiem**, bo
-przekazywanie QSO jest nieodwracalne — wysłane QSO trafia do cudzego dziennika
-akcji i nie da się go „odwysłać".
-
-Rozstrzyga proporcja: akcje dyplomowe są **od czasu do czasu**, a logowanie
-lokalne odbywa się **znacznie częściej**. Mostek startujący z systemem stałby
-więc bezczynnie przez większość dni — a w te dni czekałby z włączonym celem na
-QSO, które nie należą do żadnej akcji.
-
-Rozważony wariant „start zawsze wstrzymany" odrzucony jako pozorny: skoro i tak
-trzeba kliknąć, żeby ruszył, to autostart nie oszczędza kroku, a dokłada proces
-w tle i pytanie „czy on teraz nasłuchuje, czy nie".
-
-**Wzmacniało to inną potrzebę: widoczności, którym znakiem stacji poleci QSO —
-ZROBIONE w 0.1.19.** Zakładka Stan ma panel „Poleci jako" (włączone cele wraz
-z operatorem, liczba wyłączonych albo wprost „ze znakiem z loggera"), a do tego
-ostrzeżenie, gdy ŻADEN włączony cel nie loguje na znak przychodzący z loggera.
-Warunek jest właśnie taki, a nie „znaki się różnią": przy rozmnażaniu QSO na
-kilka stacji rozjazd jest normalny i zamierzony, więc ostrzeganie o nim zawsze
-zrobiłoby z tego szum, który się ignoruje.
-
-To była osobna sprawa od ostrzeżenia o **złym znaku operatora** (niżej): tam
-chodzi o wartość, której serwis nie przyjmie albo ją utnie, tutaj o poprawny
-znak użyty w niewłaściwym momencie. Zapisane omyłkowo jako jedno 2026-09-07.
-
-### Aktualizacje aplikacji — powiadomienie zrobione, samoaktualizacji NIE robimy
-Od 0.1.11 program sprawdza, czy jest nowsze wydanie, i mówi o tym w oknie
-(odznaka + zakładka „O programie"). Nie pobiera i nie instaluje niczego sam.
-
-**Samoaktualizacji świadomie nie wprowadzamy**, ustalone 2026-09-04:
-
-1. Mostek pracuje godzinami w trakcie akcji. Restart przerywa nasłuch UDP,
-   a QSO wysłane przez logger w tym oknie **nie ma jak wrócić** — UDP nie
-   ponawia. To jedyny powód, który wystarcza sam.
-2. Objęłaby dwie postacie z czterech: `latest.yml` opisuje wyłącznie instalator
-   NSIS, `latest-linux.yml` wyłącznie AppImage (sprawdzone w wygenerowanych
-   plikach). `.deb` i wersja przenośna i tak zostają z powiadomieniem.
-3. Bez podpisu kodu pobrany instalator trafi na SmartScreen.
-
-Gdyby kiedyś wracać do tematu: `electron-updater` + sekcja `publish`
-w `electron-builder.yml` + wgrywanie `latest*.yml` do wydania (dziś ich NIE
-wgrywamy) — i twarda reguła „nigdy nie restartuj sam, tylko zaproponuj po
-zamknięciu".
-
-Repozytorium `apt` dla `.deb` byłoby „właściwą" drogą dystrybucji, ale to własny
-serwer albo PPA, klucze GPG i utrzymanie — nieproporcjonalne do skali.
-
-### Lista emisji w PING — prośba do autora platformy
-
-**Stan (2026-10-06):** mostek NIE ma listy obsługiwanych emisji i mieć jej nie
-musi. Wysyła wiernie to, co podał logger, a przy `INVALID_MODE` ponawia QSO
-z rodziną (`JS8` → `MFSK`). Decyzję, czego serwis nie obsługuje, podejmuje więc
-serwer — zgodnie z zasadą, że jesteśmy pośrednikiem, a nie instancją oceniającą.
-
-Przez chwilę mieliśmy listę wpisaną w kod (`PRZYJMOWANE_PRZEZ_SERWER`). Marek
-podważył to podejście i słusznie: lista zestarzałaby się przy pierwszej zmianie
-u nich, a my braliśmy na siebie decyzję, która do nas nie należy.
-
-**Co zostaje do rozważenia:** poprosić autora radiodyplom.pl, żeby odpowiedź
-`action=PING` zawierała listę przyjmowanych emisji (dziś ma `operator`,
-`stations`, `activeActions`, `pinExpires`, `apiEnabled`, `timestamp`). Zysk
-byłby po obu stronach: moglibyśmy ostrzec użytkownika **przed** wysyłką, zamiast
-dowiadywać się z odmowy, a serwis miałby mniej odrzuconych QSO.
-
-*Zastrzeżenie Marka: na wcześniejsze pytania do autora nie dostaliśmy
-odpowiedzi, więc nie ma co na tym opierać planu — ponowienie działa bez niczyjej
-zgody.*
-
-### Uzupełnianie brakującego SUBMODE wartością z ustawień — do przemyślenia
-
-**Pomysł Marka (2026-10-06), nieprzesądzony.** W „Ustawieniach zaawansowanych"
-dałoby się pozwolić na stałe uzupełnianie podtypu, gdy logger go nie poda:
-`MFSK → FT4`, `DIGITALVOICE → DMR` i podobnie.
-
-**Skąd się wziął.** Tego dnia zmierzyliśmy, że emisja decyduje o punktacji:
-organizator zaznacza *dozwolone emisje*, a lista ma `FT4`, `JS8`, `C4FM`, `DMR`,
-`DSTAR`, `PSK31` i `MFSK` jako **osobne pozycje**. Łączność przysłana jako gołe
-`MFSK` nie policzy się do dyplomu, w którym zaznaczono `FT4` — będzie w logu,
-ale bez punktów, i nikt nie powiąże tego z mostkiem. Dziś przekazujemy to, co
-dostaliśmy (`src/modes.js`, `modeZRekordu`), bo podtypu nie mamy z czego odtworzyć.
-
-**Za:** operator pracujący wyłącznie jedną emisją z rodziny (a tak jest prawie
-zawsze — ktoś robi FT4 albo DMR, nie „MFSK w ogóle") odzyskałby punkty bez
-zmieniania czegokolwiek w loggerze.
-
-**Przeciw, i to poważnie:** to jest **zgadywanie wpisane do cudzego dyplomu**.
-Serwer niczego nie waliduje — zapisuje dosłownie to, co wyślemy (zmierzone na
-akcji testowej). Zła wartość nie zostanie więc wyłapana ani przez nas, ani przez
-organizatora. Jedna sesja JS8 u kogoś, kto ma ustawione `MFSK → FT4`, da log
-pełen nieprawdziwych FT4. Łamie to zasadę zapisaną w `src/modes.js`: *mapujemy
-wyłącznie to, co jest jednoznaczne*.
-
-**Gdyby robić, to tak:** domyślnie wyłączone; osobno dla każdej rodziny; nazwa
-mówiąca wprost, że to podstawianie, a nie wykrywanie; każde podstawienie
-**widoczne w logu** (nie debug), żeby dało się dojść, skąd w dyplomie wzięła
-się taka emisja; opis w interfejsie mówiący, że zapis trafia do cudzego dyplomu
-i nikt go nie sprawdzi.
-
-**Warto najpierw zmierzyć, czy problem w ogóle występuje:** ile łączności
-w dotychczasowych akcjach ma emisję `MFSK`, `DIGITALVOICE` albo `PSK` bez
-podtypu. Jeśli to pojedyncze sztuki — szkoda zachodu i ryzyka.
-
-## Techniczne / jakościowe
-
-### Okno automatycznego ponawiania
-Domyślnie ~3,4 h (5 s → 15 min, 20 prób). Po wyczerpaniu QSO idzie do `data/failed/`
-i wymaga jednego kliknięcia „Ponów odrzucone". Rozważyć wyższe `maxAttempts`
-domyślnie albo automatyczne ponawianie z `failed/` po powrocie łączności.
 
 ## Zamknięte (dla pamięci — potwierdzone testem)
 

@@ -284,6 +284,13 @@
      same. Tu poprawiamy to, czego zawinięcie nie załatwia: rozmiary pod palec,
      zakładki nie do zawinięcia i siatki o SZTYWNEJ liczbie kolumn. */
   @media (max-width: 620px) {
+    /* DEGRADACJA PANELU ZDARZEŃ, krok 1: znika ŹRÓDŁO. To metadana — gdy
+       brakuje miejsca, traci się ją najmniej boleśnie. Próg jest celowo
+       WCZEŚNIEJSZY, niż wynika z rachunku dla typowego wiersza (548 px):
+       zapytanie medialne patrzy na szerokość OKNA, a nie na to, czy dany
+       wiersz się mieści, a wiersz z długim znakiem jest szerszy o ~40 px
+       i plakietka wyjeżdżała za ramkę panelu. */
+    ul.events li.qso > .src { display:none; }
     main { padding:10px; }
     .panel { padding:10px 12px; }
     header { padding:10px 12px; gap:8px; }
@@ -369,6 +376,50 @@
   ul.events li.bad .what { color:var(--err); }
   ul.events li.warn .what { color:var(--warn); }
   ul.events li.dup .what { color:var(--muted); }
+
+  /* ===== Wiersz ŁĄCZNOŚCI w kolumnach =====
+     Komunikaty (odrzucenia, ponowienia) zostają pełną szerokością — tam liczy
+     się treść, nie wyrównanie. Tu chodzi o to, by dało się przebiec wzrokiem
+     po znakach i pasmach w trakcie akcji.
+
+     ODSTĘP, NIE SAME SZEROKOŚCI: przy `gap:0` kolumny trzymały się wyłącznie
+     dzięki `width` i gdy któraś je traciła, sąsiedzi się SKLEJALI („UA9CR40m").
+     `min-width` zamiast `width`: typowe wiersze się wyrównują, a nietypowo
+     długi znak ROZSUWA swój wiersz zamiast zostać przycięty — ucięty znak to
+     utrata informacji. Liczby z pomiaru treści i z rozkładu w dzienniku
+     (1840 QSO: 99,4% znaków ma ≤ 6 liter, najdłuższy SP5DFK/QRP = 10). */
+  ul.events li.qso { align-items:baseline; gap:10px; }
+  ul.events li.qso > * { flex:none; }
+  ul.events li.qso time { min-width:5.0em; }
+  ul.events li.qso .st { min-width:1.2em; align-self:center; text-align:center; }
+  ul.events li.qso .st::before { content:""; display:inline-block; width:7px; height:7px;
+                                 border-radius:50%; background:var(--ok); vertical-align:middle; }
+  ul.events li.qso .st.warn::before { background:var(--warn); }
+  ul.events li.qso .st.dup::before  { background:var(--muted); }
+  ul.events li.qso .call { min-width:6.0em; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+                           font-weight:600; }
+  ul.events li.qso .band { min-width:2.8em; color:var(--muted); font-variant-numeric:tabular-nums; }
+  ul.events li.qso .mode { min-width:3.2em; color:var(--muted); }
+  ul.events li.qso .stn  { min-width:5.0em; white-space:nowrap; }
+  ul.events li.qso .op   { min-width:5.0em; color:var(--muted); white-space:nowrap; }
+  /* Źródło DOSUNIĘTE DO PRAWEJ: inaczej plakietka wędruje za długością znaku
+     stacji i przestaje być kolumną — a to cały sens tego układu. */
+  ul.events li.qso .src  { margin-left:auto; color:var(--muted); font-size:0.6875rem;
+                           border:1px solid var(--line); border-radius:4px; padding:0 5px;
+                           align-self:center; }
+  ul.events .br { display:none; }
+
+  /* Krok 2: dopiero teraz stacja i operator schodzą do drugiej linii — to już
+     treść łączności, nie metadana, więc chowanie ich byłoby utratą informacji.
+     Źródło WRACA razem z nimi, bo miejsce w drugiej linii jest. */
+  @media (max-width: 492px) {
+    ul.events li.qso { flex-wrap:wrap; row-gap:1px; }
+    ul.events li.qso > .br { display:block; flex-basis:100%; height:0; margin:0; }
+    ul.events li.qso > .stn { margin-left:6.4em; min-width:0; }
+    ul.events li.qso > .op { min-width:0; }
+    ul.events li.qso > .stn, ul.events li.qso > .op { font-size:0.75rem; color:var(--muted); }
+    ul.events li.qso > .src { display:inline-block; margin-left:0; }
+  }
   .note { border-left:3px solid var(--warn); padding:8px 10px; background:var(--panel);
           border-radius:0 6px 6px 0; font-size:0.75rem; margin-top:10px; }
 </style>

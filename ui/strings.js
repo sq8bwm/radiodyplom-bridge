@@ -400,6 +400,7 @@ const DICT = {
     'hint.problemBadge': 'Kliknij, aby przejść do zakładki Kolejka — tam są odrzucone QSO '
       + 'i przyciski: ponowienie, wyczyszczenie sygnalizacji, usunięcie.',
     'hint.ackProblems': 'Kasuje samą sygnalizację. Odrzucone QSO zostają w kolejce.',
+    'tip.eventSource': 'skąd przyszło to QSO',
     'ev.sent': 'wysłane',
     'ev.dryrun': 'próbnie — NIE wysłane',
     'ev.duplicate': 'duplikat',
@@ -789,6 +790,7 @@ const DICT = {
     'hint.problemBadge': 'Click to open the Queue tab — the rejected QSOs are there, with '
       + 'buttons to retry, clear the indicator, or delete them.',
     'hint.ackProblems': 'Clears the indicator only. Rejected QSOs stay in the queue.',
+    'tip.eventSource': 'where this QSO came from',
     'ev.sent': 'sent',
     'ev.dryrun': 'dry run — NOT sent',
     'ev.duplicate': 'duplicate',

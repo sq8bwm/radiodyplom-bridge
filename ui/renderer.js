@@ -518,7 +518,7 @@ function describeEvent(e) {
 }
 
 /**
- * Karty liczbowe na zakładce Stan.
+ * Karty liczbowe na zakładce QSOs (do 0.1.40 były na Stanie).
  *
  * Każda karta mówi w drugiej linii, CZEGO liczy i za jaki czas. Wcześniej
  * licznik trwały („wysłane", liczący kopie fan-outu od początku) stał w jednym
@@ -1471,7 +1471,7 @@ $('btnDiscardFailed').onclick = async () => {
 // Plakietka prowadzi tam, gdzie problemy widać i gdzie stoją wszystkie trzy
 // przyciski: ponowienie, wyciszenie, usunięcie.
 $('probBadge').onclick = () => {
-  document.querySelector('nav button[data-tab="kolejka"]').click();
+  document.querySelector('nav button[data-tab="qso"]').click();
 };
 // W przeglądarce nie ma pulpitu: menedżera plików nie otworzymy, a zamknięcie
 // usługi z karty byłoby pułapką — przypadkowe kliknięcie przerwałoby
@@ -1535,7 +1535,11 @@ $('btnQuit').onclick = async () => {
   // ze stałych zadeklarowanych niżej w pliku (`const ZAKRESY`). Postawione na
   // górze wywracało się na martwym polu deklaracji i Statystyki rysowały się
   // puste — bez widocznego błędu, bo wyjątek ginął w uchwycie zdarzenia.
-  const zadana = (location.hash || '').replace('#', '');
+  // ALIAS: do 0.1.40 ta zakładka nazywała się „kolejka" i pod takim adresem
+  // (…/#kolejka) mogła zostać w czyichś zakładkach przeglądarki albo w notatce.
+  // Stary odnośnik ma dalej działać — kosztuje jedną linijkę.
+  const zadanaSurowa = (location.hash || '').replace('#', '');
+  const zadana = zadanaSurowa === 'kolejka' ? 'qso' : zadanaSurowa;
   const przycisk = zadana && document.querySelector(`nav button[data-tab="${CSS.escape(zadana)}"]`);
   if (przycisk) przycisk.click();
 })();

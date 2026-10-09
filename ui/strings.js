@@ -62,7 +62,7 @@ const DICT = {
     'confirm.networkWritable': 'Udostępniasz interfejs w sieci Z PRAWEM ZAPISU. Każdy, kto zna hasło, będzie mógł zmienić PIN, przekierować Twoje QSO i usunąć odrzucone. Na pewno?',
 
     'tab.state': 'Stan',
-    'tab.queue': 'Kolejka',
+    'tab.qso': 'QSOs',
     'tab.config': 'Konfiguracja',
     'tab.about': 'O programie',
     'tab.stats': 'Statystyki',
@@ -456,7 +456,7 @@ const DICT = {
     'confirm.networkWritable': 'You are exposing the interface on the network WITH WRITE ACCESS. Anyone who knows the password will be able to change the PIN, redirect your QSOs and delete rejected ones. Are you sure?',
 
     'tab.state': 'Status',
-    'tab.queue': 'Queue',
+    'tab.qso': 'QSOs',
     'tab.config': 'Settings',
     'tab.about': 'About',
     'tab.stats': 'Statistics',

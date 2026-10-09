@@ -563,6 +563,45 @@ function renderCards(s) {
   $('kSkipped').title = t('tip.skipped');
 }
 
+/**
+ * Jeden wiersz panelu „Ostatnie zdarzenia".
+ *
+ * ŁĄCZNOŚCI idą w KOLUMNACH (czas · status · znak · pasmo · emisja · stacja ·
+ * operator · źródło), bo w trakcie akcji chce się przebiec wzrokiem po znakach
+ * albo sprawdzić, czy pasmo się nie zmieniło — a w zdaniach trzeba czytać każdą
+ * linię osobno. Wcześniej wiersz mówił „wysłane ZNAK → stacja" i NIE ZAWIERAŁ
+ * pasma ani emisji w ogóle.
+ *
+ * KOMUNIKATY (odrzucenie, ponowienie, porzucenie) zostają pełną szerokością:
+ * tam liczy się treść błędu, nie wyrównanie, a wciskanie jej w kolumny ucinałoby
+ * powód — czyli jedyną rzecz, po którą się tam patrzy.
+ */
+function wierszZdarzenia(e) {
+  const czas = `<time>${esc(String(e.at).slice(11, 19))}</time>`;
+  const d = describeEvent(e);
+
+  // Kolumny tylko dla zdarzeń, które SĄ łącznością i nie niosą komunikatu.
+  const wKolumnach = e.kind === 'sent' || e.kind === 'dryrun' || e.kind === 'duplicate';
+  if (!wKolumnach) {
+    return `<li class="${d.cls}">${czas}<span class="what">${d.text}</span></li>`;
+  }
+
+  const st = e.kind === 'sent' ? 'ok' : (e.kind === 'dryrun' ? 'warn' : 'dup');
+  const tytul = e.kind === 'sent' ? t('ev.sent')
+    : (e.kind === 'dryrun' ? t('ev.dryrun') : t('ev.duplicate'));
+  const pole = (klasa, v) => `<span class="${klasa}">${v ? esc(v) : ''}</span>`;
+  return `<li class="qso ${d.cls}">${czas}`
+    + `<span class="st ${st}" title="${esc(tytul)}"></span>`
+    + pole('call', e.callsign)
+    + pole('band', e.band)
+    + pole('mode', e.mode)
+    + '<i class="br"></i>'
+    + pole('stn', e.station)
+    + pole('op', e.operator)
+    + (e.source ? `<span class="src" title="${esc(t('tip.eventSource'))}">${esc(e.source)}</span>` : '')
+    + '</li>';
+}
+
 function renderEvents(s) {
   const list = [...(s.recentEvents || [])].reverse();      // najnowsze u góry
   const extra = [];
@@ -576,12 +615,8 @@ function renderEvents(s) {
     $('lastInfo').innerHTML = `<span class="empty">${t('empty.nothing')}</span>`;
     return;
   }
-  $('lastInfo').innerHTML = `<ul class="events">${extra.join('')}${
-    list.map((e) => {
-      const d = describeEvent(e);
-      return `<li class="${d.cls}"><time>${esc(String(e.at).slice(11, 19))}</time>`
-        + `<span class="what">${d.text}</span></li>`;
-    }).join('')}</ul>`;
+  $('lastInfo').innerHTML = `<ul class="events kol">${extra.join('')}${
+    list.map(wierszZdarzenia).join('')}</ul>`;
 }
 
 /**

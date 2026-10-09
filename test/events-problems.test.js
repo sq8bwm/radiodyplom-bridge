@@ -39,7 +39,13 @@ function fakeClient(...replies) {
 function makeItem(call = 'SP7VCL') {
   return {
     key: `k-${call}`, attempts: 0, nextAt: 0,
-    payload: { callsign: call, station_callsign: 'SN0LPU', operator: 'SQ8BWM', api_key: 'X' },
+    // Pasmo i emisja SĄ w prawdziwym payloadzie zawsze (mapper je wypełnia),
+    // więc atrapa bez nich była nierealistyczna — i ukryłaby brak tych pól
+    // w zdarzeniu, na którym stoi panel „Ostatnie zdarzenia".
+    payload: {
+      callsign: call, station_callsign: 'SN0LPU', operator: 'SQ8BWM',
+      band: '40m', mode: 'SSB', api_key: 'X',
+    },
     meta: { source: 'qlog' },
   };
 }
@@ -63,6 +69,19 @@ describe('bufor ostatnich zdarzeń', () => {
     assert.equal(e.station, 'SN0LPU');
     assert.equal(e.operator, 'SQ8BWM');
     assert.deepEqual(e.savedTo, ['295']);
+  });
+
+  test('zdarzenie niesie PASMO i EMISJĘ, bo panel pokazuje je w kolumnach', async () => {
+    // Do 09.10.2026 zdarzenie miało tylko znak, stację, operatora i źródło,
+    // więc wiersz w oknie mówił „wysłane ZNAK → stacja" i NIE DAŁO SIĘ z niego
+    // odczytać, na czym się pracuje. Oba pola są w payloadzie, więc dołożenie
+    // ich nic nie kosztuje — ale bez tego testu łatwo je przy porządkach uciąć
+    // i panel po cichu straci dwie kolumny.
+    const w = makeWorker(fakeClient({ ok: true, savedTo: ['295'] }));
+    await w._process(makeItem());
+    const e = w.recentEvents().at(-1);
+    assert.ok(e.band, 'zdarzenie bez pasma — panel pokaże pustą kolumnę');
+    assert.ok(e.mode, 'zdarzenie bez emisji — panel pokaże pustą kolumnę');
   });
 
   test('tryb próbny NIE jest oznaczany jako wysłane', async () => {

@@ -75,6 +75,13 @@ export class Worker {
       station: item.payload.station_callsign,
       operator: item.payload.operator || null,
       source: item.meta?.source || null,
+      // Pasmo i emisja SĄ POTRZEBNE OKNU: panel „Ostatnie zdarzenia" pokazuje
+      // je w kolumnach, żeby dało się przebiec wzrokiem po łącznościach w
+      // trakcie akcji. Wcześniej zdarzenie ich nie niosło i wiersz mówił tylko
+      // „wysłane ZNAK → stacja", więc z panelu nie dało się odczytać, na czym
+      // się pracuje. Oba pola są już w payloadzie, więc to nic nie kosztuje.
+      band: item.payload.band || null,
+      mode: item.payload.mode || null,
       ...extra,
     });
     if (this.events.length > this.maxEvents) {

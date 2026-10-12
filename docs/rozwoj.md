@@ -93,6 +93,28 @@ GitHub zamienia spacje na kropki przy wgrywaniu załączników do wydania, przez
 plik sum kontrolnych przestawał pasować do tego, co odbiorca pobiera. Windows buduje się **z
 Linuksa** — electron-builder sam dociąga NSIS, wine nie jest potrzebne.
 
+### Katalog rozpakowania wersji przenośnej
+
+Skrypty `pack:win` i `pack` przekazują
+`-c.portable.unpackDirName=RadioDyplomBridge-$npm_package_version`, czyli
+wymuszają nazwę katalogu, do którego plik przenośny rozpakowuje się w `%TEMP%`
+przy każdym uruchomieniu.
+
+Domyślnie electron-builder wstawia tam losowy identyfikator liczony **przy
+budowaniu** (`3KafYbyQ3LFNllMLQgwmn4tBmIH`). Działa, ale człowiek patrzący
+w `%TEMP%` nie ma szans zgadnąć, czyj to katalog — a zostaje tam po każdej
+wersji, po 264 MB sztuka.
+
+**Dlaczego z wersją, a nie jedna stała nazwa dla wszystkich wydań:** skrypt NSIS
+zaczyna od `RMDir /r` na tym katalogu i rozpakowuje go od nowa. Przy wspólnej
+nazwie uruchomienie nowej wersji kasowałoby katalog **działającej** starej —
+pliki otwarte przez tamten proces Windows zablokuje, więc kasowanie wyjdzie
+w połowie i druga instancja wystartuje na mieszance plików z dwóch wydań. Numer
+wersji w nazwie trzyma wydania osobno, a nadal daje czytelną nazwę.
+
+Makra `${version}` ta opcja nie rozwija — stąd zmienna `$npm_package_version`
+w skrypcie npm, a nie wpis w `electron-builder.yml`.
+
 ### RD_CONFIG_DIR nie izoluje danych
 
 `RD_CONFIG_DIR` przestawia katalog `config.json` — i **tylko jego**. Przy

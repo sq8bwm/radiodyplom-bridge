@@ -36,6 +36,51 @@ Brak łączności rozpoznawany jest **dwiema drogami**, żeby nie umknął w ża
 Błąd trwały (zły znak, brak uprawnień) **nie** gasi łączności — to problem z danymi,
 nie z siecią, i dlatego daje stan żółty, a nie czerwony.
 
+### Dwa widoki: prosty i pełny
+
+Okno ma dwa układy. Przełącznik stoi w nagłówku, obok „Wstrzymaj", i mówi,
+dokąd prowadzi: **Zaawansowane** w widoku prostym, **Widok prosty** w pełnym.
+Wybór zapisuje się w konfiguracji (pole `view`), więc trzyma się między
+uruchomieniami i jest ten sam w oknie i w przeglądarce.
+
+**Widok prosty** odpowiada na jedno pytanie — czy to działa:
+
+- jedna linijka stanu: kolorowa kropka i zdanie („Działa — czeka na QSO
+  z loggera", „Wstrzymane", „Próba na sucho", „Brak łączności…");
+- dwie liczby: **z dzisiaj** (łączności z dzisiejszą datą, które doszły na
+  serwer) i **czeka** (zapisane na dysku, czekające na wysłanie — żółte tylko
+  wtedy, gdy naprawdę coś czeka). Wyjaśnienia są w dymkach, żeby kafelki
+  pokazywały samą liczbę;
+- dziesięć ostatnich łączności, w tym samym formacie co w zakładce QSOs.
+
+Gdy brakuje PIN-u, zamiast linijki stanu pojawia się belka z polem i przyciskiem
+**Zapisz i sprawdź**. To jedyne ustawienie dostępne poza Konfiguracją — bez PIN-u
+program nie wysyła niczego, a osoba, która właśnie go zainstalowała, nie powinna
+szukać zakładki, żeby ruszyć z miejsca.
+
+**Widok pełny** to wszystko, co było dotąd: sześć zakładek, tabele, formularze,
+log i statystyki. Nic z niego nie zniknęło i nic nie jest dostępne wyłącznie
+w widoku prostym.
+
+Kto co dostaje:
+
+| Sytuacja | Widok na starcie |
+|---|---|
+| nowa instalacja (konfiguracja zasiana z wzorca) | prosty |
+| konfiguracja sprzed tej wersji (bez pola `view`) | pełny |
+| po przełączeniu | ten, który został wybrany |
+
+Nowe instalacje zaczynają od prostego, bo pełna strona przy pierwszym
+uruchomieniu wygląda na coś, co trzeba skonfigurować — a nie trzeba: po wpisaniu
+PIN-u QSO lecą same. Konfiguracje istniejące zostają na pełnym świadomie: nikt,
+kto pracuje z programem od miesiąca, nie prosił o schowanie mu zakładek.
+
+Liczba „z dzisiaj" idzie z **dziennika wysyłek**, a nie z licznika w pamięci —
+dzięki temu przeżywa restart programu. Dzień liczony jest w **UTC**, tak samo jak
+zakres „dziś" na Statystykach, więc obie liczby zgadzają się także wieczorem.
+Dziennik indeksuje po dacie QSO, więc wysłanie wczorajszej łączności z pliku ADIF
+powiększy liczbę z wczoraj, a nie z dzisiaj.
+
 ### Pytania zadaje własne okienko, nie natywne `confirm`
 
 Wszystkie potwierdzenia (zapis mimo braku uprawnień, usunięcie PIN-u celu,

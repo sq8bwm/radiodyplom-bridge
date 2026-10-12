@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
 
 const H = readFileSync(new URL('../ui/index.html', import.meta.url), 'utf8');
 const R = readFileSync(new URL('../ui/renderer.js', import.meta.url), 'utf8');
+const S = readFileSync(new URL('../ui/strings.js', import.meta.url), 'utf8');
 const PROG = /@media \(max-width: (\d+)px\) \{/;
 
 /** Treść bloku `@media` dla wąskiego ekranu — do sprawdzania reguł w środku. */
@@ -132,6 +133,55 @@ describe('układ na wąskim ekranie', () => {
     const b = blokWaski();
     assert.match(b, /\.tbl-scroll thead \{ position:absolute/);
     assert.doesNotMatch(b, /\.tbl-scroll thead \{ display:none/);
+  });
+
+  test('nagłówek mieści się w dwóch wierszach na telefonie', () => {
+    // Zmierzone 12.10.2026 przy 360 px: ikony (3 × 29 px), „Wstrzymaj" i
+    // przełącznik widoku nie mieszczą się w jednym rzędzie — brakowało 6 px,
+    // więc przełącznik spadał do TRZECIEGO wiersza. Trzy rzeczy trzymają
+    // nagłówek w dwóch wierszach i każda z nich jest tu pilnowana:
+    // ikony w osobnej grupie, ciaśniejsze przyciski i nazwa programu, która
+    // poniżej 460 px ustępuje miejsca znakowi.
+    const ikony = H.match(/<div class="hdr-icons">[\s\S]*?<\/div>/);
+    assert.ok(ikony, 'ikony nagłówka muszą stać w osobnej grupie .hdr-icons');
+    for (const id of ['langBtn', 'themeBtn', 'fsBtn']) {
+      assert.match(ikony[0], new RegExp(`id="${id}"`), `${id} należy do .hdr-icons`);
+    }
+    const b = blokWaski();
+    assert.match(b, /\.hdr-icons \{ margin-left:auto; \}/);
+    assert.match(b, /header button\.act \{ padding:10px 12px; \}/);
+    assert.match(H, /@media \(max-width: 460px\) \{\s*header #title \.pelna \{ display:none; \}/);
+  });
+
+  test('na telefonie nazwa jest krótsza, a PIN schodzi z nagłówka', () => {
+    // Zamiast chować nazwę do zera, oddajemy jej miejsce zajęte przez
+    // zamaskowany PIN (zmierzone 12.10.2026: PIN brał 63 px ze 127 px
+    // plakietki, pełna nazwa 151 px, krótka 99 px, a na nazwę zostawało
+    // 128 px po schowaniu PIN-u, a krótka nazwa „RD Bridge" bierze 73).
+    assert.match(H, /<span\s+class="krotka" data-i18n="app\.nameShort">/);
+    assert.match(S, /'app\.nameShort':/);
+    const b = H.match(/@media \(max-width: 460px\) \{[\s\S]*?\n  \}/)[0];
+    assert.match(b, /header #title \.krotka \{ display:inline; \}/);
+    assert.match(b, /header #profile \.pin, header #profile \.stan \{ display:none; \}/);
+    // „· brak łączności" rozpychał plakietkę tak, że ikony spadały niżej —
+    // zobaczone na żywo 12.10.2026 po wyłączeniu serwisu.
+    assert.match(R, /<span class="stan">/);
+    // Przy bardzo długim znaku ustępuje nazwa programu, nie znak.
+    assert.match(b, /header\.znak-dlugi #title \{ display:none; \}/);
+    assert.match(b, /header #profile \{ flex:0 0 auto; \}/);
+    assert.match(R, /classList\.toggle\('znak-dlugi', znak\.length >= 15\)/);
+    // Znak wywoławczy ZOSTAJE — chowamy tylko PIN.
+    assert.match(R, /<span class="pin">/);
+    assert.doesNotMatch(b, /#profile \{ display:none/);
+  });
+
+  test('nazwa programu znika dopiero poniżej głównego progu', () => {
+    // Próg nazwy jest WĘŻSZY od telefonowego: między 461 a 620 px nazwa,
+    // znak i ikony mieszczą się razem, więc nie ma po co jej chować.
+    const [, glowny] = H.match(PROG);
+    const [, nazwy] = H.match(/@media \(max-width: (\d+)px\) \{\s*header #title/);
+    assert.ok(Number(nazwy) < Number(glowny),
+      `próg nazwy ${nazwy}px musi być niższy od telefonowego ${glowny}px`);
   });
 
   test('reguły wąskiego ekranu nie ruszają okna na monitorze', () => {

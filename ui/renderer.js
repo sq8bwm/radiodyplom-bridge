@@ -22,6 +22,7 @@ function applyLang() {
   drawSkalaButton();
   drawLangButton();
   drawPasswordToggle();      // tytuł przycisku też jest tłumaczony
+  drawWidokButton();         // napis zmienia się z językiem i z widokiem
   refresh();
   if ($('konfig').classList.contains('active')) loadConfig();
 }
@@ -363,6 +364,172 @@ document.querySelectorAll('nav button').forEach((b) => {
   };
 });
 
+// ---------- widok prosty ----------
+//
+// Dwa widoki tego samego programu: `simple` odpowiada na jedno pytanie
+// („czy to działa?"), `advanced` to pełny układ z zakładkami. Nowe instalacje
+// zaczynają od prostego — pełna strona przy pierwszym uruchomieniu wygląda na
+// coś, co trzeba skonfigurować, a nie trzeba: QSO lecą same.
+//
+// Wybór siedzi w konfiguracji (`view`), więc trzyma się między uruchomieniami
+// i jest ten sam w oknie i w przeglądarce. Świadomie: to ten sam program i ta
+// sama osoba, a osobny stan na telefon znaczyłby, że przełączenie w oknie nie
+// robi nic w przeglądarce — i odwrotnie.
+const WIDOKI = ['simple', 'advanced'];
+let widok = 'advanced';
+
+/** Napis na przełączniku mówi, DOKĄD prowadzi, nie gdzie jesteśmy. */
+function drawWidokButton() {
+  const b = $('btnWidok');
+  if (!b) return;
+  const prosty = widok === 'simple';
+  b.textContent = prosty ? t('btn.advanced') : t('btn.simpleView');
+  b.title = t(prosty ? 'tip.advanced' : 'tip.simpleView');
+}
+
+function zastosujWidok(w) {
+  widok = WIDOKI.includes(w) ? w : 'advanced';
+  const prosty = widok === 'simple';
+  $('prosty').hidden = !prosty;
+  $('pelny').hidden = prosty;
+  // Pasek zakładek znika razem z pełnym widokiem — jego obecność była całym
+  // powodem, dla którego pierwsze uruchomienie wyglądało na skomplikowane.
+  const nav = document.querySelector('nav');
+  if (nav) nav.hidden = prosty;
+  drawWidokButton();
+  if (prosty) {
+    renderProsty(ostatniStatus);
+    odswiezDzisiaj(true);
+  }
+}
+
+function buildWidokButton(start) {
+  zastosujWidok(start);
+  $('btnWidok').onclick = async () => {
+    const nast = widok === 'simple' ? 'advanced' : 'simple';
+    zastosujWidok(nast);
+    try { await window.bridge.saveConfig({ view: nast }); } catch { /* sesja wystarczy */ }
+  };
+}
+
+/**
+ * Licznik „z dzisiaj" czytamy z dziennika wysyłek, nie z licznika w pamięci:
+ * ten drugi jest sumą od zawsze i po restarcie programu nie wie o dzisiejszym
+ * poranku. Dziennik indeksuje po DACIE QSO — i dobrze, bo to data, którą
+ * operator ma przed oczami w loggerze.
+ *
+ * Dzień bierzemy w UTC, tak samo jak zakres „dziś" na Statystykach. Doba
+ * amatorska jest w UTC, więc wieczorem liczby w obu miejscach muszą się
+ * zgadzać.
+ *
+ * Odpytujemy rzadziej niż co 2 sekundy, bo każde pytanie czyta plik dziennika
+ * z całego miesiąca — ale NATYCHMIAST, gdy zmieni się licznik wysłanych kopii.
+ * Bez tego drugiego warunku świeżo wysłane QSO było już na liście, a liczba
+ * nad nią stała przez pół minuty na zerze i wyglądała na zepsutą. Widać to
+ * było dopiero na zrzucie z działającego programu — testy tego nie łapią.
+ */
+const DZISIAJ_CO_MS = 30000;
+let dzisiajKiedy = 0;
+let dzisiajPoWysylce = null;
+
+async function odswiezDzisiaj(teraz = false) {
+  if (widok !== 'simple') return;
+  const t0 = Date.now();
+  if (!teraz && t0 - dzisiajKiedy < DZISIAJ_CO_MS) return;
+  dzisiajKiedy = t0;
+  let ile = null;
+  try {
+    const dzien = new Date().toISOString().slice(0, 10);
+    const d = await window.bridge.stats?.(dzien, dzien);
+    ile = d?.total?.qso ?? null;
+  } catch { /* dziennika może nie być — pokażemy kreskę */ }
+  $('prostySent').textContent = ile === null ? '—' : ile;
+}
+
+/** Jedno zdanie o stanie: klasa kropki i tekst obok niej. */
+function prostyStan(s) {
+  if (s.queue.paused) return { dot: 'warn', kl: 'ostrzega', tekst: t('prosty.paused') };
+  if (s.state === 'error') return { dot: 'err', kl: 'zle', tekst: t('prosty.offline') };
+  // Próba na sucho jest ważniejsza od odrzuconych: przy niej NIC nie wychodzi
+  // z komputera, więc zielone „działa" byłoby nieprawdą.
+  if (s.radiodyplom.dryRun) return { dot: 'warn', kl: 'ostrzega', tekst: t('prosty.dry') };
+  if (s.queue.failed > 0) return { dot: 'warn', kl: 'ostrzega', tekst: t('prosty.rejected') };
+  if (s.queue.pending > 0) return { dot: 'ok', kl: '', tekst: t('prosty.okQueue') };
+  return { dot: 'ok', kl: '', tekst: t('prosty.ok') };
+}
+
+function renderProsty(s) {
+  if (widok !== 'simple' || !s) return;
+
+  // Brak PIN-u: belka mówi wszystko, co trzeba, więc linijka stanu schodzi
+  // z ekranu. Dwa komunikaty o tym samym obok siebie to szum, a ten widok
+  // ma mieć jedną rzecz do przeczytania.
+  const brakPin = !!s.radiodyplom.pinMissing;
+  $('prostyPin').hidden = !brakPin;
+  $('prostyStan').hidden = brakPin;
+
+  if (!brakPin) {
+    const st = prostyStan(s);
+    $('prostyDot').className = `dot ${st.dot}`;
+    $('prostyStan').className = `linijka ${st.kl}`;
+    $('prostyStanTekst').textContent = st.tekst;
+  }
+
+  const czeka = s.queue.pending;
+  $('prostyPending').textContent = czeka;
+  // Żółty ma znaczyć „popatrz na to". Zero w kolejce to stan docelowy, więc
+  // kolor gaśnie — inaczej ostrzegawczy odcień wisiałby na ekranie zawsze.
+  $('prostyKPending').className = `liczba${czeka > 0 ? ' czeka' : ''}`;
+  $('prostyKSent').title = t('prosty.tipSentToday');
+  $('prostyKPending').title = t('prosty.tipPending');
+
+  // Licznik trwały zmienia się przy każdej wysłanej kopii — to nasz sygnał,
+  // że dziennik ma nowy wpis i warto go przeczytać od razu.
+  const wyslane = s.queue.sent;
+  const poszloCos = dzisiajPoWysylce !== null && wyslane !== dzisiajPoWysylce;
+  dzisiajPoWysylce = wyslane;
+  odswiezDzisiaj(poszloCos);
+
+  // Lista: tylko zdarzenia, które SĄ łącznością. Ostrzeżenia i komunikaty
+  // należą do widoku pełnego — tutaj mieszałyby się z QSO i znowu robiły
+  // ze strony ścianę tekstu.
+  const qso = [...(s.recentEvents || [])].reverse()
+    .filter((e) => e.kind === 'sent' || e.kind === 'dryrun' || e.kind === 'duplicate')
+    .slice(0, 10);
+  $('prostaLista').innerHTML = qso.length
+    ? `<ul class="events kol">${qso.map(wierszZdarzenia).join('')}</ul>`
+    : `<span class="empty">${t('prosty.empty')}</span>`;
+}
+
+/**
+ * PIN wpisany w widoku prostym. Jedyne ustawienie dostępne poza Konfiguracją,
+ * bo bez niego program nie robi nic, a osoba, która właśnie go zainstalowała,
+ * nie powinna szukać zakładki, żeby ruszyć z miejsca.
+ */
+$('btnProstyPin').onclick = async () => {
+  const pin = $('prostyPinInput').value.trim();
+  if (!pin) return;
+  const b = $('btnProstyPin');
+  b.disabled = true;
+  try {
+    await window.bridge.saveConfig({ radiodyplom: { pin } });
+    $('prostyPinInput').value = '';
+    $('prostyPinEcho').textContent = t('prosty.pinSaved');
+    setTimeout(() => { $('prostyPinEcho').textContent = ''; }, 8000);
+  } catch (err) {
+    $('prostyPinEcho').textContent = String(err?.message || err);
+  } finally {
+    b.disabled = false;
+  }
+  refresh();
+};
+
+// Enter w polu PIN-u robi to samo co przycisk — pole jest jedyne na stronie,
+// więc odruch „wpisz i naciśnij Enter" musi zadziałać.
+$('prostyPinInput').onkeydown = (e) => {
+  if (e.key === 'Enter') $('btnProstyPin').click();
+};
+
 // ---------- stan ----------
 function renderStatus(s) {
   if (!s) return;
@@ -381,8 +548,21 @@ function renderStatus(s) {
   if (s.radiodyplom.pinMissing) {
     badge.textContent = t('state.noPin');
   } else {
-    const who = `${s.radiodyplom.profile || '—'} · ${s.radiodyplom.pin}`;
-    badge.textContent = bad ? `${who} · ${t('state.noConn')}` : who;
+    // Znak i PIN osobno, żeby wąski ekran mógł schować sam PIN. Zamaskowany
+    // PIN niesie jedną informację — „jest ustawiony" — i tę samą niesie
+    // kropka stanu; znak wywoławczy niesie coś, czego nie ma nigdzie indziej.
+    const pin = `<span class="pin"> · ${esc(s.radiodyplom.pin)}</span>`;
+    // Dopisek o braku łączności chowa się na telefonie razem z PIN-em: tam
+    // mówi to samo czerwona plakietka i czerwona kropka obok, a w widoku
+    // prostym jeszcze linijka stanu pełnym zdaniem. Zostawiony na wąskim
+    // ekranie rozpychał plakietkę tak, że ikony spadały do trzeciego wiersza.
+    const konc = bad ? `<span class="stan"> · ${esc(t('state.noConn'))}</span>` : '';
+    const znak = s.radiodyplom.profile || '—';
+    badge.innerHTML = `${esc(znak)}${pin}${konc}`;
+    // Długi znak (prefiks DX, /P, /MM) nie mieści się na telefonie obok nazwy
+    // programu. Wtedy ustępuje nazwa — co zrobić, mówi arkusz; tutaj tylko
+    // mierzymy, bo CSS nie umie zapytać o długość tekstu.
+    document.querySelector('header').classList.toggle('znak-dlugi', znak.length >= 15);
   }
   // Banner jest sterowany STANEM, nie odpowiedzią na zapis — dzięki temu nie
   // ginie przy przełączeniu zakładki ani po ponownym otwarciu okna.
@@ -719,6 +899,7 @@ async function refresh() {
     }
     $('startFailNote').hidden = true;
     renderStatus(ostatniStatus);
+    renderProsty(ostatniStatus);
     zastosujTryb(ostatniStatus.api);
   } catch { /* rdzeń wstaje */ }
 }
@@ -1524,7 +1705,14 @@ $('btnLogEnd').onclick = () => {
 };
 $('logbox').addEventListener('scroll', updateLogFollow);
 
-if (!window.bridge.quit) $('btnQuit').hidden = true;
+// W przeglądarce nie ma czego zamykać, więc „Zakończ" znika — a razem z nim
+// kreska, która go oddzielała. Sama wisiała na końcu rzędu i oddzielała
+// przełącznik widoku od niczego; przy wąskim ekranie potrafiła nawet spaść
+// do osobnego wiersza.
+if (!window.bridge.quit) {
+  $('btnQuit').hidden = true;
+  document.querySelector('.hdr-sep').hidden = true;
+}
 
 // Zapis zgłoszenia istnieje tylko w oknie na pulpicie — w przeglądarce nie ma
 // gdzie zapisać pliku. Tam zostaje `npm run report` na maszynie mostka.
@@ -1560,6 +1748,10 @@ $('btnQuit').onclick = async () => {
   const cfg = await window.bridge.getConfig();
   buildThemeButton(cfg?.theme || 'auto');
   buildSkalaButton(cfg?.fontScale || 'normal');
+  // Konfiguracje sprzed tej wersji nie mają pola `view` — i zostają na pełnym
+  // widoku. Nikt, kto pracuje z programem od miesiąca, nie prosił o to, żeby
+  // mu go schować.
+  buildWidokButton(cfg?.view || 'advanced');
   setLang(cfg?.language || 'pl');
   buildLangButton(getLang());
   buildPasswordToggle();

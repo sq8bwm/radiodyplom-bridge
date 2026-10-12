@@ -134,6 +134,15 @@
                  /* Do prawej krawędzi także po zawinięciu — dzięki temu
                     „Zakończ" nigdy nie stoi pod plakietkami z lewej. */
                  margin-left:auto; }
+  /* Ikony (język, motyw, rozmiar tekstu) stoją OSOBNO od przycisków akcji.
+     Na szerokim ekranie to nie robi różnicy — grupy sąsiadują i wygląda jak
+     jeden rząd. Różnica jest na telefonie: ikony zostają wtedy w pierwszym
+     wierszu, przy znaku, a przyciski mają cały drugi wiersz dla siebie.
+     Zanim je rozdzieliłam, wszystko siedziało w `.hdr-actions`, która przy
+     360 px łamała się w środku i nagłówek brał TRZY wiersze (zmierzone
+     12.10.2026: 140 px wysokości, przy dwóch wierszach 94 px). */
+  .hdr-icons { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+  header #title .krotka { display:none; }
   .hdr-sep { width:1px; height:22px; background:var(--line); flex:none; }
   /* Nagłówek i zakładki przyklejone RAZEM, jednym pojemnikiem.
      Osobne `top` dla zakładek byłoby kruche: nagłówek zawija się przy wąskim
@@ -314,6 +323,14 @@
        tu zbędny: przyciski i tak zajmują cały rząd. */
     header .grow { display:none; }
     .hdr-actions { flex:1 1 100%; flex-wrap:wrap; row-gap:8px; }
+    /* Ikony dociskamy do prawej krawędzi pierwszego wiersza: razem ze znakiem
+       po lewej dają rząd, który wygląda na zaplanowany, a nie na resztę. */
+    .hdr-icons { margin-left:auto; }
+    /* Przyciski w nagłówku węższe niż reszta — tylko one muszą zmieścić się
+       w jednym wierszu we trzy („Wstrzymaj", przełącznik widoku, „Zakończ").
+       Przy 16 px po bokach brakowało 6 px i przełącznik spadał do trzeciego
+       wiersza, ciągnąc za sobą kreskę rozdzielającą. */
+    header button.act { padding:10px 12px; }
     /* Stała szerokość ma trzymać przyciski w miejscu przy zmianie języka na
        monitorze. Na telefonie ważniejsze jest, żeby się zmieściły. */
     header #btnPause, header #btnQuit { min-width:0; }
@@ -433,15 +450,94 @@
     ul.events li.qso > .stn, ul.events li.qso > .op { font-size:0.75rem; color:var(--muted); }
     ul.events li.qso > .src { display:inline-block; margin-left:0; }
   }
+  /* Poniżej tej szerokości nazwa programu schodzi z nagłówka. Nie dlatego, że
+     przeszkadza, tylko dlatego, że musi coś ustąpić: kropka stanu, znak z PIN-em
+     i trzy ikony potrzebują 263 px z 336 dostępnych przy 360 px, a sama nazwa
+     bierze 150 px. Znak wywoławczy mówi więcej od nazwy programu komuś, kto
+     właśnie otworzył adres mostka, a nazwa i tak stoi w tytule karty i okna.
+     Próg zmierzony: od 461 px nazwa, znak i ikony mieszczą się razem. */
+  @media (max-width: 460px) {
+    header #title .pelna { display:none; }
+    header #title .krotka { display:inline; }
+    /* Zamaskowany PIN schodzi z nagłówka: mówi tylko tyle, że PIN jest
+       ustawiony, a to samo mówi zielona kropka obok. Znak wywoławczy zostaje,
+       bo on mówi, CZYJE QSO lecą — przy dwóch kontach to jedyna różnica
+       widoczna na pierwszy rzut oka. */
+    header #profile .pin, header #profile .stan { display:none; }
+    /* Przy bardzo długim znaku („VP2V/SQ8BWM/MM" to 119 px zamiast 64) ustępuje
+       CAŁA nazwa, nie znak: bez nazwy programu da się żyć, z uciętym znakiem
+       nie. Klasę nadaje renderer, bo CSS nie umie zapytać o długość tekstu —
+       a `overflow:hidden` tu nie wystarczy: przy `flex-wrap:wrap` przeglądarka
+       najpierw ŁAMIE wiersz, a dopiero potem kurczy to, co w nim zostało
+       (sprawdzone 12.10.2026 — ikony i tak spadały do trzeciego wiersza).
+       Na nazwę i znak jest tu 200 px; krótka nazwa bierze 73, więc na znak
+       zostaje ~127 px — a plakietka i tak ucina się na 20ch, czyli ok. 126 px.
+       Znak czternastoznakowy („VP2V/SQ8BWM/MM") mieści się jeszcze obok nazwy
+       z zapasem 8 px; dłuższy jest już ucinany do pełnych 126 px i wtedy
+       zapas spada do jednego piksela — dlatego próg stoi na piętnastu. */
+    header.znak-dlugi #title { display:none; }
+    header #profile { flex:0 0 auto; }
+  }
   .note { border-left:3px solid var(--warn); padding:8px 10px; background:var(--panel);
           border-radius:0 6px 6px 0; font-size:0.75rem; margin-top:10px; }
+
+  /* ---------- widok prosty ----------
+     Krótka strona dla kogoś, kto chce wiedzieć tylko jedno: czy mostek działa.
+     Pełny układ z zakładkami potrafi przestraszyć przy pierwszym uruchomieniu,
+     a przez pierwszą godzinę nie ma w nim nic do roboty — QSO lecą same.
+
+     Stan mówi JEDNA LINIJKA małym tekstem, nie panel: panel zabierał trzecią
+     część ekranu, żeby powiedzieć „działa". Sama kropka w nagłówku byłaby
+     jeszcze mniejsza, ale nowy użytkownik nie wie, co znaczy jej kolor. */
+  .linijka { display:flex; align-items:center; gap:8px; color:var(--muted);
+             font-size:0.8125rem; margin:0 2px 12px; }
+  .linijka.zle { color:var(--err); }
+  .linijka.ostrzega { color:var(--warn); }
+
+  /* Kafelki: sama liczba i krótka etykieta, wyjaśnienie w dymku. Na telefonie
+     ZOSTAJĄ obok siebie (stąd `nowrap` niżej) — jeden pod drugim spychały
+     listę łączności poniżej krawędzi ekranu, a to jedyna treść, po którą
+     wraca się do tego widoku. */
+  .liczby { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .liczba { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+            padding:10px 16px; cursor:help; display:flex; align-items:baseline; gap:10px; }
+  .liczba .wartosc { font-size:1.5rem; font-weight:600; line-height:1; }
+  .liczba .etykieta { font-size:0.75rem; color:var(--muted); }
+  .liczba.czeka .wartosc { color:var(--warn); }
+
+  /* Belka PIN-u. W widoku prostym nie ma zakładki Konfiguracja, więc jedyne
+     ustawienie, bez którego program jest bezużyteczny, musi dać się wpisać
+     tutaj — inaczej „prosty dla nowych" kończyłby się na pierwszym kroku. */
+  .pin-bar { border-left:3px solid var(--warn);
+             background:var(--panel); border-radius:0 8px 8px 0;
+             padding:14px 16px; margin-bottom:12px; }
+  .pin-bar b { display:block; margin-bottom:4px; }
+  .pin-bar .tresc { font-size:0.8125rem; color:var(--muted); }
+  .pin-bar .rzad { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+  .pin-bar input { flex:0 1 220px; min-width:0; }
+  .pin-bar .echo { font-size:0.75rem; color:var(--ok); }
+
+  @media (max-width: 620px) {
+    .liczby { flex-wrap:nowrap; gap:8px; }
+    .liczba { flex:1 1 0; min-width:0; padding:10px 12px; gap:8px; }
+    .liczba .wartosc { font-size:1.375rem; }
+    .pin-bar input { flex:1 1 140px; }
+  }
 </style>
 </head>
 <body>
 <div class="topbar">
 <header>
   <span class="dot" id="dot"></span>
-  <h1 id="title" data-i18n="app.name">RadioDyplom Bridge</h1>
+  <!-- Dwie formy nazwy, przełączane szerokością ekranu. Pełna nazwa bierze
+       151 px, a na telefonie na nazwę zostaje 128 px — po oddaniu miejsca,
+       które zajmował zamaskowany PIN w plakietce obok. „RD Bridge" (73 px)
+       mieści się obok KAŻDEGO znaku wywoławczego, także tych z prefiksem
+       i dwoma przyrostkami; „RadioDyplom" (99 px) już nie. -->
+  <h1 id="title">
+    <span class="pelna" data-i18n="app.name">RadioDyplom Bridge</span><span
+      class="krotka" data-i18n="app.nameShort">RadioDyplom</span>
+  </h1>
   <span class="badge" id="profile">—</span>
   <span class="badge dry" id="dryBadge" hidden>DRY-RUN</span>
   <span class="badge st-error" id="probBadge" hidden style="cursor:pointer"></span>
@@ -451,11 +547,18 @@
        tyle samo, a opis pełny jest w podpowiedzi i na zakładce Stan. -->
   <button class="icon-btn net" id="netIcon" hidden></button>
   <span class="grow"></span>
-  <div class="hdr-actions">
+  <div class="hdr-icons">
     <button class="icon-btn" id="langBtn" title="Język / Language"></button>
     <button class="icon-btn" id="themeBtn" title="Motyw / Theme"></button>
     <button class="icon-btn" id="fsBtn" title="Rozmiar tekstu / Text size"></button>
+  </div>
+  <div class="hdr-actions">
     <button class="act sec" id="btnPause" data-i18n="btn.pause">Wstrzymaj</button>
+    <!-- Przełącznik widoku stoi obok „Wstrzymaj", bo to jedyne dwa przyciski,
+         których używa się w trakcie pracy. Napis zmienia się zależnie od tego,
+         gdzie jesteśmy — droga powrotna MUSI być równie widoczna jak droga
+         tam, inaczej widok prosty byłby pułapką. -->
+    <button class="act sec" id="btnWidok"></button>
     <span class="hdr-sep"></span>
     <button class="act sec danger" id="btnQuit" data-i18n="btn.quit" title=""></button>
   </div>
@@ -494,7 +597,42 @@
 </nav>
 </div>
 
-<main>
+<!-- WIDOK PROSTY. Osobny `main`, nie kolejna zakładka: zakładka pokazuje się
+     RAZEM z paskiem zakładek, a tu chodzi o to, żeby paska nie było widać.
+     Dwa `<main>` są poprawne, dopóki wszystkie poza jednym mają `hidden`. -->
+<main id="prosty" hidden>
+  <div class="pin-bar" id="prostyPin" hidden>
+    <b data-i18n="prosty.pinTitle"></b>
+    <div class="tresc" data-i18n="prosty.pinText"></div>
+    <div class="rzad">
+      <input type="text" id="prostyPinInput" placeholder="ABCD-1234" autocomplete="off">
+      <button class="act" id="btnProstyPin" data-i18n="btn.pinSave"></button>
+      <span class="echo" id="prostyPinEcho"></span>
+    </div>
+  </div>
+
+  <div class="linijka" id="prostyStan">
+    <span class="dot" id="prostyDot"></span><span id="prostyStanTekst"></span>
+  </div>
+
+  <div class="liczby">
+    <div class="liczba" id="prostyKSent">
+      <span class="wartosc" id="prostySent">0</span>
+      <span class="etykieta" data-i18n="prosty.sentToday"></span>
+    </div>
+    <div class="liczba czeka" id="prostyKPending">
+      <span class="wartosc" id="prostyPending">0</span>
+      <span class="etykieta" data-i18n="prosty.pending"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 data-i18n="prosty.lastQso"></h2>
+    <div id="prostaLista"></div>
+  </div>
+</main>
+
+<main id="pelny">
   <section id="stan">
     <div class="panel">
       <h2 data-i18n="panel.account"></h2>

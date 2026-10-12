@@ -57,6 +57,8 @@
   "language": "pl",
   "theme": "auto",
   "fontScale": "normal",
+  "_view_komentarz": "simple = krotka strona (dziala/nie dziala, liczby, ostatnie QSO), advanced = pelny widok z zakladkami. Przelacznik jest w naglowku okna. Nowe instalacje zaczynaja od simple; konfiguracje bez tego pola zostaja na advanced.",
+  "view": "simple",
   "ui": {
     "recentEvents": 20,
     "zoom": 1

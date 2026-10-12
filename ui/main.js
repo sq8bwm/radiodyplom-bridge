@@ -7,7 +7,7 @@
 // UI rozmawia z nim bezpośrednio, bez HTTP. Serwer HTTP zostaje włączony tylko
 // po to, by dało się też podejrzeć stan z przeglądarki albo skryptu.
 import {
-  app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, shell, dialog,
+  app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, shell, dialog, screen,
 } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -240,6 +240,20 @@ function buildMenu() {
   ]);
 }
 
+// Najmniejszy sensowny rozmiar STRONY (okno jest o ramkę większe, patrz
+// `ustawMinimalnyRozmiar`). Z pomiaru, nie z oka: przy 344 px nagłówek mieści
+// się w dwóch wierszach, przy 343 px „Zakończ" spada do trzeciego. Pionowy
+// pasek przewijania zabiera stronie kolejne 15 px, więc okno potrzebuje 359 —
+// zaokrąglone do 360, czyli dokładnie tyle, ile najwęższy telefon, pod który
+// jest robiony układ w `index.html`.
+//
+// Mierzyć trzeba W OKNIE, nie na stronie z przeglądarki: tam nie ma przycisku
+// „Zakończ" (brak `window.bridge.quit`) i próg wychodzi o 44 px za niski.
+//
+// Na 320 px wysokości widok prosty pokazuje nagłówek, linijkę stanu, obie
+// liczby i początek listy, a pełny — nagłówek razem z paskiem zakładek.
+const MIN_TRESC = { szer: 360, wys: 320 };
+
 function showWindow() {
   if (win) {
     if (win.isMinimized()) win.restore();
@@ -259,6 +273,30 @@ function showWindow() {
     },
   });
   win.setMenuBarVisibility(false);
+
+  // Minimalny rozmiar okna. Bez niego okno daje się ścisnąć do kilku pikseli:
+  // nie widać już nic, a trafienie myszą w krawędź, żeby je rozciągnąć,
+  // to zabawa w celowanie.
+  //
+  // `setMinimumSize` mówi o OKNIE razem z ramką i belką tytułu, a MIN_TRESC
+  // o stronie — różnicę bierzemy z żywego okna, bo zależy od systemu i motywu.
+  //
+  // Mnożymy przez powiększenie (Ctrl +), bo ono skaluje całą stronę: przy 200%
+  // okno szerokie na 320 px pokazuje stronę o szerokości 160 px, czyli nagłówek
+  // w czterech wierszach. Minimum przycinamy do obszaru roboczego ekranu, żeby
+  // nigdy nie było większe od miejsca, w którym okno ma stanąć.
+  const ustawMinimalnyRozmiar = (zoom) => {
+    if (!win || win.isDestroyed()) return;
+    const z = Math.max(0.8, Math.min(3, Number(zoom) || 1));
+    const [szerOkna, wysOkna] = win.getSize();
+    const [szerTresci, wysTresci] = win.getContentSize();
+    const praca = screen.getPrimaryDisplay().workAreaSize;
+    win.setMinimumSize(
+      Math.min(Math.round(MIN_TRESC.szer * z) + Math.max(0, szerOkna - szerTresci), praca.width),
+      Math.min(Math.round(MIN_TRESC.wys * z) + Math.max(0, wysOkna - wysTresci), praca.height),
+    );
+  };
+  ustawMinimalnyRozmiar(daemon?.getConfig?.()?.ui?.zoom);
 
   // Gdy interfejs nie wstanie, człowiek widzi białe okno i nic więcej — a log
   // milczy, bo rdzeń pracuje dalej i nie ma o czym pisać. Zgłoszenie
@@ -327,6 +365,7 @@ function showWindow() {
     const nowy = wZero ? 1
       : Math.max(0.8, Math.min(3, Number((teraz + (wPlus ? 0.1 : -0.1)).toFixed(2))));
     win.webContents.setZoomFactor(nowy);
+    ustawMinimalnyRozmiar(nowy);
     zoomZapisz(nowy);
     log.info(`Powiększenie okna: ${Math.round(nowy * 100)}%`);
   });
@@ -339,6 +378,9 @@ function showWindow() {
     // jawnego ustawienia jego pamięć wygrywała z konfiguracją — okno wstawało
     // powiększone, choć w pliku było `zoom: 1`. Zobaczone na zrzucie.
     win.webContents.setZoomFactor(Math.max(0.8, Math.min(3, z)));
+    // Dopiero teraz okno jest obrysowane przez menedżera okien, więc różnica
+    // między oknem a treścią jest prawdziwa — przy tworzeniu bywa zerowa.
+    ustawMinimalnyRozmiar(z);
     // Szczypanie dwoma palcami na ekranach dotykowych i gładzikach.
     win.webContents.setVisualZoomLevelLimits(1, 3).catch(() => {});
   });

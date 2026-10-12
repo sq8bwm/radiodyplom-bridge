@@ -367,6 +367,16 @@ To ten sam plik `index.html`, który jedzie w oknie programu — więc te reguł
 wchodzą też, gdy ktoś zwęzi okno na monitorze. Okno startuje w 900×700, czyli
 domyślnie ich nie widać.
 
+Zwężać da się **do 360×320 punktów strony** i ani piksela dalej. Wcześniej okno
+dawało się ścisnąć do paska kilku pikseli: nie było już czego czytać, a złapanie
+krawędzi myszą, żeby je rozciągnąć, wymagało cierpliwości. 360 px to zmierzona
+granica, przy której nagłówek wciąż mieści się w dwóch wierszach razem
+z przyciskiem „Zakończ" (przy 343 px spada do trzeciego, a pionowy pasek
+przewijania zabiera stronie kolejne 15 px) — i zarazem szerokość najwęższego
+telefonu, pod który robiony jest układ. Granica **rośnie razem z powiększeniem
+okna**: przy 200% jest to 720×640 punktów ekranu, bo strona dostaje wtedy połowę
+pikseli okna. Większe niż obszar roboczy ekranu nigdy nie będzie.
+
 Do 0.1.24 strona nie miała `<meta viewport>` i przeglądarka na telefonie
 rysowała ją tak, jakby ekran miał 980 px, a potem pomniejszała całość — dało
 się z tego korzystać po powiększeniu palcami, ale niewygodnie.

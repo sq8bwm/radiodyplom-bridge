@@ -403,9 +403,9 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
     log.warn('RD_NO_TRAY: pomijam ikonę w zasobniku');
   }
 
-  showWindow();
-
   // --- most IPC: renderer nie ma dostępu do Node, wszystko idzie tędy ---
+  // Rejestrujemy je PRZED otwarciem okna — patrz komentarz przy showWindow()
+  // na końcu tego bloku.
   ipcMain.handle('status', () => daemon?.status()
     ?? (bladStartu ? { bladStartu, configFile: configPath() } : null));
   // „Pokaż plik konfiguracji" — przy nieudanym starcie zakładka Konfiguracja
@@ -505,6 +505,20 @@ if (mamyBlokadeInstancji) app.whenReady().then(async () => {
     refreshTray();
     return r;
   });
+
+  // OKNO OTWIERAMY NA KOŃCU, po rejestracji wszystkich mostów IPC.
+  //
+  // Renderer pyta o konfigurację i stan natychmiast po wczytaniu strony.
+  // Gdy zdąży przed `ipcMain.handle`, `invoke` rzuca „No handler registered
+  // for 'config:get'", wyjątek przerywa budowanie widoku i w oknie zostaje
+  // pusty szkielet: zakładki i ramki bez jednego napisu, bez komunikatu
+  // o błędzie. Wyścig wygrywało zwykle okno, więc objaw był rzadki
+  // i nieodtwarzalny na żądanie — odtworzony doświadczalnie 12.10.2026
+  // przez opóźnienie rejestracji o 4 s.
+  //
+  // Kolejność jest tu jedynym zabezpieczeniem: `ipcRenderer.invoke` nie czeka
+  // na handler, który jeszcze nie istnieje. Pilnuje tego test.
+  showWindow();
 });
 
 // Sama subskrypcja tego zdarzenia wyłącza domyślne „zamknij okno = zakończ aplikację".

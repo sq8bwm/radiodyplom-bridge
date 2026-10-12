@@ -194,3 +194,53 @@ describe('układ na wąskim ekranie', () => {
       `próg ${prog}px nie może dochodzić do szerokości okna ${szerokoscOkna}px`);
   });
 });
+
+// ZGŁOSZONE 2026-10-12: „można zmniejszyć do jednego czy paru pikseli, nie jest
+// to wygodne". Okno bez `setMinimumSize` zwija się do paska, po którym nie widać
+// już, co to za program, a krawędź do rozciągnięcia trzeba trafić myszą.
+describe('okno ma dolną granicę rozmiaru', () => {
+  const M = readFileSync(new URL('../ui/main.js', import.meta.url), 'utf8');
+  const minTresc = () => {
+    const [, szer, wys] = M.match(/const MIN_TRESC = \{ szer: (\d+), wys: (\d+) \};/);
+    return { szer: Number(szer), wys: Number(wys) };
+  };
+
+  test('minimum jest w ogóle ustawiane', () => {
+    assert.match(M, /win\.setMinimumSize\(/);
+  });
+
+  test('minimalna szerokość zostawia nagłówek w dwóch wierszach', () => {
+    // Zmierzone w oknie, z przyciskiem „Zakończ": przy 344 px strony nagłówek
+    // ma dwa wiersze, przy 343 px trzy. Pionowy pasek przewijania zabiera
+    // kolejne 15 px (okno 300 → strona 285), więc okno musi mieć co najmniej
+    // 359 px. Pomiar na stronie z przeglądarki daje 300 px i jest nieprawdziwy:
+    // tam nie ma „Zakończ", bo nie ma `window.bridge.quit`.
+    assert.ok(minTresc().szer >= 359,
+      `${minTresc().szer}px to za mało — „Zakończ" spadnie do trzeciego wiersza`);
+  });
+
+  test('minimum nie przekracza rozmiaru startowego okna', () => {
+    const [, szerokoscOkna] = M.match(/width: (\d+),/);
+    const [, wysokoscOkna] = M.match(/height: (\d+),/);
+    assert.ok(minTresc().szer < Number(szerokoscOkna));
+    assert.ok(minTresc().wys < Number(wysokoscOkna));
+  });
+
+  test('minimum rośnie razem z powiększeniem okna', () => {
+    // Przy 200% strona dostaje połowę pikseli okna, więc stałe minimum byłoby
+    // minimum na niby. Stąd mnożenie i ponowne ustawienie po Ctrl +/-.
+    assert.match(M, /MIN_TRESC\.szer \* z/);
+    assert.match(M, /MIN_TRESC\.wys \* z/);
+    const skrot = M.slice(M.indexOf('before-input-event'));
+    assert.match(skrot.slice(0, skrot.indexOf('did-finish-load')),
+      /ustawMinimalnyRozmiar\(nowy\);/,
+      'po zmianie powiększenia klawiszem minimum musi być przeliczone');
+  });
+
+  test('minimum nie wychodzi poza obszar roboczy ekranu', () => {
+    // Inaczej przy 300% na małym ekranie okna nie dałoby się już zmniejszyć
+    // do rozmiaru, w którym w ogóle mieści się na pulpicie.
+    assert.match(M, /screen\.getPrimaryDisplay\(\)\.workAreaSize/);
+    assert.match(M, /Math\.min\(Math\.round\(MIN_TRESC\.szer \* z\).*praca\.width\)/);
+  });
+});

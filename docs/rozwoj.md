@@ -81,6 +81,30 @@ jako plik, przez `js-yaml`.
 Token przebiegu ma `contents: read` i nic więcej. Kolejny przebieg tej samej
 gałęzi anuluje poprzedni — przy kilku poprawkach z rzędu liczy się ostatni.
 
+### Zaglądanie do okna z zewnątrz
+
+Gdy okno wygląda na puste albo białe, pierwsze pytanie brzmi: czy interfejs
+się nie zbudował, czy tylko nie widać gotowego obrazu. Odpowiada na to zdalne
+debugowanie — uruchomienie z portem, a potem pytania do silnika przeglądarki:
+
+```bash
+radiodyplom-bridge --remote-debugging-port=9223
+curl -s http://127.0.0.1:9223/json/list        # czy strona w ogóle istnieje
+```
+
+Wynik z pola `webSocketDebuggerUrl` otwiera się klientem WebSocket (Node ma go
+wbudowanego od wersji 22, więc bez zależności). Przydają się dwa wywołania
+protokołu: `Runtime.evaluate` z `document.body.innerText` — czyli co naprawdę
+jest w oknie — oraz `Page.captureScreenshot`, czyli zrzut renderowany przez
+sam silnik, **niezależny od tego, co widać na ekranie**.
+
+Tak właśnie 12.10.2026 rozstrzygnęliśmy sprawę białego okna na Windowsie:
+zrzut z silnika pokazywał kompletny interfejs, a zrzut ekranu w tej samej
+chwili — biały prostokąt. Program był w porządku, obraz nie trafiał na ekran.
+Opis dla użytkownika: [Gdy coś nie działa](problemy.md#okno-jest-całkiem-białe).
+
+Do maszyny z Windowsem port przenosi się tunelem: `ssh -N -L 9223:127.0.0.1:9223 <host>`.
+
 ## Pakowanie i dystrybucja
 
 ```bash

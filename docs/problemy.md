@@ -21,12 +21,20 @@ Nie ma więc powodu do pośpiechu w trakcie zawodów — łączności nie giną.
 Sprawdzić to można bez okna:
 
 - plik logu rośnie — *Otwórz log* z menu zasobnika;
-- to samo okno w przeglądarce: `http://localhost:12061/`. Jeśli rysuje się
-  tam normalnie, popsute jest okno programu, a nie mostek. **Tego nie
-  sprawdziliśmy przy prawdziwej awarii** — więc jest to rzecz do sprawdzenia,
-  a nie obiecane obejście.
+- to samo okno w przeglądarce: `http://localhost:12061/`. W naszym teście
+  odpowiadało normalnie, kiedy okno programu było białe.
 
-### Co pomaga
+### Co pomaga — najpierw to
+
+**Zminimalizuj okno i przywróć je** (albo złap za krawędź i zmień rozmiar).
+U nas naprawiło obraz natychmiast: po przywróceniu okno pokazało całą
+zawartość, bez zamykania programu i bez restartu systemu.
+
+Dlaczego to w ogóle działa — patrz *Co o tym wiemy* niżej: strona jest
+narysowana, tylko gotowy obraz nie trafia na ekran. Przywrócenie okna zmusza
+system do pokazania go od nowa.
+
+### Gdy to nie pomoże
 
 **Uruchom ponownie komputer** — i to dosłownie: w menu Start wybierz
 *Uruchom ponownie*, nie *Zamknij*.
@@ -50,7 +58,19 @@ co do bajtu taki sam jak na działającej maszynie, konfiguracja z tego komputer
 rysuje się poprawnie gdzie indziej, `--disable-gpu` nic nie zmienia. Po
 ponownym uruchomieniu systemu okno rysuje się normalnie.
 
-Mechanizmu nie znamy — wiemy tylko, że restart pomógł. Jeśli trafisz na to
+**Zmierzone 12.10.2026, przy oknie białym w tej samej chwili:** strona
+w środku jest **zbudowana i narysowana w całości**. Pytanie zadane silnikowi
+przeglądarki (zdalne debugowanie) pokazało kompletny dokument — nagłówek,
+zakładki, liczniki, nawet czerwoną belkę z opisem błędu — a zrzut pobrany
+prosto z silnika wyglądał tak, jak okno powinno wyglądać. W tej samej chwili
+zrzut ekranu pokazywał biały prostokąt.
+
+Z tego wynika rzecz praktyczna: **to nie jest błąd w programie ani w jego
+interfejsie**. Program liczy, rysuje i wie, co ma pokazać; gotowy obraz nie
+trafia na ekran. Dlatego w logu nic nie ma (nie ma o czym pisać) i dlatego
+przywrócenie okna wystarcza.
+
+Mechanizmu po stronie systemu nie znamy — wiemy tylko, że restart też pomaga. Jeśli trafisz na to
 u siebie, przyda się jedna odpowiedź: **czy inne programy oparte na Electronie
 też miały wtedy białe okna** (Signal, Discord, VS Code, Slack). To odróżnia
 usterkę systemu od naszej.

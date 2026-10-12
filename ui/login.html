@@ -42,6 +42,13 @@
            cursor:pointer; background:var(--accent); color:var(--on-accent);
            border:none; border-radius:6px; }
   button[disabled] { opacity:.6; cursor:default; }
+  /* Pole hasła z podglądem. Przycisk musi wyłamać się z `width:100%` powyżej,
+     bo tamta reguła jest pisana pod przycisk „Zaloguj". */
+  .pole { display:flex; gap:6px; align-items:stretch; }
+  .pole input { flex:1 1 auto; min-width:0; }
+  .oko { width:auto; margin:0; padding:0 10px; background:var(--panel); color:var(--muted);
+         border:1px solid var(--line); border-radius:6px; display:flex; align-items:center; }
+  .oko svg { width:18px; height:18px; display:block; }
   .blad { color:var(--err); font-size:13px; margin-top:12px; min-height:19px; }
   .nota { color:var(--muted); font-size:11px; margin-top:16px; border-top:1px solid var(--line);
           padding-top:12px; }
@@ -53,7 +60,10 @@
     <p class="pod">Logowanie do interfejsu &middot; Sign in</p>
 
     <label for="p">Hasło &middot; Password</label>
-    <input type="password" id="p" name="password" autocomplete="current-password" required autofocus>
+    <div class="pole">
+      <input type="password" id="p" name="password" autocomplete="current-password" required autofocus>
+      <button type="button" class="oko" id="o" aria-pressed="false"></button>
+    </div>
 
     <button type="submit" id="b">Zaloguj &middot; Sign in</button>
     <div class="blad" id="e" role="alert"></div>
@@ -66,6 +76,26 @@
   const p = document.getElementById('p');
   const b = document.getElementById('b');
   const e = document.getElementById('e');
+  const o = document.getElementById('o');
+
+  // Podgląd wpisywanego hasła. Na telefonie, gdzie klawiatura nie pokazuje
+  // znaku po wpisaniu, pomyłka w długim haśle wygląda jak zła konfiguracja.
+  const OKO = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">'
+    + '<path d="M1 8s2.6-4.2 7-4.2S15 8 15 8s-2.6 4.2-7 4.2S1 8 1 8z"/><circle cx="8" cy="8" r="1.9"/></svg>';
+  const OKO_PRZEKRESLONE = OKO.replace('</svg>', '<path d="M2.5 13.5 13.5 2.5"/></svg>');
+  const rysujOko = () => {
+    const widoczne = p.type === 'text';
+    o.innerHTML = widoczne ? OKO_PRZEKRESLONE : OKO;
+    o.title = widoczne ? 'Ukryj hasło · Hide password' : 'Pokaż hasło · Show password';
+    o.setAttribute('aria-label', o.title);
+    o.setAttribute('aria-pressed', String(widoczne));
+  };
+  o.onclick = () => {
+    p.type = p.type === 'password' ? 'text' : 'password';
+    rysujOko();
+    p.focus();
+  };
+  rysujOko();
 
   // Informacja o trybie pracy. /api/session jest dostępne bez logowania
   // i celowo nie zdradza niczego poza tym, w jakim trybie stoi mostek.

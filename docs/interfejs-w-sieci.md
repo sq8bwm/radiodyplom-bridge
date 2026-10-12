@@ -63,7 +63,13 @@ Gotowy adres do wpisania na telefonie znajdziesz na zakładce **Stan**, w panelu
 tylko schemat adresu, nie numer portu.
 
 Hasło zapisuje się jako **hasz scrypt**, nigdy jawnie — tak jak PIN nie wraca
-z API w jawnej postaci. Certyfikat program wystawia sobie sam przy pierwszym
+z API w jawnej postaci. Przy polu jest przycisk z **oczkiem**: odsłania to,
+co właśnie wpisujesz — żeby literówka nie wyszła dopiero na telefonie. Hasła
+**już zapisanego** nie odsłoni nikt, bo program go nie zna.
+
+**Nie pamiętasz hasła?** Nie trzeba niczego odzyskiwać ani kasować: wpisz w to
+pole nowe i zapisz. Stare przestaje działać od razu, a **zmiana samego hasła nie
+wymaga restartu** — restartu wymagają tylko adres, port i HTTPS. Certyfikat program wystawia sobie sam przy pierwszym
 starcie w tym trybie, do `<katalog danych>/tls/` z prawami `0600`.
 
 Po restarcie w logu znajdziesz odcisk certyfikatu:

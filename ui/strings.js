@@ -17,7 +17,7 @@ export const THEMES = ['auto', 'light', 'dark'];
 const DICT = {
   pl: {
     'app.name': 'RadioDyplom Bridge',
-    'app.nameShort': 'RadioDyplom',
+    'app.nameShort': 'RD Bridge',
 
     'theme.auto': 'Motyw: system',
     'theme.light': 'Motyw: jasny',
@@ -443,7 +443,7 @@ const DICT = {
 
   en: {
     'app.name': 'RadioDyplom Bridge',
-    'app.nameShort': 'RadioDyplom',
+    'app.nameShort': 'RD Bridge',
 
     'theme.auto': 'Theme: system',
     'theme.light': 'Theme: light',

@@ -470,8 +470,11 @@
        a `overflow:hidden` tu nie wystarczy: przy `flex-wrap:wrap` przeglądarka
        najpierw ŁAMIE wiersz, a dopiero potem kurczy to, co w nim zostało
        (sprawdzone 12.10.2026 — ikony i tak spadały do trzeciego wiersza).
-       Na nazwę i znak jest tu 200 px; nazwa bierze 99, więc na znak zostaje
-       ~100 px, czyli jakieś jedenaście znaków. */
+       Na nazwę i znak jest tu 200 px; krótka nazwa bierze 73, więc na znak
+       zostaje ~127 px — a plakietka i tak ucina się na 20ch, czyli ok. 126 px.
+       Znak czternastoznakowy („VP2V/SQ8BWM/MM") mieści się jeszcze obok nazwy
+       z zapasem 8 px; dłuższy jest już ucinany do pełnych 126 px i wtedy
+       zapas spada do jednego piksela — dlatego próg stoi na piętnastu. */
     header.znak-dlugi #title { display:none; }
     header #profile { flex:0 0 auto; }
   }
@@ -528,9 +531,9 @@
   <span class="dot" id="dot"></span>
   <!-- Dwie formy nazwy, przełączane szerokością ekranu. Pełna nazwa bierze
        151 px, a na telefonie na nazwę zostaje 128 px — po oddaniu miejsca,
-       które zajmował zamaskowany PIN w plakietce obok. „RadioDyplom" mieści
-       się z zapasem i zostawia w nagłówku to, co ważniejsze: znak wywoławczy
-       i stan. -->
+       które zajmował zamaskowany PIN w plakietce obok. „RD Bridge" (73 px)
+       mieści się obok KAŻDEGO znaku wywoławczego, także tych z prefiksem
+       i dwoma przyrostkami; „RadioDyplom" (99 px) już nie. -->
   <h1 id="title">
     <span class="pelna" data-i18n="app.name">RadioDyplom Bridge</span><span
       class="krotka" data-i18n="app.nameShort">RadioDyplom</span>

@@ -157,7 +157,7 @@ describe('układ na wąskim ekranie', () => {
     // Zamiast chować nazwę do zera, oddajemy jej miejsce zajęte przez
     // zamaskowany PIN (zmierzone 12.10.2026: PIN brał 63 px ze 127 px
     // plakietki, pełna nazwa 151 px, krótka 99 px, a na nazwę zostawało
-    // 128 px po schowaniu PIN-u).
+    // 128 px po schowaniu PIN-u, a krótka nazwa „RD Bridge" bierze 73).
     assert.match(H, /<span\s+class="krotka" data-i18n="app\.nameShort">/);
     assert.match(S, /'app\.nameShort':/);
     const b = H.match(/@media \(max-width: 460px\) \{[\s\S]*?\n  \}/)[0];
@@ -169,7 +169,7 @@ describe('układ na wąskim ekranie', () => {
     // Przy bardzo długim znaku ustępuje nazwa programu, nie znak.
     assert.match(b, /header\.znak-dlugi #title \{ display:none; \}/);
     assert.match(b, /header #profile \{ flex:0 0 auto; \}/);
-    assert.match(R, /classList\.toggle\('znak-dlugi', znak\.length >= 12\)/);
+    assert.match(R, /classList\.toggle\('znak-dlugi', znak\.length >= 15\)/);
     // Znak wywoławczy ZOSTAJE — chowamy tylko PIN.
     assert.match(R, /<span class="pin">/);
     assert.doesNotMatch(b, /#profile \{ display:none/);

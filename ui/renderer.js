@@ -562,7 +562,7 @@ function renderStatus(s) {
     // Długi znak (prefiks DX, /P, /MM) nie mieści się na telefonie obok nazwy
     // programu. Wtedy ustępuje nazwa — co zrobić, mówi arkusz; tutaj tylko
     // mierzymy, bo CSS nie umie zapytać o długość tekstu.
-    document.querySelector('header').classList.toggle('znak-dlugi', znak.length >= 12);
+    document.querySelector('header').classList.toggle('znak-dlugi', znak.length >= 15);
   }
   // Banner jest sterowany STANEM, nie odpowiedzią na zapis — dzięki temu nie
   // ginie przy przełączeniu zakładki ani po ponownym otwarciu okna.

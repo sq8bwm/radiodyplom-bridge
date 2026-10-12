@@ -32,6 +32,16 @@ const THEMES = ['auto', 'light', 'dark'];
  */
 const SKALE = ['normal', 'duzy', 'bardzo-duzy'];
 
+/**
+ * Tryby widoku okna. `simple` to krótka strona dla kogoś, kto chce tylko
+ * wiedzieć, czy mostek działa; `advanced` to pełny układ z zakładkami.
+ *
+ * Brak pola znaczy `advanced` CELOWO: konfiguracje sprzed tej wersji należą
+ * do osób, które pracują z pełnym widokiem i nie prosiły o zmianę. Nowe
+ * instalacje dostają `simple` z `config.example.json`.
+ */
+const WIDOKI = ['simple', 'advanced'];
+
 /** Zmiany wymagające restartu (nie da się ich zastosować na żywo). */
 const RESTART_KEYS = ['udp.enabled', 'udp.host', 'udp.port', 'udp.multicastGroups',
   'api.port', 'api.enabled',
@@ -100,6 +110,7 @@ export function editableConfig(cfg) {
     // i po restarcie okno wracało do poprzedniego motywu.
     theme: THEMES.includes(cfg.theme) ? cfg.theme : 'auto',
     fontScale: SKALE.includes(cfg.fontScale) ? cfg.fontScale : 'normal',
+    view: WIDOKI.includes(cfg.view) ? cfg.view : 'advanced',
     tcp: {
       enabled: cfg.tcp?.enabled === true,
       host: cfg.tcp?.host || '127.0.0.1',
@@ -319,6 +330,11 @@ export function applyConfig(daemon, patch) {
   if (patch.fontScale !== undefined) {
     cfg.fontScale = SKALE.includes(patch.fontScale) ? patch.fontScale : 'normal';
   }
+  // Wybór widoku — walidowany wobec listy z tego samego powodu co motyw:
+  // nieznana wartość zostawiłaby okno bez żadnego widoku.
+  if (patch.view !== undefined) {
+    cfg.view = WIDOKI.includes(patch.view) ? patch.view : 'advanced';
+  }
 
   // --- zastosuj na żywo, co się da ---
   // Flagę „brak PIN-u" trzeba przeliczyć, inaczej interfejs pokazywałby
@@ -428,6 +444,9 @@ export function writeConfigFile(cfg) {
     // Bez tego wybór ginął przy pierwszym zapisie z okna — rozwinięcie
     // `original` wygrywa, a tam tego pola jeszcze nie ma.
     fontScale: cfg.fontScale || 'normal',
+    // Bez tego przełączenie widoku żyłoby do pierwszego zapisu z Konfiguracji:
+    // rozwinięcie `original` wygrywa, a tam tego pola jeszcze nie ma.
+    view: cfg.view || 'advanced',
     tcp: {
       ...(original.tcp || {}),
       enabled: cfg.tcp?.enabled === true,

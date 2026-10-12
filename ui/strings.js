@@ -324,6 +324,35 @@ const DICT = {
     'state.noConn': 'brak łączności',
     'state.coreDown': 'Rdzeń nie wystartował',
 
+    // Widok prosty. Teksty są dłuższe niż `state.*` CELOWO: tam opisują ikonę,
+    // której znaczenie użytkownik już zna, a tu są jedynym zdaniem na stronie
+    // i muszą odpowiedzieć osobie, która uruchomiła program pierwszy raz.
+    'prosty.ok': 'Działa — czeka na QSO z loggera',
+    'prosty.okQueue': 'Działa — dosyła zaległe łączności',
+    'prosty.rejected': 'Działa, ale są odrzucone łączności',
+    'prosty.paused': 'Wstrzymane — nic nie leci na serwer',
+    'prosty.offline': 'Brak łączności z radiodyplom.pl — ponawiam',
+    'prosty.dry': 'Próba na sucho — nic nie leci na serwer',
+    'prosty.sentToday': 'z dzisiaj',
+    'prosty.pending': 'czeka',
+    'prosty.lastQso': 'Ostatnie łączności',
+    'prosty.empty': 'Jeszcze nic nie przyszło z loggera',
+    'prosty.tipSentToday': 'Łączności z dzisiejszą datą, które doszły na serwer. '
+      + 'Liczone z dziennika wysyłek, więc przeżywają restart programu.',
+    'prosty.tipPending': 'Łączności zapisane na dysku, czekające na wysłanie — '
+      + 'na przykład gdy nie ma internetu. Program ponawia sam.',
+    'prosty.pinTitle': 'Zostało jedno: wpisz PIN z radiodyplom.pl',
+    'prosty.pinText': 'Mostek już nasłuchuje loggera, ale bez PIN-u nie wyśle ani jednego QSO. '
+      + 'PIN jest w Twoim profilu na radiodyplom.pl — wklej go tutaj, reszta działa od razu.',
+    'prosty.pinSaved': 'Zapisane. Sprawdzam połączenie…',
+    'prosty.coreDown': 'Program nie wstał do końca — zajrzyj do widoku pełnego',
+
+    'btn.advanced': 'Zaawansowane',
+    'btn.simpleView': 'Widok prosty',
+    'btn.pinSave': 'Zapisz i sprawdź',
+    'tip.advanced': 'Pełny widok: zakładki, konfiguracja, statystyki i log',
+    'tip.simpleView': 'Krótki widok: czy działa, ile poszło i co ostatnio',
+
     'msg.noPinHint': 'Brak PIN-u API. Wpisz go w zakładce Konfiguracja — '
       + 'do tego czasu nic nie zostanie wysłane.',
     'msg.lastSent': 'Ostatnie wysłane: ',
@@ -718,6 +747,36 @@ const DICT = {
     'state.noPin': 'no API PIN',
     'state.noConn': 'no connection',
     'state.coreDown': 'Core failed to start',
+
+    // Simple view. Longer than `state.*` ON PURPOSE: there they label an icon
+    // the user already knows, here they are the only sentence on the page and
+    // must answer someone who has just started the program for the first time.
+    'prosty.ok': 'Running — waiting for QSOs from your logger',
+    'prosty.okQueue': 'Running — sending the backlog',
+    'prosty.rejected': 'Running, but some QSOs were rejected',
+    'prosty.paused': 'Paused — nothing is being uploaded',
+    'prosty.offline': 'No connection to radiodyplom.pl — retrying',
+    'prosty.dry': 'Dry run — nothing is being uploaded',
+    'prosty.sentToday': 'from today',
+    'prosty.pending': 'waiting',
+    'prosty.lastQso': 'Recent QSOs',
+    'prosty.empty': 'Nothing has arrived from the logger yet',
+    'prosty.tipSentToday': 'QSOs dated today that reached the server. Counted from the '
+      + 'upload journal, so they survive a restart.',
+    'prosty.tipPending': 'QSOs stored on disk, waiting to be uploaded — for example when '
+      + 'there is no internet. The program retries on its own.',
+    'prosty.pinTitle': 'One thing left: enter your radiodyplom.pl PIN',
+    'prosty.pinText': 'The bridge is already listening to your logger, but without a PIN it '
+      + 'will not upload a single QSO. The PIN is in your profile on radiodyplom.pl — paste '
+      + 'it here, everything else works out of the box.',
+    'prosty.pinSaved': 'Saved. Checking the connection…',
+    'prosty.coreDown': 'The program did not fully start — see the full view',
+
+    'btn.advanced': 'Advanced',
+    'btn.simpleView': 'Simple view',
+    'btn.pinSave': 'Save and check',
+    'tip.advanced': 'Full view: tabs, settings, statistics and log',
+    'tip.simpleView': 'Short view: whether it works, how much went out and what came last',
 
     'msg.noPinHint': 'No API PIN. Enter it in Settings — nothing will be uploaded until then.',
     'msg.lastSent': 'Last uploaded: ',

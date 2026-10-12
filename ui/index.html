@@ -435,6 +435,49 @@
   }
   .note { border-left:3px solid var(--warn); padding:8px 10px; background:var(--panel);
           border-radius:0 6px 6px 0; font-size:0.75rem; margin-top:10px; }
+
+  /* ---------- widok prosty ----------
+     Krótka strona dla kogoś, kto chce wiedzieć tylko jedno: czy mostek działa.
+     Pełny układ z zakładkami potrafi przestraszyć przy pierwszym uruchomieniu,
+     a przez pierwszą godzinę nie ma w nim nic do roboty — QSO lecą same.
+
+     Stan mówi JEDNA LINIJKA małym tekstem, nie panel: panel zabierał trzecią
+     część ekranu, żeby powiedzieć „działa". Sama kropka w nagłówku byłaby
+     jeszcze mniejsza, ale nowy użytkownik nie wie, co znaczy jej kolor. */
+  .linijka { display:flex; align-items:center; gap:8px; color:var(--muted);
+             font-size:0.8125rem; margin:0 2px 12px; }
+  .linijka.zle { color:var(--err); }
+  .linijka.ostrzega { color:var(--warn); }
+
+  /* Kafelki: sama liczba i krótka etykieta, wyjaśnienie w dymku. Na telefonie
+     ZOSTAJĄ obok siebie (stąd `nowrap` niżej) — jeden pod drugim spychały
+     listę łączności poniżej krawędzi ekranu, a to jedyna treść, po którą
+     wraca się do tego widoku. */
+  .liczby { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .liczba { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+            padding:10px 16px; cursor:help; display:flex; align-items:baseline; gap:10px; }
+  .liczba .wartosc { font-size:1.5rem; font-weight:600; line-height:1; }
+  .liczba .etykieta { font-size:0.75rem; color:var(--muted); }
+  .liczba.czeka .wartosc { color:var(--warn); }
+
+  /* Belka PIN-u. W widoku prostym nie ma zakładki Konfiguracja, więc jedyne
+     ustawienie, bez którego program jest bezużyteczny, musi dać się wpisać
+     tutaj — inaczej „prosty dla nowych" kończyłby się na pierwszym kroku. */
+  .pin-bar { border-left:3px solid var(--warn);
+             background:var(--panel); border-radius:0 8px 8px 0;
+             padding:14px 16px; margin-bottom:12px; }
+  .pin-bar b { display:block; margin-bottom:4px; }
+  .pin-bar .tresc { font-size:0.8125rem; color:var(--muted); }
+  .pin-bar .rzad { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+  .pin-bar input { flex:0 1 220px; min-width:0; }
+  .pin-bar .echo { font-size:0.75rem; color:var(--ok); }
+
+  @media (max-width: 620px) {
+    .liczby { flex-wrap:nowrap; gap:8px; }
+    .liczba { flex:1 1 0; min-width:0; padding:10px 12px; gap:8px; }
+    .liczba .wartosc { font-size:1.375rem; }
+    .pin-bar input { flex:1 1 140px; }
+  }
 </style>
 </head>
 <body>
@@ -456,6 +499,11 @@
     <button class="icon-btn" id="themeBtn" title="Motyw / Theme"></button>
     <button class="icon-btn" id="fsBtn" title="Rozmiar tekstu / Text size"></button>
     <button class="act sec" id="btnPause" data-i18n="btn.pause">Wstrzymaj</button>
+    <!-- Przełącznik widoku stoi obok „Wstrzymaj", bo to jedyne dwa przyciski,
+         których używa się w trakcie pracy. Napis zmienia się zależnie od tego,
+         gdzie jesteśmy — droga powrotna MUSI być równie widoczna jak droga
+         tam, inaczej widok prosty byłby pułapką. -->
+    <button class="act sec" id="btnWidok"></button>
     <span class="hdr-sep"></span>
     <button class="act sec danger" id="btnQuit" data-i18n="btn.quit" title=""></button>
   </div>
@@ -494,7 +542,42 @@
 </nav>
 </div>
 
-<main>
+<!-- WIDOK PROSTY. Osobny `main`, nie kolejna zakładka: zakładka pokazuje się
+     RAZEM z paskiem zakładek, a tu chodzi o to, żeby paska nie było widać.
+     Dwa `<main>` są poprawne, dopóki wszystkie poza jednym mają `hidden`. -->
+<main id="prosty" hidden>
+  <div class="pin-bar" id="prostyPin" hidden>
+    <b data-i18n="prosty.pinTitle"></b>
+    <div class="tresc" data-i18n="prosty.pinText"></div>
+    <div class="rzad">
+      <input type="text" id="prostyPinInput" placeholder="ABCD-1234" autocomplete="off">
+      <button class="act" id="btnProstyPin" data-i18n="btn.pinSave"></button>
+      <span class="echo" id="prostyPinEcho"></span>
+    </div>
+  </div>
+
+  <div class="linijka" id="prostyStan">
+    <span class="dot" id="prostyDot"></span><span id="prostyStanTekst"></span>
+  </div>
+
+  <div class="liczby">
+    <div class="liczba" id="prostyKSent">
+      <span class="wartosc" id="prostySent">0</span>
+      <span class="etykieta" data-i18n="prosty.sentToday"></span>
+    </div>
+    <div class="liczba czeka" id="prostyKPending">
+      <span class="wartosc" id="prostyPending">0</span>
+      <span class="etykieta" data-i18n="prosty.pending"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 data-i18n="prosty.lastQso"></h2>
+    <div id="prostaLista"></div>
+  </div>
+</main>
+
+<main id="pelny">
   <section id="stan">
     <div class="panel">
       <h2 data-i18n="panel.account"></h2>

@@ -144,7 +144,10 @@ niewpisany, plakietka w nagłówku mówi wprost, czego brakuje.
 **1. Weź PIN API.** W Managerze radiodyplom: *Dostęp API → Generuj nowy PIN API →
 Zapisz PIN API*. PIN jest przypisany do Twojego profilu użytkownika.
 
-**2. Wpisz go w programie**, zakładka **Konfiguracja**. Działa od razu, bez restartu.
+**2. Wpisz go w programie.** Świeża instalacja wita krótkim widokiem z belką
+„Zostało jedno: wpisz PIN z radiodyplom.pl" — wklej go tam i gotowe. Pełny widok
+(zakładki, w tym **Konfiguracja**) jest pod przyciskiem **Zaawansowane**
+w nagłówku; przycisk obok prowadzi z powrotem. Działa od razu, bez restartu.
 Później pole pokazuje PIN **zamaskowany** (`ABCD-****`) — zostaw tak, żeby go nie
 zmieniać. PIN nigdy nie opuszcza programu w jawnej postaci, także przez API stanu.
 
@@ -173,6 +176,11 @@ tryb próbny i pracuj normalnie.
 
 Program żyje **w zasobniku systemowym**. Zamknięcie okna go nie kończy — mostek
 pracuje dalej. Do zakończenia służy przycisk **„Zakończ"** w oknie.
+
+Okno ma dwa widoki: **prosty** (stan, dwie liczby, ostatnie łączności) i **pełny**
+(zakładki, konfiguracja, statystyki, log). Przełącznik stoi w nagłówku obok
+„Wstrzymaj", a wybór zapamiętuje się między uruchomieniami — opis w
+[Interfejs graficzny i API stanu](docs/interfejs.md#dwa-widoki-prosty-i-pełny).
 
 Kolor plakietki i ikony mówi wszystko bez otwierania okna:
 

@@ -548,8 +548,21 @@ function renderStatus(s) {
   if (s.radiodyplom.pinMissing) {
     badge.textContent = t('state.noPin');
   } else {
-    const who = `${s.radiodyplom.profile || '—'} · ${s.radiodyplom.pin}`;
-    badge.textContent = bad ? `${who} · ${t('state.noConn')}` : who;
+    // Znak i PIN osobno, żeby wąski ekran mógł schować sam PIN. Zamaskowany
+    // PIN niesie jedną informację — „jest ustawiony" — i tę samą niesie
+    // kropka stanu; znak wywoławczy niesie coś, czego nie ma nigdzie indziej.
+    const pin = `<span class="pin"> · ${esc(s.radiodyplom.pin)}</span>`;
+    // Dopisek o braku łączności chowa się na telefonie razem z PIN-em: tam
+    // mówi to samo czerwona plakietka i czerwona kropka obok, a w widoku
+    // prostym jeszcze linijka stanu pełnym zdaniem. Zostawiony na wąskim
+    // ekranie rozpychał plakietkę tak, że ikony spadały do trzeciego wiersza.
+    const konc = bad ? `<span class="stan"> · ${esc(t('state.noConn'))}</span>` : '';
+    const znak = s.radiodyplom.profile || '—';
+    badge.innerHTML = `${esc(znak)}${pin}${konc}`;
+    // Długi znak (prefiks DX, /P, /MM) nie mieści się na telefonie obok nazwy
+    // programu. Wtedy ustępuje nazwa — co zrobić, mówi arkusz; tutaj tylko
+    // mierzymy, bo CSS nie umie zapytać o długość tekstu.
+    document.querySelector('header').classList.toggle('znak-dlugi', znak.length >= 12);
   }
   // Banner jest sterowany STANEM, nie odpowiedzią na zapis — dzięki temu nie
   // ginie przy przełączeniu zakładki ani po ponownym otwarciu okna.

@@ -17,6 +17,7 @@ export const THEMES = ['auto', 'light', 'dark'];
 const DICT = {
   pl: {
     'app.name': 'RadioDyplom Bridge',
+    'app.nameShort': 'RadioDyplom',
 
     'theme.auto': 'Motyw: system',
     'theme.light': 'Motyw: jasny',
@@ -336,7 +337,7 @@ const DICT = {
     'prosty.sentToday': 'z dzisiaj',
     'prosty.pending': 'czeka',
     'prosty.lastQso': 'Ostatnie łączności',
-    'prosty.empty': 'Jeszcze nic nie przyszło z loggera',
+    'prosty.empty': 'Od startu programu nic jeszcze nie przyszło',
     'prosty.tipSentToday': 'Łączności z dzisiejszą datą, które doszły na serwer. '
       + 'Liczone z dziennika wysyłek, więc przeżywają restart programu.',
     'prosty.tipPending': 'Łączności zapisane na dysku, czekające na wysłanie — '
@@ -442,6 +443,7 @@ const DICT = {
 
   en: {
     'app.name': 'RadioDyplom Bridge',
+    'app.nameShort': 'RadioDyplom',
 
     'theme.auto': 'Theme: system',
     'theme.light': 'Theme: light',
@@ -760,7 +762,7 @@ const DICT = {
     'prosty.sentToday': 'from today',
     'prosty.pending': 'waiting',
     'prosty.lastQso': 'Recent QSOs',
-    'prosty.empty': 'Nothing has arrived from the logger yet',
+    'prosty.empty': 'Nothing has arrived since the program started',
     'prosty.tipSentToday': 'QSOs dated today that reached the server. Counted from the '
       + 'upload journal, so they survive a restart.',
     'prosty.tipPending': 'QSOs stored on disk, waiting to be uploaded — for example when '

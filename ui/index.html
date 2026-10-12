@@ -142,6 +142,7 @@
      360 px łamała się w środku i nagłówek brał TRZY wiersze (zmierzone
      12.10.2026: 140 px wysokości, przy dwóch wierszach 94 px). */
   .hdr-icons { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+  header #title .krotka { display:none; }
   .hdr-sep { width:1px; height:22px; background:var(--line); flex:none; }
   /* Nagłówek i zakładki przyklejone RAZEM, jednym pojemnikiem.
      Osobne `top` dla zakładek byłoby kruche: nagłówek zawija się przy wąskim
@@ -456,7 +457,23 @@
      właśnie otworzył adres mostka, a nazwa i tak stoi w tytule karty i okna.
      Próg zmierzony: od 461 px nazwa, znak i ikony mieszczą się razem. */
   @media (max-width: 460px) {
-    header #title { display:none; }
+    header #title .pelna { display:none; }
+    header #title .krotka { display:inline; }
+    /* Zamaskowany PIN schodzi z nagłówka: mówi tylko tyle, że PIN jest
+       ustawiony, a to samo mówi zielona kropka obok. Znak wywoławczy zostaje,
+       bo on mówi, CZYJE QSO lecą — przy dwóch kontach to jedyna różnica
+       widoczna na pierwszy rzut oka. */
+    header #profile .pin, header #profile .stan { display:none; }
+    /* Przy bardzo długim znaku („VP2V/SQ8BWM/MM" to 119 px zamiast 64) ustępuje
+       CAŁA nazwa, nie znak: bez nazwy programu da się żyć, z uciętym znakiem
+       nie. Klasę nadaje renderer, bo CSS nie umie zapytać o długość tekstu —
+       a `overflow:hidden` tu nie wystarczy: przy `flex-wrap:wrap` przeglądarka
+       najpierw ŁAMIE wiersz, a dopiero potem kurczy to, co w nim zostało
+       (sprawdzone 12.10.2026 — ikony i tak spadały do trzeciego wiersza).
+       Na nazwę i znak jest tu 200 px; nazwa bierze 99, więc na znak zostaje
+       ~100 px, czyli jakieś jedenaście znaków. */
+    header.znak-dlugi #title { display:none; }
+    header #profile { flex:0 0 auto; }
   }
   .note { border-left:3px solid var(--warn); padding:8px 10px; background:var(--panel);
           border-radius:0 6px 6px 0; font-size:0.75rem; margin-top:10px; }
@@ -509,7 +526,15 @@
 <div class="topbar">
 <header>
   <span class="dot" id="dot"></span>
-  <h1 id="title" data-i18n="app.name">RadioDyplom Bridge</h1>
+  <!-- Dwie formy nazwy, przełączane szerokością ekranu. Pełna nazwa bierze
+       151 px, a na telefonie na nazwę zostaje 128 px — po oddaniu miejsca,
+       które zajmował zamaskowany PIN w plakietce obok. „RadioDyplom" mieści
+       się z zapasem i zostawia w nagłówku to, co ważniejsze: znak wywoławczy
+       i stan. -->
+  <h1 id="title">
+    <span class="pelna" data-i18n="app.name">RadioDyplom Bridge</span><span
+      class="krotka" data-i18n="app.nameShort">RadioDyplom</span>
+  </h1>
   <span class="badge" id="profile">—</span>
   <span class="badge dry" id="dryBadge" hidden>DRY-RUN</span>
   <span class="badge st-error" id="probBadge" hidden style="cursor:pointer"></span>

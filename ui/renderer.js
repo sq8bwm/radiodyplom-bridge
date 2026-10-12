@@ -21,8 +21,39 @@ function applyLang() {
   drawThemeButton();         // podpowiedzi są tłumaczone
   drawSkalaButton();
   drawLangButton();
+  drawPasswordToggle();      // tytuł przycisku też jest tłumaczony
   refresh();
   if ($('konfig').classList.contains('active')) loadConfig();
+}
+
+/**
+ * Podgląd wpisywanego hasła do interfejsu.
+ *
+ * Pokazuje TYLKO to, co człowiek właśnie wpisał. Zapisanego hasła nie da się
+ * odsłonić, bo program go nie zna — w konfiguracji leży sam skrót. Przycisk
+ * ma więc chronić przed literówką w haśle, które potem przepisuje się na
+ * telefonie, a nie przypominać zapomniane.
+ */
+function drawPasswordToggle() {
+  const b = $('fApiPasswordOko');
+  if (!b) return;
+  const widoczne = $('fApiPassword').type === 'text';
+  b.innerHTML = widoczne ? SVG.okoPrzekreslone : SVG.oko;
+  b.title = t(widoczne ? 'btn.hidePassword' : 'btn.showPassword');
+  b.setAttribute('aria-label', b.title);
+  b.setAttribute('aria-pressed', String(widoczne));
+}
+
+function buildPasswordToggle() {
+  const b = $('fApiPasswordOko');
+  if (!b) return;
+  drawPasswordToggle();
+  b.onclick = () => {
+    const pole = $('fApiPassword');
+    pole.type = pole.type === 'password' ? 'text' : 'password';
+    drawPasswordToggle();
+    pole.focus();
+  };
 }
 
 /** Przycisk języka: flaga języka BIEŻĄCEGO, klik przełącza na następny. */
@@ -74,6 +105,13 @@ const SVG = {
   zamekOtwarty: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">'
     + '<rect x="3" y="7" width="10" height="7" rx="1.2"/>'
     + '<path d="M5.5 7V5.2a2.5 2.5 0 0 1 4.9-.6"/></svg>',
+  // podgląd hasła: oko otwarte = teraz ukryte (klik pokaże), przekreślone = widoczne
+  oko: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">'
+    + '<path d="M1 8s2.6-4.2 7-4.2S15 8 15 8s-2.6 4.2-7 4.2S1 8 1 8z"/>'
+    + '<circle cx="8" cy="8" r="1.9"/></svg>',
+  okoPrzekreslone: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">'
+    + '<path d="M1 8s2.6-4.2 7-4.2S15 8 15 8s-2.6 4.2-7 4.2S1 8 1 8z"/>'
+    + '<circle cx="8" cy="8" r="1.9"/><path d="M2.5 13.5 13.5 2.5"/></svg>',
   // flagi — biały pas dostaje obramowanie, inaczej ginie na jasnym tle
   pl: '<svg viewBox="0 0 20 14"><rect x=".5" y=".5" width="19" height="6.5" fill="#fff"/>'
     + '<rect x=".5" y="7" width="19" height="6.5" fill="#dc143c"/>'
@@ -1524,6 +1562,7 @@ $('btnQuit').onclick = async () => {
   buildSkalaButton(cfg?.fontScale || 'normal');
   setLang(cfg?.language || 'pl');
   buildLangButton(getLang());
+  buildPasswordToggle();
   applyLang();
   setInterval(refresh, 2000);
   setInterval(() => { if ($('log').classList.contains('active')) refreshLog(); }, 2000);

@@ -189,6 +189,10 @@
     width:100%; padding:0.45em 0.6em; border:1px solid var(--line); border-radius:6px;
     background:var(--bg); color:var(--text); font-size:0.8125rem; font-family:inherit; }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  /* Pole hasła z przyciskiem podglądu: input ma `width:100%`, więc w wierszu
+     flex wypychałby przycisk poza panel. */
+  .row.haslo { flex-wrap:nowrap; gap:6px; }
+  .row.haslo input { flex:1 1 auto; width:auto; min-width:0; }
   /* Cel fan-outu: znacznik + znak stacji + operator + PIN + usuwanie. */
   .three { display:grid; grid-template-columns:auto 1fr 1fr 1fr auto auto; gap:8px; align-items:end; }
   .three.off input, .three.off .t-lbl { opacity:.45; }
@@ -621,7 +625,10 @@
           <input type="number" id="fApiPort" min="1024" max="65535"></div>
       </div>
       <label data-i18n="label.apiPassword"></label>
-      <input type="password" id="fApiPassword" autocomplete="new-password">
+      <div class="row haslo">
+        <input type="password" id="fApiPassword" autocomplete="new-password">
+        <button type="button" class="icon-btn" id="fApiPasswordOko" aria-pressed="false"></button>
+      </div>
       <label class="chk"><input type="checkbox" id="fApiReadOnly">
         <span data-i18n="label.apiReadOnly"></span></label>
       <div class="note" data-i18n="note.apiNetwork"></div>

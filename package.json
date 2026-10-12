@@ -18,11 +18,11 @@
     "requeue": "node src/tools/requeue.js",
     "ui": "electron ui/main.js",
     "pack:linux": "electron-builder --linux && npm run checksums",
-    "pack:win": "electron-builder --win && npm run checksums",
+    "pack:win": "electron-builder --win -c.portable.unpackDirName=RadioDyplomBridge-$npm_package_version && npm run checksums",
     "pack:mac": "electron-builder --mac && npm run checksums",
     "pack:headless": "node src/tools/build-headless-deb.js",
     "pack:all": "npm run pack && npm run pack:headless",
-    "pack": "electron-builder --linux --win && npm run checksums",
+    "pack": "electron-builder --linux --win -c.portable.unpackDirName=RadioDyplomBridge-$npm_package_version && npm run checksums",
     "test": "node --test test/*.test.js",
     "checksums": "node src/tools/checksums.js"
   },

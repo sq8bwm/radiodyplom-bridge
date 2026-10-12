@@ -84,6 +84,49 @@ Przy pierwszym uruchomieniu Windows zapyta o zezwolenie dla Node/aplikacji na
 przyjmowanie połączeń. Bez zgody dla **sieci prywatnej** datagramy z innych maszyn
 nie dojdą.
 
+Wersja instalowana leży pod stałą ścieżką, więc **pyta raz** i na tym koniec.
+
+#### Wersja przenośna pyta po każdej aktualizacji
+
+Plik przenośny nie uruchamia się wprost: przy każdym starcie **rozpakowuje
+program do katalogu tymczasowego** i stamtąd go uruchamia. Zapora rozpoznaje
+program po ścieżce, a ta jest inna dla każdego wydania — dlatego po przejściu
+na nowszą wersję **pytanie wraca**. To nie jest usterka ani objaw podmiany
+pliku.
+
+Co z tego wynika w praktyce:
+
+- **zezwól dla sieci prywatnej** po każdej aktualizacji, jeśli korzystasz
+  z loggera na innym komputerze albo z okna w przeglądarce w sieci lokalnej;
+- po starej wersji **zostaje katalog w `%TEMP%`** — u nas zmierzone **264 MB**.
+  Windows sam go nie usunie. W nowszych wydaniach nazywa się on
+  `RadioDyplomBridge-<wersja>`, więc widać, co to jest; wcześniej był to
+  losowy ciąg w rodzaju `3KafYbyQ3LFNllMLQgwmn4tBmIH`;
+- w zaporze zostają **martwe reguły** wskazujące na ścieżki, których już nie ma.
+  Nic nie psują, ale zaśmiecają listę.
+
+Sprzątanie starych wpisów — najpierw podejrzyj, co by zniknęło:
+
+```powershell
+Get-NetFirewallRule | Where-Object { $_.DisplayName -like "*RadioDyplom*" } |
+  ForEach-Object { "{0} {1} {2}" -f $_.Direction, $_.Action,
+    ($_ | Get-NetFirewallApplicationFilter).Program }
+```
+
+Usuń tylko te, które wskazują na `\AppData\Local\Temp\`:
+
+```powershell
+Get-NetFirewallRule | Where-Object { $_.DisplayName -like "*RadioDyplom*" } |
+  Where-Object { ($_ | Get-NetFirewallApplicationFilter).Program -like "*\appdata\local\temp\*" } |
+  Remove-NetFirewallRule
+```
+
+Reguła wskazująca na `…\Programs\RadioDyplom Bridge\…` to wersja
+instalowana — tej nie ruszaj.
+
+Katalogu tymczasowego **nie myl z danymi**: konfiguracja, kolejka i log nigdy
+tam nie trafiają. Gdzie leżą — patrz [Katalog danych](#katalog-danych) niżej.
+
 ### Rdzeń nie startuje — co sprawdzić
 
 Gdy w oknie pojawi się czerwony baner **„Mostek nie wystartował"**, powód jest

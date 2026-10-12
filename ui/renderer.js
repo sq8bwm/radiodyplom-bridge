@@ -1692,7 +1692,14 @@ $('btnLogEnd').onclick = () => {
 };
 $('logbox').addEventListener('scroll', updateLogFollow);
 
-if (!window.bridge.quit) $('btnQuit').hidden = true;
+// W przeglądarce nie ma czego zamykać, więc „Zakończ" znika — a razem z nim
+// kreska, która go oddzielała. Sama wisiała na końcu rzędu i oddzielała
+// przełącznik widoku od niczego; przy wąskim ekranie potrafiła nawet spaść
+// do osobnego wiersza.
+if (!window.bridge.quit) {
+  $('btnQuit').hidden = true;
+  document.querySelector('.hdr-sep').hidden = true;
+}
 
 // Zapis zgłoszenia istnieje tylko w oknie na pulpicie — w przeglądarce nie ma
 // gdzie zapisać pliku. Tam zostaje `npm run report` na maszynie mostka.

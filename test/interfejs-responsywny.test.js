@@ -134,6 +134,33 @@ describe('układ na wąskim ekranie', () => {
     assert.doesNotMatch(b, /\.tbl-scroll thead \{ display:none/);
   });
 
+  test('nagłówek mieści się w dwóch wierszach na telefonie', () => {
+    // Zmierzone 12.10.2026 przy 360 px: ikony (3 × 29 px), „Wstrzymaj" i
+    // przełącznik widoku nie mieszczą się w jednym rzędzie — brakowało 6 px,
+    // więc przełącznik spadał do TRZECIEGO wiersza. Trzy rzeczy trzymają
+    // nagłówek w dwóch wierszach i każda z nich jest tu pilnowana:
+    // ikony w osobnej grupie, ciaśniejsze przyciski i nazwa programu, która
+    // poniżej 460 px ustępuje miejsca znakowi.
+    const ikony = H.match(/<div class="hdr-icons">[\s\S]*?<\/div>/);
+    assert.ok(ikony, 'ikony nagłówka muszą stać w osobnej grupie .hdr-icons');
+    for (const id of ['langBtn', 'themeBtn', 'fsBtn']) {
+      assert.match(ikony[0], new RegExp(`id="${id}"`), `${id} należy do .hdr-icons`);
+    }
+    const b = blokWaski();
+    assert.match(b, /\.hdr-icons \{ margin-left:auto; \}/);
+    assert.match(b, /header button\.act \{ padding:10px 12px; \}/);
+    assert.match(H, /@media \(max-width: 460px\) \{\s*header #title \{ display:none; \}/);
+  });
+
+  test('nazwa programu znika dopiero poniżej głównego progu', () => {
+    // Próg nazwy jest WĘŻSZY od telefonowego: między 461 a 620 px nazwa,
+    // znak i ikony mieszczą się razem, więc nie ma po co jej chować.
+    const [, glowny] = H.match(PROG);
+    const [, nazwy] = H.match(/@media \(max-width: (\d+)px\) \{\s*header #title/);
+    assert.ok(Number(nazwy) < Number(glowny),
+      `próg nazwy ${nazwy}px musi być niższy od telefonowego ${glowny}px`);
+  });
+
   test('reguły wąskiego ekranu nie ruszają okna na monitorze', () => {
     // Okno startuje w 900×700, więc próg musi być wyraźnie niżej. Gdyby ktoś
     // podniósł go do szerokości okna, układ telefonu wszedłby na monitor.

@@ -55,8 +55,15 @@ describe('strona w przeglądarce', () => {
   });
 
   test('renderer chowa przyciski, których most nie daje', () => {
-    assert.match(RENDERER, /if \(!window\.bridge\.quit\) \$\('btnQuit'\)\.hidden = true;/);
+    assert.match(RENDERER, /if \(!window\.bridge\.quit\) \{\s*\$\('btnQuit'\)\.hidden = true;/);
     assert.match(RENDERER, /if \(!window\.bridge\.openLog\) \$\('btnOpenLog'\)\.hidden = true;/);
+  });
+
+  test('kreska rozdzielająca znika razem z „Zakończ"', () => {
+    // Kreska oddziela akcje od przycisku, który kończy program. Bez niego
+    // wisiała na końcu rzędu i oddzielała przełącznik widoku od niczego,
+    // a przy wąskim oknie spadała do osobnego wiersza.
+    assert.match(RENDERER, /document\.querySelector\('\.hdr-sep'\)\.hidden = true;/);
   });
 
   test('most oddaje te same kształty co IPC', () => {

@@ -134,6 +134,14 @@
                  /* Do prawej krawędzi także po zawinięciu — dzięki temu
                     „Zakończ" nigdy nie stoi pod plakietkami z lewej. */
                  margin-left:auto; }
+  /* Ikony (język, motyw, rozmiar tekstu) stoją OSOBNO od przycisków akcji.
+     Na szerokim ekranie to nie robi różnicy — grupy sąsiadują i wygląda jak
+     jeden rząd. Różnica jest na telefonie: ikony zostają wtedy w pierwszym
+     wierszu, przy znaku, a przyciski mają cały drugi wiersz dla siebie.
+     Zanim je rozdzieliłam, wszystko siedziało w `.hdr-actions`, która przy
+     360 px łamała się w środku i nagłówek brał TRZY wiersze (zmierzone
+     12.10.2026: 140 px wysokości, przy dwóch wierszach 94 px). */
+  .hdr-icons { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
   .hdr-sep { width:1px; height:22px; background:var(--line); flex:none; }
   /* Nagłówek i zakładki przyklejone RAZEM, jednym pojemnikiem.
      Osobne `top` dla zakładek byłoby kruche: nagłówek zawija się przy wąskim
@@ -314,6 +322,14 @@
        tu zbędny: przyciski i tak zajmują cały rząd. */
     header .grow { display:none; }
     .hdr-actions { flex:1 1 100%; flex-wrap:wrap; row-gap:8px; }
+    /* Ikony dociskamy do prawej krawędzi pierwszego wiersza: razem ze znakiem
+       po lewej dają rząd, który wygląda na zaplanowany, a nie na resztę. */
+    .hdr-icons { margin-left:auto; }
+    /* Przyciski w nagłówku węższe niż reszta — tylko one muszą zmieścić się
+       w jednym wierszu we trzy („Wstrzymaj", przełącznik widoku, „Zakończ").
+       Przy 16 px po bokach brakowało 6 px i przełącznik spadał do trzeciego
+       wiersza, ciągnąc za sobą kreskę rozdzielającą. */
+    header button.act { padding:10px 12px; }
     /* Stała szerokość ma trzymać przyciski w miejscu przy zmianie języka na
        monitorze. Na telefonie ważniejsze jest, żeby się zmieściły. */
     header #btnPause, header #btnQuit { min-width:0; }
@@ -433,6 +449,15 @@
     ul.events li.qso > .stn, ul.events li.qso > .op { font-size:0.75rem; color:var(--muted); }
     ul.events li.qso > .src { display:inline-block; margin-left:0; }
   }
+  /* Poniżej tej szerokości nazwa programu schodzi z nagłówka. Nie dlatego, że
+     przeszkadza, tylko dlatego, że musi coś ustąpić: kropka stanu, znak z PIN-em
+     i trzy ikony potrzebują 263 px z 336 dostępnych przy 360 px, a sama nazwa
+     bierze 150 px. Znak wywoławczy mówi więcej od nazwy programu komuś, kto
+     właśnie otworzył adres mostka, a nazwa i tak stoi w tytule karty i okna.
+     Próg zmierzony: od 461 px nazwa, znak i ikony mieszczą się razem. */
+  @media (max-width: 460px) {
+    header #title { display:none; }
+  }
   .note { border-left:3px solid var(--warn); padding:8px 10px; background:var(--panel);
           border-radius:0 6px 6px 0; font-size:0.75rem; margin-top:10px; }
 
@@ -494,10 +519,12 @@
        tyle samo, a opis pełny jest w podpowiedzi i na zakładce Stan. -->
   <button class="icon-btn net" id="netIcon" hidden></button>
   <span class="grow"></span>
-  <div class="hdr-actions">
+  <div class="hdr-icons">
     <button class="icon-btn" id="langBtn" title="Język / Language"></button>
     <button class="icon-btn" id="themeBtn" title="Motyw / Theme"></button>
     <button class="icon-btn" id="fsBtn" title="Rozmiar tekstu / Text size"></button>
+  </div>
+  <div class="hdr-actions">
     <button class="act sec" id="btnPause" data-i18n="btn.pause">Wstrzymaj</button>
     <!-- Przełącznik widoku stoi obok „Wstrzymaj", bo to jedyne dwa przyciski,
          których używa się w trakcie pracy. Napis zmienia się zależnie od tego,

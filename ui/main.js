@@ -259,6 +259,41 @@ function showWindow() {
     },
   });
   win.setMenuBarVisibility(false);
+
+  // Gdy interfejs nie wstanie, człowiek widzi białe okno i nic więcej — a log
+  // milczy, bo rdzeń pracuje dalej i nie ma o czym pisać. Zgłoszenie
+  // z przycisku „Zapisz zgłoszenie do wysłania" bierze ten sam log, więc też
+  // milczy. Te nasłuchy niczego nie naprawiają; mają zostawić ślad, po którym
+  // da się odróżnić „strona się nie wczytała" od „strona się wczytała i padła".
+  // Zakładamy je PRZED `loadFile`, bo inaczej przegapimy wypadki pierwszego
+  // wczytania.
+  const wc = win.webContents;
+  wc.on('did-fail-load', (_zdarzenie, kod, opis, adres, glownaRamka) => {
+    // -3 to ABORTED: zwykłe przerwanie nawigacji, nie awaria.
+    if (kod === -3) return;
+    log.error(`Interfejs się nie wczytał (${kod} ${opis})`
+      + `${glownaRamka ? '' : ' — ramka podrzędna'}: ${adres}`);
+  });
+  wc.on('preload-error', (_zdarzenie, sciezka, blad) => {
+    log.error(`Preload okna padł: ${blad?.message || blad} (${sciezka})`);
+  });
+  wc.on('render-process-gone', (_zdarzenie, szczegoly) => {
+    log.error(`Proces interfejsu zniknął: ${szczegoly.reason}, kod ${szczegoly.exitCode}`);
+  });
+  // Pętla błędów w rendererze potrafi sypać kilkadziesiąt linii na sekundę
+  // i wypchnąć z bufora logu wszystko inne — dlatego liczymy i milkniemy.
+  let bledowKonsoli = 0;
+  wc.on('console-message', (zdarzenie) => {
+    if (zdarzenie.level !== 'error') return;
+    bledowKonsoli += 1;
+    if (bledowKonsoli > 20) return;
+    const skad = zdarzenie.sourceId ? ` (${zdarzenie.sourceId}:${zdarzenie.lineNumber})` : '';
+    log.error(`Błąd w interfejsie: ${zdarzenie.message}${skad}`);
+    if (bledowKonsoli === 20) log.warn('Dalsze błędy interfejsu pomijam — to już dwudziesty');
+  });
+  win.on('unresponsive', () => log.warn('Okno nie odpowiada'));
+  win.on('responsive', () => log.info('Okno znów odpowiada'));
+
   win.loadFile(join(__dirname, 'index.html'));
 
   // Zamknięcie okna chowa aplikację do zasobnika – daemon ma pracować dalej.

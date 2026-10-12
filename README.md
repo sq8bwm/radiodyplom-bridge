@@ -261,6 +261,7 @@ Node.js ≥ 18, zero zależności runtime.
 | [Windows i sieć](docs/windows-i-siec.md) | rozgłoszenia, multicast, zapora, autostart |
 | [Interfejs w sieci](docs/interfejs-w-sieci.md) | okno z telefonu: hasło, HTTPS, tryb tylko do odczytu |
 | [Raspberry Pi / bez okna](docs/malinka.md) | mostek jako usługa na małym komputerze |
+| [Gdy coś nie działa](docs/problemy.md) | objawy zgłaszane przez użytkowników i co o nich wiemy |
 | [Rozwój](docs/rozwoj.md) | wymagania, testy, budowanie paczek |
 | [Dla pakujących w dystrybucjach](docs/rozwoj.md#dla-pakujących-w-dystrybucjach) | licencja, brak kroku budowania, zero zależności, wpis w menu, testy w `check()` |
 

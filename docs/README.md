@@ -14,4 +14,5 @@ Tutaj leżą szczegóły.
 | [Windows i sieć](windows-i-siec.md) | rozgłoszenia, multicast, zapora, autostart |
 | [Interfejs w sieci](interfejs-w-sieci.md) | okno z telefonu: hasło, HTTPS, tryb tylko do odczytu |
 | [Raspberry Pi / bez okna](malinka.md) | paczka headless, usługa systemd, sterowanie przez API |
+| [Gdy coś nie działa](problemy.md) | objawy zgłaszane przez użytkowników i co o nich wiemy |
 | [Rozwój](rozwoj.md) | wymagania, testy, budowanie paczek |

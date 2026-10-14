@@ -179,6 +179,32 @@ Rozróżnia dwa różne braki:
 - *brak — konto nie ma przypisanej żadnej stacji* — serwis odpowiedział i wiemy,
   że nie ma nic.
 
+### Pola z sekretem i oczko obok
+
+Hasło do interfejsu i **wszystkie trzy pola PIN-u** (Konfiguracja, belka
+w widoku prostym, PIN konta przy regule fan-outu) kryją wpisywane znaki.
+Przycisk z **oczkiem** obok pokazuje to, co właśnie wpisujesz — i tylko to.
+
+Do 0.1.42 PIN-y były zwykłym tekstem. Nie chodzi o to, że ktoś wykradnie PIN
+zza pleców: chodzi o zrzuty ekranu i transmisje z zawodów, na których PIN
+zostawał na zawsze.
+
+**Sekretu już zapisanego oczko nie odsłoni**, w obu polach z różnych powodów:
+
+| Pole | Co leży w konfiguracji | Co pokaże oczko |
+|---|---|---|
+| hasło do interfejsu | sam skrót `scrypt` | tylko to, co właśnie wpisujesz — hasła nie zna nawet program |
+| PIN | PIN jawnie | maskę `AB**-****`, bo interfejs dostaje wyłącznie ją |
+
+PIN jest w pliku jawny, więc technicznie dałoby się pokazać go w oknie. Nie
+robimy tego **świadomie**: to samo pole zachowywałoby się wtedy inaczej w oknie
+i w przeglądarce (przez sieć sekretu nie oddajemy — zwłaszcza w trybie
+`api.readOnly`, gdzie dziś nie da się nawet nic zapisać). Jedno zachowanie
+wszędzie jest łatwiejsze do opisania niż wyjątek.
+
+Pola PIN-u mają `autocomplete="off"`, więc przeglądarka nie proponuje
+zapamiętania PIN-u jako hasła do strony.
+
 ### Znacznik uprawnień przy regule fan-outu
 
 Każdy wiersz w „Rozmnażanie QSO na wiele stacji" ma znacznik, z podpowiedzią

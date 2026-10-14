@@ -198,8 +198,8 @@
     width:100%; padding:0.45em 0.6em; border:1px solid var(--line); border-radius:6px;
     background:var(--bg); color:var(--text); font-size:0.8125rem; font-family:inherit; }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  /* Pole hasła z przyciskiem podglądu: input ma `width:100%`, więc w wierszu
-     flex wypychałby przycisk poza panel. */
+  /* Pole z sekretem (hasło, PIN) i przyciskiem podglądu: input ma `width:100%`,
+     więc w wierszu flex wypychałby przycisk poza panel. */
   .row.haslo { flex-wrap:nowrap; gap:6px; }
   .row.haslo input { flex:1 1 auto; width:auto; min-width:0; }
   /* Cel fan-outu: znacznik + znak stacji + operator + PIN + usuwanie. */
@@ -605,7 +605,8 @@
     <b data-i18n="prosty.pinTitle"></b>
     <div class="tresc" data-i18n="prosty.pinText"></div>
     <div class="rzad">
-      <input type="text" id="prostyPinInput" placeholder="ABCD-1234" autocomplete="off">
+      <input type="password" id="prostyPinInput" placeholder="ABCD-1234" autocomplete="off">
+      <button type="button" class="icon-btn" id="prostyPinOko" aria-pressed="false"></button>
       <button class="act" id="btnProstyPin" data-i18n="btn.pinSave"></button>
       <span class="echo" id="prostyPinEcho"></span>
     </div>
@@ -708,7 +709,10 @@
     <div class="panel">
       <h2 data-i18n="panel.connection"></h2>
       <label data-i18n="label.pin"></label>
-      <input type="text" id="fPin" placeholder="ABCD-1234">
+      <div class="row haslo">
+        <input type="password" id="fPin" placeholder="ABCD-1234" autocomplete="off">
+        <button type="button" class="icon-btn" id="fPinOko" aria-pressed="false"></button>
+      </div>
       <!-- Identyfikator, bo treść podmieniamy, gdy PIN pochodzi z pin.env. -->
       <div class="hint" id="pinHint" data-i18n="hint.pin"></div>
       <div class="row" style="margin-top:10px">

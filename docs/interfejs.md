@@ -75,6 +75,19 @@ uruchomieniu wygląda na coś, co trzeba skonfigurować — a nie trzeba: po wpi
 PIN-u QSO lecą same. Konfiguracje istniejące zostają na pełnym świadomie: nikt,
 kto pracuje z programem od miesiąca, nie prosił o schowanie mu zakładek.
 
+Wygląd tej strony jest podporządkowany jednemu pytaniu. **Linijka stanu ma
+własne pole i barwę stanu** — zieloną, gdy mostek pracuje, bursztynową przy
+wstrzymaniu, próbie na sucho albo odrzuconych, czerwoną przy braku łączności.
+Barwa niczego nie zastępuje, bo ten sam stan stoi obok tekstem; uczy oka
+kształtu, żeby odstępstwo było widać przed przeczytaniem. **Liczby mają 40 px**
+(28 px na ekranie węższym niż 620) i cyfry o stałej szerokości, więc licznik
+nie podskakuje przy każdym QSO.
+
+Podpis stoi **obok** liczby, nie pod nią: kafelek jest wtedy o 18 px niższy,
+a tyle wysokości zostaje liście łączności, po którą się do tego widoku wraca.
+Gdy obok zabraknie miejsca — przy 140% tekstu na najwęższym ekranie — podpis
+schodzi pod liczbę zamiast wyjść poza kafelek.
+
 Liczba „z dzisiaj" idzie z **dziennika wysyłek**, a nie z licznika w pamięci —
 dzięki temu przeżywa restart programu. Dzień liczony jest w **UTC**, tak samo jak
 zakres „dziś" na Statystykach, więc obie liczby zgadzają się także wieczorem.
@@ -382,6 +395,19 @@ liczniki idą po dwa w rzędzie, zakładki zostają w jednym rzędzie przewijany
 palcem, dwukolumnowe pary pól schodzą do jednej kolumny, a pola i przyciski
 rosną pod palec. Tabele przewijają się w bok **wewnątrz** swoich paneli, więc
 nagłówek nie ucieka razem z treścią.
+
+Przyciski w nagłówku: **„Wstrzymaj" i przełącznik widoku mają równą
+szerokość** — tyle, ile potrzebuje szerszy napis. Robi to siatka o kolumnach
+`1fr`, nie sztywna liczba pikseli, więc równość przeżywa zmianę języka
+i powiększenie tekstu. **„Zakończ" zostaje węższy**: jako jedyny robi coś
+nieodwracalnego i nie ma powodu, żeby ważył tyle samo. Na ekranie węższym niż
+620 px przyciski wypełniają cały wiersz, kończąc się równo z kafelkami pod
+spodem — ale **nie na równe części**: przy 360 px na trzy równe zostałoby po
+107 px, a „Zaawansowane" potrzebuje 124 i napis byłby ucięty.
+
+Równe szerokości kosztują trochę miejsca: nagłówek mieści się w jednym wierszu
+od **832 px** wzwyż, wcześniej było to 810. Przy oknie startowym 900×700 —
+także z pionowym paskiem przewijania, który zabiera 15 px — nadal jeden wiersz.
 
 Prawa krawędź paska zakładek jest **wygaszona** — to znak, że pasek się
 przesuwa. Bez tego ostatnia zakładka wyglądała na uciętą i nic nie mówiło,

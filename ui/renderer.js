@@ -21,40 +21,61 @@ function applyLang() {
   drawThemeButton();         // podpowiedzi są tłumaczone
   drawSkalaButton();
   drawLangButton();
-  drawPasswordToggle();      // tytuł przycisku też jest tłumaczony
+  drawOczka();               // podpowiedzi przy oczkach też są tłumaczone
   drawWidokButton();         // napis zmienia się z językiem i z widokiem
   refresh();
   if ($('konfig').classList.contains('active')) loadConfig();
 }
 
 /**
- * Podgląd wpisywanego hasła do interfejsu.
+ * Oczka przy polach z sekretem: hasłem do interfejsu i PIN-ami.
  *
- * Pokazuje TYLKO to, co człowiek właśnie wpisał. Zapisanego hasła nie da się
- * odsłonić, bo program go nie zna — w konfiguracji leży sam skrót. Przycisk
- * ma więc chronić przed literówką w haśle, które potem przepisuje się na
- * telefonie, a nie przypominać zapomniane.
+ * Pokazują TYLKO to, co człowiek właśnie wpisał. Sekretu już zapisanego żadne
+ * z nich nie odsłoni, choć z dwóch różnych powodów: hasła program nie zna
+ * (w konfiguracji leży sam skrót scrypt), a PIN-u nie dostaje interfejs —
+ * `editableConfig` w `src/configedit.js` oddaje wyłącznie maskę `AB**-****`.
+ *
+ * Oczko przy PIN-ie ma sens dopiero od chwili, gdy pole kryje wpisywane znaki:
+ * wcześniej PIN-y były zwykłym tekstem i widział je każdy, kto patrzył na ekran
+ * albo oglądał zrzut z zawodów.
+ *
+ * W oknie i w przeglądarce działa TAK SAMO. Odsłanianie zapisanego PIN-u tylko
+ * w oknie byłoby pierwszym wyjątkiem, w którym to samo pole zachowuje się
+ * inaczej zależnie od tego, skąd je otworzysz — świadomie z tego rezygnujemy.
  */
-function drawPasswordToggle() {
-  const b = $('fApiPasswordOko');
-  if (!b) return;
-  const widoczne = $('fApiPassword').type === 'text';
-  b.innerHTML = widoczne ? SVG.okoPrzekreslone : SVG.oko;
-  b.title = t(widoczne ? 'btn.hidePassword' : 'btn.showPassword');
-  b.setAttribute('aria-label', b.title);
-  b.setAttribute('aria-pressed', String(widoczne));
+const OCZKA = [];
+
+function drawOczka() {
+  // Pola celów fan-outu powstają na nowo przy każdym przerysowaniu listy,
+  // więc stare wpisy wypadają same, gdy ich pole nie jest już w dokumencie.
+  for (let i = OCZKA.length - 1; i >= 0; i -= 1) {
+    if (!OCZKA[i].pole.isConnected) OCZKA.splice(i, 1);
+  }
+  for (const { pole, przycisk, pokaz, ukryj } of OCZKA) {
+    const widoczne = pole.type === 'text';
+    przycisk.innerHTML = widoczne ? SVG.okoPrzekreslone : SVG.oko;
+    przycisk.title = t(widoczne ? ukryj : pokaz);
+    przycisk.setAttribute('aria-label', przycisk.title);
+    przycisk.setAttribute('aria-pressed', String(widoczne));
+  }
+}
+
+/** Podpina oczko do pola. `pokaz`/`ukryj` to klucze tłumaczeń podpowiedzi. */
+function podepnijOko(pole, przycisk, pokaz = 'btn.showPin', ukryj = 'btn.hidePin') {
+  if (!pole || !przycisk) return;
+  OCZKA.push({ pole, przycisk, pokaz, ukryj });
+  przycisk.onclick = () => {
+    pole.type = pole.type === 'password' ? 'text' : 'password';
+    drawOczka();
+    pole.focus();
+  };
+  drawOczka();
 }
 
 function buildPasswordToggle() {
-  const b = $('fApiPasswordOko');
-  if (!b) return;
-  drawPasswordToggle();
-  b.onclick = () => {
-    const pole = $('fApiPassword');
-    pole.type = pole.type === 'password' ? 'text' : 'password';
-    drawPasswordToggle();
-    pole.focus();
-  };
+  podepnijOko($('fApiPassword'), $('fApiPasswordOko'), 'btn.showPassword', 'btn.hidePassword');
+  podepnijOko($('fPin'), $('fPinOko'));
+  podepnijOko($('prostyPinInput'), $('prostyPinOko'));
 }
 
 /** Przycisk języka: flaga języka BIEŻĄCEGO, klik przełącza na następny. */
@@ -1074,6 +1095,9 @@ async function loadConfig() {
   $('fPin').value = cfg.radiodyplom.pin || '';
   const pinZEnv = !!cfg.radiodyplom.pinFromEnv;
   $('fPin').disabled = pinZEnv;
+  // Oczko razem z polem: przy PIN-ie z `pin.env` pole jest puste, więc
+  // przycisk nie miałby czego pokazać.
+  $('fPinOko').disabled = pinZEnv;
   if (pinZEnv) $('fPin').value = '';
   $('pinHint').textContent = pinZEnv ? t('hint.pinFromEnv') : t('hint.pin');
   $('fDryRun').checked = cfg.radiodyplom.dryRun;
@@ -1362,12 +1386,16 @@ function renderTargets(list) {
                title="${esc(t('hint.targetOn'))}"></div>
       <div><label class="t-lbl">${t('label.stationCall')}</label><input type="text" class="t-station" value="${esc(x.station_callsign)}" placeholder="SN0ABC"></div>
       <div><label class="t-lbl">${t('label.operator')}</label><input type="text" class="t-op" value="${esc(x.operator || '')}" placeholder="SQ8BWM"></div>
-      <div><label class="t-lbl">${t('label.targetPin')}</label><input type="text" class="t-pin" value="${esc(x.pin || '')}" placeholder="${esc(t('hint.targetPin'))}" title="${esc(t('hint.targetPinLong'))}"></div>
+      <div><label class="t-lbl">${t('label.targetPin')}</label>
+        <div class="row haslo"><input type="password" class="t-pin" autocomplete="off" value="${esc(x.pin || '')}" placeholder="${esc(t('hint.targetPin'))}" title="${esc(t('hint.targetPinLong'))}"><button type="button" class="icon-btn t-oko" aria-pressed="false"></button></div></div>
       <span class="t-chk"></span>
       <button class="act sec t-del">${t('btn.remove')}</button>
     </div>`;
   }).join('');
   $('targets').querySelectorAll('.t-station, .t-op').forEach(forceUpper);
+  $('targets').querySelectorAll('.three').forEach((w) => {
+    podepnijOko(w.querySelector('.t-pin'), w.querySelector('.t-oko'));
+  });
   $('targets').querySelectorAll('.t-del').forEach((b) => {
     b.onclick = () => { b.closest('.three').remove(); };
   });

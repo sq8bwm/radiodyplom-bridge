@@ -88,11 +88,35 @@ a tyle wysokości zostaje liście łączności, po którą się do tego widoku w
 Gdy obok zabraknie miejsca — przy 140% tekstu na najwęższym ekranie — podpis
 schodzi pod liczbę zamiast wyjść poza kafelek.
 
+**Lista rośnie razem z oknem.** Strona wypełnia całą jego wysokość, a panel
+z łącznościami dostaje to, co zostanie po stanie i liczbach — wcześniej przy
+900×700 dolna połowa ekranu była pusta, a lista kończyła się w jednej trzeciej
+wysokości i wyglądała na uciętą.
+
+**Kropka mruga raz, gdy łączność właśnie poszła na serwer.** Liczby zmieniają
+się po cichu i przy spojrzeniu z boku nie wiadomo, czy program jeszcze pracuje.
+Jeden przebieg, nie pętla: migający element przy kilkugodzinnej akcji byłby nie
+do zniesienia. Sygnałem jest licznik wysyłek, ten sam, który odświeża „z
+dzisiaj" — nie ma tu drugiego mechanizmu. Kto ma w systemie ustawione
+ograniczenie ruchu (`prefers-reduced-motion`), nie zobaczy animacji wcale.
+
 Liczba „z dzisiaj" idzie z **dziennika wysyłek**, a nie z licznika w pamięci —
 dzięki temu przeżywa restart programu. Dzień liczony jest w **UTC**, tak samo jak
 zakres „dziś" na Statystykach, więc obie liczby zgadzają się także wieczorem.
 Dziennik indeksuje po dacie QSO, więc wysłanie wczorajszej łączności z pliku ADIF
 powiększy liczbę z wczoraj, a nie z dzisiaj.
+
+### Najechanie i skupienie
+
+Wszystko, co klikalne, reaguje na kursor: przycisk z wypełnieniem rozjaśnia się,
+obrysowany dostaje delikatne tło i wyraźniejszą ramkę, zakładki ciemnieją,
+a wiersze łączności i kafelki z liczbami podświetlają się. Zmiany są celowo
+drobne — to potwierdzenie „trafiłeś", a nie efekt. **„Zakończ" ma stan własny,
+czerwony**, bo jako jedyny robi coś nieodwracalnego. Przyciski wyłączone nie
+reagują wcale, żeby nie udawały klikalnych.
+
+Obwódka skupienia (`:focus-visible`, 2 px w kolorze akcentu) była tu wcześniej
+i zostaje bez zmian — kto nawiguje klawiaturą, musi widzieć, gdzie jest.
 
 ### Pytania zadaje własne okienko, nie natywne `confirm`
 

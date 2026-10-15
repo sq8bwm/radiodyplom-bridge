@@ -122,3 +122,77 @@ describe('przyciski w nagłówku', () => {
     assert.match(waski.slice(0, 700), /\.hdr-sep \{ display:none; \}/);
   });
 });
+
+describe('strona wypełnia okno', () => {
+  test('body jest kolumną na całą wysokość, a lista rośnie', () => {
+    // Przy 900×700 dolna połowa ekranu zostawała pusta, a lista łączności
+    // kończyła się w jednej trzeciej wysokości i wyglądała na uciętą.
+    const b = regula('body { margin:0');
+    assert.match(b, /min-height:100vh/);
+    assert.match(b, /display:flex/);
+    assert.match(b, /flex-direction:column/);
+    assert.match(regula('main { flex'), /flex:1 1 auto/);
+    assert.match(regula('#prosty .panel'), /flex:1 1 auto/);
+  });
+});
+
+describe('stany najechania', () => {
+  // Dotąd miały je TYLKO ikony, więc reszta przycisków wyglądała na
+  // nieklikalną, dopóki się jej nie kliknęło. Każda z tych reguł jest
+  // sprawdzona na żywej stronie prawdziwym ruchem kursora.
+  test('przycisk z wypełnieniem rozjaśnia się, obrysowany zmienia tło i ramkę', () => {
+    assert.match(H, /button\.act:not\(\.sec\):hover \{ filter:brightness/);
+    assert.match(regula('button.act.sec:hover'), /border-color:var\(--accent\)/);
+    assert.match(regula('button.act.sec:hover'), /background:color-mix/);
+  });
+
+  test('„Zakończ" ma własny, czerwony stan najechania', () => {
+    // Ten przycisk jako jedyny robi coś nieodwracalnego — ma się odróżniać
+    // także pod kursorem.
+    assert.match(regula('button.act.danger:hover'), /border-color:var\(--err\)/);
+    assert.match(regula('button.act.danger:hover'), /var\(--err\) 9%/);
+  });
+
+  test('zakładki, kafelki i wiersze łączności też reagują', () => {
+    assert.ok(H.includes('nav button:hover'));
+    assert.match(regula('.liczba:hover'), /border-color:color-mix/);
+    assert.match(regula('ul.events li:hover'), /background:color-mix/);
+  });
+
+  test('przycisk wyłączony NIE udaje klikalnego', () => {
+    assert.match(regula('button.act:disabled, button.icon-btn:disabled'), /opacity:\.5/);
+    assert.match(H, /button\.act:disabled:hover, button\.icon-btn:disabled:hover \{ filter:none/);
+  });
+});
+
+describe('kropka mruga po wysłanej łączności', () => {
+  const R = readFileSync(new URL('../ui/renderer.js', import.meta.url), 'utf8');
+
+  test('mrugnięcie trwa JEDEN przebieg, nie w kółko', () => {
+    // Element migający bez końca byłby nie do zniesienia przy kilkugodzinnej
+    // akcji — to ma być potwierdzenie, nie alarm.
+    const a = regula('.dot.swiezy');
+    assert.match(a, /animation:puls-kropki [\d.]+s ease-out 1;/);
+    assert.ok(!/infinite/.test(a));
+  });
+
+  test('kto prosi system o mniej ruchu, dostaje mniej ruchu', () => {
+    assert.match(H, /@media \(prefers-reduced-motion: reduce\) \{ \.dot\.swiezy \{ animation:none; \} \}/);
+  });
+
+  test('sygnałem jest ISTNIEJĄCY licznik wysyłek, nie nowy mechanizm', () => {
+    assert.match(R, /if \(poszloCos\) mrugnijKropka\(\);/);
+  });
+
+  test('odświeżenie co 2 s nie zdejmuje klasy w połowie animacji', () => {
+    // `className` wymiata wszystko, więc klasę trzeba przepisać.
+    assert.match(R, /const mruga = \$\('prostyDot'\)\.classList\.contains\('swiezy'\);/);
+    assert.match(R, /mruga \? ' swiezy' : ''/);
+  });
+
+  test('animacja rusza także drugi raz pod rząd', () => {
+    // Zdjęcie i nadanie klasy w jednym kroku przeglądarka skleja w nic —
+    // między nimi musi być wymuszone przeliczenie układu.
+    assert.match(R, /void kropka\.offsetWidth;/);
+  });
+});

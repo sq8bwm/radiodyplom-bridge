@@ -529,18 +529,8 @@ function renderProsty(s) {
   $('prostyKSent').title = t('prosty.tipSentToday');
   $('prostyKPending').title = t('prosty.tipPending');
 
-  // Licznik trwały zmienia się przy każdej wysłanej kopii — to nasz sygnał,
-  // że dziennik ma nowy wpis i warto go przeczytać od razu.
-  const wyslane = s.queue.sent;
-  const poszloCos = dzisiajPoWysylce !== null && wyslane !== dzisiajPoWysylce;
-  dzisiajPoWysylce = wyslane;
-
-  // Ten sam sygnał zapala mrugnięcie kropki. Nowego mechanizmu nie dokładamy:
-  // licznik trwały rośnie dokładnie wtedy, gdy łączność poszła na serwer.
-  if (poszloCos) mrugnijKropka();
-
-  // Kropka mruga TYLKO w widoku prostym — w pełnym jej nie ma. Liczba
-  // „z dzisiaj" jest już odświeżana we wspólnej ścieżce, niżej.
+  // Mrugnięcie kropki i odczyt „z dzisiaj" mają JEDEN sygnał i jedno miejsce,
+  // we wspólnej ścieżce odświeżania — patrz `renderStatus`.
 
   // Lista: tylko zdarzenia, które SĄ łącznością. Ostrzeżenia i komunikaty
   // należą do widoku pełnego — tutaj mieszałyby się z QSO i znowu robiły
@@ -640,10 +630,18 @@ function renderStatus(s) {
   // „Z dzisiaj" czytamy z dziennika — dla OBU widoków naraz, bo kafelek
   // na zakładce QSOs pokazuje teraz to samo co widok prosty. Odczyt jest
   // dławiony i wymuszany tylko wtedy, gdy licznik wysyłek drgnął.
+  //
+  // Sygnał liczymy TYLKO TUTAJ. Gdy był liczony w dwóch miejscach, to które
+  // wykonywało się pierwsze, zjadało zmianę licznika — `renderStatus` biegnie
+  // przed `renderProsty`, więc warunek w widoku prostym był już zawsze
+  // fałszywy i kropka przestała mrugać. Złapane dopiero na żywym oknie.
   const wyslaneTeraz = s.queue.sent;
   const cosPoszlo = dzisiajPoWysylce !== null && wyslaneTeraz !== dzisiajPoWysylce;
   dzisiajPoWysylce = wyslaneTeraz;
   odswiezDzisiaj(cosPoszlo);
+  // Kropka jest tylko w widoku prostym, ale `mrugnijKropka` sama sprawdza,
+  // czy element istnieje — nie ma potrzeby pytać tu o widok.
+  if (cosPoszlo) mrugnijKropka();
   $('logPath').textContent = s.logFile || '';
 
   const mc = s.listener.multicastGroups?.length

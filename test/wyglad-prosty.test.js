@@ -176,12 +176,41 @@ describe('kropka mruga po wysłanej łączności', () => {
     assert.ok(!/infinite/.test(a));
   });
 
+  test('na ciemnym tle poświata jest MOCNIEJSZA niż na jasnym', () => {
+    // Ta sama wartość, która na bieli wystarcza, na ciemnym tle ginie.
+    // Zgłoszone wprost: „a mogłoby troszkę jaśniej pulsować na ciemnym".
+    const sila = (blok) => {
+      const i = H.indexOf(blok);
+      assert.ok(i > 0, `brak bloku ${blok}`);
+      const m = H.slice(i, H.indexOf('\n  }', i) + 4)
+        .match(/--poswiata-pulsu:\s*color-mix\(in srgb, var\(--ok\) (\d+)%/);
+      assert.ok(m, `w ${blok} nie ma poświaty`);
+      return Number(m[1]);
+    };
+    assert.ok(sila(':root[data-theme="dark"] {') > sila(':root {'),
+      'poświata w motywie ciemnym musi być mocniejsza');
+  });
+
   test('kto prosi system o mniej ruchu, dostaje mniej ruchu', () => {
     assert.match(H, /@media \(prefers-reduced-motion: reduce\) \{ \.dot\.swiezy \{ animation:none; \} \}/);
   });
 
   test('sygnałem jest ISTNIEJĄCY licznik wysyłek, nie nowy mechanizm', () => {
-    assert.match(R, /if \(poszloCos\) mrugnijKropka\(\);/);
+    assert.match(R, /if \(cosPoszlo\) mrugnijKropka\(\);/);
+  });
+
+  test('sygnał jest liczony w JEDNYM miejscu', () => {
+    // Regresja z 2026-10-15 (PR #112): przy przenoszeniu odczytu „z dzisiaj"
+    // do wspólnej ścieżki sygnał został policzony DWA razy. `renderStatus`
+    // biegnie przed `renderProsty`, więc pierwsze miejsce zjadało zmianę
+    // licznika i kropka przestała mrugać. Nie wyszło w testach, bo każdy
+    // kawałek z osobna wyglądał poprawnie — złapane dopiero na żywym oknie.
+    // Bez wykluczenia `let` liczylibyśmy też deklarację i test byłby czerwony
+    // na poprawnym kodzie.
+    const przypisania = R.match(/(?<!let )dzisiajPoWysylce = /g) || [];
+    assert.equal(przypisania.length, 1,
+      `licznik odniesienia przypisywany ${przypisania.length} razy — to, które `
+      + 'wykona się pierwsze, zabierze sygnał drugiemu');
   });
 
   test('odświeżenie co 2 s nie zdejmuje klasy w połowie animacji', () => {

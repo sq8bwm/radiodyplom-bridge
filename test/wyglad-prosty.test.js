@@ -181,7 +181,21 @@ describe('kropka mruga po wysłanej łączności', () => {
   });
 
   test('sygnałem jest ISTNIEJĄCY licznik wysyłek, nie nowy mechanizm', () => {
-    assert.match(R, /if \(poszloCos\) mrugnijKropka\(\);/);
+    assert.match(R, /if \(cosPoszlo\) mrugnijKropka\(\);/);
+  });
+
+  test('sygnał jest liczony w JEDNYM miejscu', () => {
+    // Regresja z 2026-10-15 (PR #112): przy przenoszeniu odczytu „z dzisiaj"
+    // do wspólnej ścieżki sygnał został policzony DWA razy. `renderStatus`
+    // biegnie przed `renderProsty`, więc pierwsze miejsce zjadało zmianę
+    // licznika i kropka przestała mrugać. Nie wyszło w testach, bo każdy
+    // kawałek z osobna wyglądał poprawnie — złapane dopiero na żywym oknie.
+    // Bez wykluczenia `let` liczylibyśmy też deklarację i test byłby czerwony
+    // na poprawnym kodzie.
+    const przypisania = R.match(/(?<!let )dzisiajPoWysylce = /g) || [];
+    assert.equal(przypisania.length, 1,
+      `licznik odniesienia przypisywany ${przypisania.length} razy — to, które `
+      + 'wykona się pierwsze, zabierze sygnał drugiemu');
   });
 
   test('odświeżenie co 2 s nie zdejmuje klasy w połowie animacji', () => {

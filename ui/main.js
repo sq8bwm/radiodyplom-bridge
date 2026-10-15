@@ -192,12 +192,29 @@ function trayState() {
 }
 
 let lastTrayKey = '';
+// Stan ikony tuż po `new Tray(iconFor('ok'))` — bez tego pierwsze odświeżenie
+// ustawiałoby ten sam obrazek drugi raz.
+let lastTrayIcon = 'ok';
+let lastTrayTip = '';
 
 function refreshTray() {
   if (!tray) return;
   const { state, tip } = trayState();
-  tray.setImage(iconFor(state));
-  tray.setToolTip(`${t('app.name')} — ${tip}`);
+
+  // Ikonę i dymek ustawiamy TYLKO przy zmianie — tak samo jak menu niżej.
+  // Zegar chodzi co 3 sekundy, a stan zmienia się rzadko. Na XFCE ikona jest
+  // osadzona w panelu przez XEmbed i każde `setImage` to ruch na oknie
+  // osadzonym w cudzym procesie; wtyczka zasobnika xfce4-panel 4.18 potrafi
+  // się przy pracy z tą ikoną wywrócić, więc nie dokładamy jej roboty.
+  if (state !== lastTrayIcon) {
+    lastTrayIcon = state;
+    tray.setImage(iconFor(state));
+  }
+  const dymek = `${t('app.name')} — ${tip}`;
+  if (dymek !== lastTrayTip) {
+    lastTrayTip = dymek;
+    tray.setToolTip(dymek);
+  }
 
   // Menu przebudowujemy TYLKO gdy zmieniły się jego etykiety. Ustawianie go
   // co 3 sekundy potrafi na Windows sprawić, że menu przestaje się pokazywać.

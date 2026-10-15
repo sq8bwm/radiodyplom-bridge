@@ -33,7 +33,10 @@ WSJT-X albo pokrewnym programie i ma konto na radiodyplom.pl.
 prowadzi dziennika za Ciebie. Z serwera tylko pobiera listę Twoich stacji
 i aktywnych akcji; niczego tam nie zmienia poza dopisaniem QSO.
 
-![Zakładka Stan: liczniki, dane konta, adres nasłuchu](docs/obrazy/okno-stan.png)
+![Widok prosty: stan jednym zdaniem, łączności z dzisiaj, kolejka i ostatnie QSO](docs/obrazy/okno-prosty-ciemny.png)
+
+Tak wygląda **widok prosty** — to, co widzisz po instalacji. Jedno zdanie o stanie,
+dwie liczby i ostatnie łączności; reszta jest pod przyciskiem **Zaawansowane**.
 
 ---
 
@@ -199,6 +202,20 @@ Interfejs jest po **polsku i angielsku**, a motyw ma trzy stany —
 i słońcem/księżycem. Trzecia ikona, **`aA`**, zmienia wielkość tekstu (normalny →
 duży → bardzo duży), a **Ctrl +**, **Ctrl −** i **Ctrl 0** (na macOS: **Cmd +**, **Cmd −** i **Cmd 0**) powiększają całe okno.
 Oba ustawienia są zapamiętywane.
+
+---
+
+## Widok pełny, gdy potrzeba szczegółów
+
+![Zakładka QSOs: liczniki i ostatnie zdarzenia](docs/obrazy/okno-ciemny.png)
+
+Sześć zakładek: **Stan** (konto, nasłuch, na co poleci QSO), **QSOs** (liczniki
+i ostatnie zdarzenia), **Konfiguracja**, **Statystyki**, **Log** i **O programie**.
+Przełącznik w nagłówku prowadzi tam i z powrotem, a wybór jest zapamiętywany.
+
+Pierwszy kafelek pokazuje **tę samą liczbę co widok prosty** — łączności z dzisiejszą
+datą, które doszły na serwer; licznik od początku i licznik tej sesji schodzą do
+drugiej linii.
 
 ---
 

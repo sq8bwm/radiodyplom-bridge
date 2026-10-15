@@ -12,9 +12,16 @@ import { readFileSync } from 'node:fs';
 
 const H = readFileSync(new URL('../ui/index.html', import.meta.url), 'utf8');
 
-/** Treść reguły dla podanego selektora (pierwsze wystąpienie). */
+/**
+ * Treść reguły dla podanego selektora — szukanego jako POCZĄTEK WIERSZA.
+ *
+ * Bez kotwicy „nowa linia + wcięcie" wyszukiwanie łapało regułę szerszą,
+ * która zawiera tę nazwę w środku: `header button.act.sec:hover` zawiera
+ * `button.act.sec:hover` i stoi w pliku wcześniej, więc test sprawdzał nie to
+ * co trzeba. Ta sama pułapka co przy liczeniu podciągów.
+ */
 function regula(selektor) {
-  const i = H.indexOf(selektor);
+  const i = H.indexOf(`\n  ${selektor}`);
   assert.ok(i > 0, `brak reguły ${selektor}`);
   const start = H.indexOf('{', i);
   return H.slice(start, H.indexOf('}', start));
@@ -223,5 +230,77 @@ describe('kropka mruga po wysłanej łączności', () => {
     // Zdjęcie i nadanie klasy w jednym kroku przeglądarka skleja w nic —
     // między nimi musi być wymuszone przeliczenie układu.
     assert.match(R, /void kropka\.offsetWidth;/);
+  });
+});
+
+// Belka nagłówka. Wybrana 2026-10-15 po obejrzeniu ośmiu makiet: pas
+// odsunięty od panelu, a na nim kontrolki w kolorze panelu, z cieniem.
+describe('belka nagłówka i kafelki na niej', () => {
+  /** Jasność względna wg WCAG — do sprawdzania KIERUNKU, nie tylko zapisu. */
+  const jasnosc = (hex) => {
+    // `#fff` to też poprawny zapis — bez rozwinięcia do sześciu znaków
+    // dzielenie na pary dawało jeden kolor i NaN w porównaniu.
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map((z) => z + z).join('');
+    const [r, g, b] = h.match(/../g).map((x) => parseInt(x, 16) / 255);
+    const k = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * k(r) + 0.7152 * k(g) + 0.0722 * k(b);
+  };
+  /** Wartość zmiennej w bloku motywu zaczynającym się od `selektor`. */
+  const zmienna = (selektor, nazwa) => {
+    const i = H.indexOf(selektor);
+    assert.ok(i > 0, `brak bloku ${selektor}`);
+    const blok = H.slice(i, H.indexOf('\n  }', i) + 4);
+    const m = blok.match(new RegExp(`--${nazwa}:\\s*(#[0-9a-f]{3,8}|var\\([^)]+\\))`, 'i'));
+    assert.ok(m, `w ${selektor} nie ma --${nazwa}`);
+    return m[1];
+  };
+
+  test('belka jest zdefiniowana w KAŻDYM zapisie motywu', () => {
+    // Trzy zapisy: jasny, ciemny po atrybucie i ciemny po ustawieniu systemu.
+    // Pominięcie któregokolwiek znaczy biały pas w połowie przypadków.
+    assert.equal(H.split('--belka:').length - 1, 3);
+    assert.equal(H.split('--cien-kontrolki:').length - 1, 3);
+  });
+
+  test('nagłówek bierze kolor z belki, nie z panelu', () => {
+    assert.match(regula('header { display:flex'), /background:var\(--belka\)/);
+  });
+
+  test('ZASADA: w jasnym belka jest ciemniejsza od panelu, w ciemnym jaśniejsza', () => {
+    // To jest sedno tej zmiany i jedyna rzecz, którą trzeba pamiętać.
+    // Sprawdzamy liczbami, bo zapis może się zmienić, a kierunek nie.
+    const jasnyPanel = zmienna(':root {', 'panel');
+    const jasnaBelka = zmienna(':root {', 'belka');
+    assert.ok(jasnosc(jasnaBelka) < jasnosc(jasnyPanel),
+      `w motywie jasnym belka ${jasnaBelka} musi być ciemniejsza od panelu ${jasnyPanel}`);
+
+    const ciemnyPanel = zmienna(':root[data-theme="dark"] {', 'panel');
+    const ciemnaBelka = zmienna(':root[data-theme="dark"] {', 'belka');
+    assert.ok(jasnosc(ciemnaBelka) > jasnosc(ciemnyPanel),
+      `w motywie ciemnym belka ${ciemnaBelka} musi być jaśniejsza od panelu ${ciemnyPanel}`);
+  });
+
+  test('kontrolki na belce mają kolor panelu i cień', () => {
+    const r = regula('header button.act.sec, header .icon-btn, header .badge');
+    assert.match(r, /background:var\(--panel\)/);
+    assert.match(r, /box-shadow:var\(--cien-kontrolki\)/);
+  });
+
+  test('pod kursorem kafelek unosi się wyżej', () => {
+    assert.match(H, /header button\.act\.sec:hover, header \.icon-btn:hover \{\s*box-shadow:var\(--cien-kontrolki-pod-kursorem\)/);
+  });
+
+  test('plakietki stanu NIE przepuszczają belki', () => {
+    // Tło liczone na „tym, co pod spodem" brudziło się razem z pasem i napis
+    // spadał do 3,61:1. Liczymy je na panelu — i słabiej, bo 10% dawało
+    // 4,41:1 jeszcze na białej belce, czyli poniżej progu.
+    for (const stan of ['ok', 'warn', 'err']) {
+      const nazwa = stan === 'err' ? 'st-error' : `st-${stan}`;
+      const r = regula(`.badge.${nazwa}`);
+      assert.match(r, new RegExp(`color-mix\\(in srgb, var\\(--${stan}\\) 6%, var\\(--panel\\)\\)`),
+        `${nazwa}: tło musi być liczone na panelu, 6%`);
+      assert.doesNotMatch(r, /transparent/);
+    }
   });
 });

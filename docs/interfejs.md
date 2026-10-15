@@ -106,6 +106,27 @@ zakres „dziś" na Statystykach, więc obie liczby zgadzają się także wieczo
 Dziennik indeksuje po dacie QSO, więc wysłanie wczorajszej łączności z pliku ADIF
 powiększy liczbę z wczoraj, a nie z dzisiaj.
 
+### Belka nagłówka
+
+Nagłówek ma **własny kolor tła**, odsunięty od panelu, a wszystko, co na nim
+leży — przyciski, ikony i plakietki — jest osobnym kafelkiem w kolorze panelu,
+z ramką i cieniem. Jedna zasada opisuje oba motywy:
+
+> kontrolka ma kolor **panelu**, a belka jest od panelu odsunięta: w motywie
+> jasnym **ciemniejsza**, w ciemnym **jaśniejsza**.
+
+Dzięki temu barwy napisów zostają tam, gdzie były strojone, i nagłówek nie
+potrzebuje własnej palety. Wariant odwrotny — ciemna belka w jasnym motywie —
+był rozważany i odrzucony: wymagał nowej czerwieni dla „Zakończ" (obecna daje
+na granacie **2,78:1**) i nowej zieleni dla kropki stanu (3,00:1), czyli
+cofnięcia pracy, którą arkusz ma opisaną przy kolorach pomocniczych.
+
+Przy okazji poprawione **plakietki stanu**. Ich tło było liczone na „tym, co
+pod spodem", więc po przyciemnieniu belki brudziło się razem z nią, a napis
+spadał do 3,61:1. Teraz liczy się **na panelu**, z nasyceniem 6% zamiast
+10–12%: zielona 4,65:1, bursztynowa 4,92:1, czerwona 4,97:1. Przed zmianą
+zielona miała **4,41:1**, czyli poniżej progu nawet na białym tle.
+
 ### Najechanie i skupienie
 
 Wszystko, co klikalne, reaguje na kursor: przycisk z wypełnieniem rozjaśnia się,

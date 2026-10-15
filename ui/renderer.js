@@ -454,7 +454,6 @@ let dzisiajKiedy = 0;
 let dzisiajPoWysylce = null;
 
 async function odswiezDzisiaj(teraz = false) {
-  if (widok !== 'simple') return;
   const t0 = Date.now();
   if (!teraz && t0 - dzisiajKiedy < DZISIAJ_CO_MS) return;
   dzisiajKiedy = t0;
@@ -464,7 +463,12 @@ async function odswiezDzisiaj(teraz = false) {
     const d = await window.bridge.stats?.(dzien, dzien);
     ile = d?.total?.qso ?? null;
   } catch { /* dziennika może nie być — pokażemy kreskę */ }
-  $('prostySent').textContent = ile === null ? '—' : ile;
+  // Ta sama liczba w OBU widokach, z tego samego odczytu. Wcześniej „z
+  // dzisiaj" było tylko w prostym, a w pełnym trzeba było iść na Statystyki
+  // i przestawić zakres na „Dziś" — czyli dwa kliknięcia po tę samą rzecz.
+  const tekst = ile === null ? '—' : String(ile);
+  $('prostySent').textContent = tekst;
+  $('cSent').textContent = tekst;
 }
 
 /** Jedno zdanie o stanie: klasa kropki i tekst obok niej. */
@@ -530,11 +534,13 @@ function renderProsty(s) {
   const wyslane = s.queue.sent;
   const poszloCos = dzisiajPoWysylce !== null && wyslane !== dzisiajPoWysylce;
   dzisiajPoWysylce = wyslane;
-  odswiezDzisiaj(poszloCos);
 
   // Ten sam sygnał zapala mrugnięcie kropki. Nowego mechanizmu nie dokładamy:
   // licznik trwały rośnie dokładnie wtedy, gdy łączność poszła na serwer.
   if (poszloCos) mrugnijKropka();
+
+  // Kropka mruga TYLKO w widoku prostym — w pełnym jej nie ma. Liczba
+  // „z dzisiaj" jest już odświeżana we wspólnej ścieżce, niżej.
 
   // Lista: tylko zdarzenia, które SĄ łącznością. Ostrzeżenia i komunikaty
   // należą do widoku pełnego — tutaj mieszałyby się z QSO i znowu robiły
@@ -631,6 +637,13 @@ function renderStatus(s) {
   $('btnPause').textContent = paused ? t('btn.resume') : t('btn.pause');
 
   renderCards(s);
+  // „Z dzisiaj" czytamy z dziennika — dla OBU widoków naraz, bo kafelek
+  // na zakładce QSOs pokazuje teraz to samo co widok prosty. Odczyt jest
+  // dławiony i wymuszany tylko wtedy, gdy licznik wysyłek drgnął.
+  const wyslaneTeraz = s.queue.sent;
+  const cosPoszlo = dzisiajPoWysylce !== null && wyslaneTeraz !== dzisiajPoWysylce;
+  dzisiajPoWysylce = wyslaneTeraz;
+  odswiezDzisiaj(cosPoszlo);
   $('logPath').textContent = s.logFile || '';
 
   const mc = s.listener.multicastGroups?.length
@@ -793,18 +806,18 @@ function renderCards(s) {
   const sesja = s.session || {};
   const nd = s.listener.notDecoded || {};
 
-  // WYSŁANE: licznik trwały, w kopiach. Przejścia próbne mają własny licznik,
-  // bo QSO, które nie opuściło komputera, nie jest wysłane.
-  $('cSent').textContent = s.queue.sent;
-  // Druga linia mówi WYŁĄCZNIE o tej sesji — mieszanie jej z licznikiem
-  // trwałym byłoby powtórzeniem błędu, który właśnie naprawiamy.
-  let podSent = t('sub.sentSession').replace('{n}', sesja.copies ?? 0);
+  // WYSŁANE DZIŚ. Samej liczby TU NIE USTAWIAMY — przychodzi z dziennika
+  // przez `odswiezDzisiaj`, dokładnie ta sama, którą pokazuje widok prosty.
+  // Licznik trwały (kopie od początku) schodzi do drugiej linii: przy akcji
+  // liczy się dzisiejszy dorobek, a suma od zawsze jest ciekawostką.
+  let podSent = t('sub.sentTotal').replace('{n}', s.queue.sent);
+  podSent += ` · ${t('sub.sentSession').replace('{n}', sesja.copies ?? 0)}`;
   if (sesja.duplicates) podSent += t('sub.sentDuplicates').replace('{n}', sesja.duplicates);
   if (sesja.dryRun) podSent += t('sub.sentDry').replace('{n}', sesja.dryRun);
   $('sSent').textContent = podSent;
   $('kSent').title = s.queue.dryRun
-    ? `${t('tip.sent')} ${t('tip.sentDryTotal').replace('{n}', s.queue.dryRun)}`
-    : t('tip.sent');
+    ? `${t('tip.sentToday')} ${t('tip.sentDryTotal').replace('{n}', s.queue.dryRun)}`
+    : t('tip.sentToday');
 
   $('cPending').textContent = s.queue.pending;
   $('sPending').textContent = t('sub.onDisk');

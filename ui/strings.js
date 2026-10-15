@@ -138,6 +138,7 @@ const DICT = {
       + 'w zasobniku. Aby go zakończyć, użyj przycisku „Zakończ".',
 
     'card.sent': 'Wysłane',
+    'card.sentToday': 'Wysłane dziś',
     'card.pending': 'W kolejce',
     'card.failed': 'Odrzucone',
     'card.received': 'Odebrane z loggera',
@@ -399,15 +400,21 @@ const DICT = {
     'panel.view': 'Widok',
     'label.recentEvents': 'Ile ostatnich zdarzeń pokazywać',
     'hint.recentEvents': 'Od 5 do 200. Dotyczy panelu „Ostatnie zdarzenia" na zakładce Stan.',
-    'sub.sentSession': 'w tej sesji: {n} kopii',
+    'sub.sentSession': 'w tej sesji: {n}',
     'sub.sentDuplicates': ' · duplikatów: {n}',
     'sub.sentDry': ' · próbnie (nie wysłane): {n}',
     'sub.onDisk': 'na dysku, przeżywa restart',
     'sub.datagrams': 'datagramów: {r} · nieodczytane: {n}',
     'sub.session': 'w tej sesji',
+    'sub.sentTotal': 'kopie od początku: {n}',
     'tip.sent': 'Licznik OD POCZĄTKU — przeżywa restart programu. Liczy KOPIE, '
       + 'nie QSO: jedno QSO rozmnożone na trzy stacje to trzy kopie. Przejścia '
       + 'próbne mają osobny licznik i tu się NIE wliczają.',
+    'tip.sentToday': 'Łączności z DZISIEJSZĄ datą, które doszły na serwer — ta sama '
+      + 'liczba, którą pokazuje widok prosty. Czytana z dziennika wysyłek, więc '
+      + 'przeżywa restart programu; doba liczona w UTC, tak jak zakres „Dziś" '
+      + 'na Statystykach. Liczy QSO, a druga linia KOPIE od początku: jedno QSO '
+      + 'rozmnożone na trzy stacje to trzy kopie.',
     'tip.pending': 'QSO czekające na wysyłkę. Leżą na dysku, więc przeżywają restart '
       + 'i zamknięcie programu.',
     'tip.failed': 'Kopie odrzucone przez serwis. Leżą na dysku; można je ponowić '
@@ -566,6 +573,7 @@ const DICT = {
       + 'keeps running in the tray. Use the “Quit” button to stop it.',
 
     'card.sent': 'Uploaded',
+    'card.sentToday': 'Uploaded today',
     'card.pending': 'Queued',
     'card.failed': 'Rejected',
     'card.received': 'Received from logger',
@@ -824,12 +832,18 @@ const DICT = {
     'panel.view': 'View',
     'label.recentEvents': 'How many recent events to show',
     'hint.recentEvents': 'Between 5 and 200. Applies to the “Recent events” panel on the Status tab.',
-    'sub.sentSession': 'this session: {n} copies',
+    'sub.sentSession': 'this session: {n}',
+    'sub.sentTotal': 'copies since the beginning: {n}',
     'sub.sentDuplicates': ' · duplicates: {n}',
     'sub.sentDry': ' · dry run (not sent): {n}',
     'sub.onDisk': 'on disk, survives a restart',
     'sub.datagrams': 'datagrams: {r} · not decoded: {n}',
     'sub.session': 'this session',
+    'tip.sentToday': 'QSOs dated TODAY that reached the server — the same number the '
+      + 'simple view shows. Read from the upload journal, so it survives a restart; '
+      + 'the day is counted in UTC, like the „Today" range on Statistics. It counts '
+      + 'QSOs, while the second line counts COPIES since the beginning: one QSO '
+      + 'fanned out to three stations is three copies.',
     'tip.sent': 'Counter SINCE THE BEGINNING — it survives a restart. It counts COPIES, '
       + 'not QSOs: one QSO fanned out to three stations is three copies. Dry-run '
       + 'passes have their own counter and are NOT included here.',

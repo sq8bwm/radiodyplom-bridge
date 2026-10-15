@@ -304,3 +304,66 @@ describe('belka nagłówka i kafelki na niej', () => {
     }
   });
 });
+
+// Akcent — jedyny kolor, ktory NIE znaczy stanu. Wymieniony 2026-10-15
+// z granatu #2c3e50 (praktycznie kolor tekstu) na indygo.
+describe('kolor akcentu', () => {
+  const wartosc = (blok, nazwa) => {
+    const i = H.indexOf(blok);
+    assert.ok(i > 0, `brak bloku ${blok}`);
+    const m = H.slice(i, H.indexOf('\n  }', i) + 4)
+      .match(new RegExp(`--${nazwa}:\\s*(#[0-9a-f]{3,8})`, 'i'));
+    assert.ok(m, `w ${blok} nie ma --${nazwa}`);
+    return m[1];
+  };
+  const kontrast = (a, b) => {
+    const roz = (h) => { let x = h.replace('#', '');
+      if (x.length === 3) x = x.split('').map((z) => z + z).join('');
+      return x.match(/../g).map((v) => parseInt(v, 16) / 255); };
+    const L = (h) => { const k = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      const [r, g, bb] = roz(h); return 0.2126 * k(r) + 0.7152 * k(g) + 0.0722 * k(bb); };
+    const [x, y] = L(a) > L(b) ? [L(a), L(b)] : [L(b), L(a)];
+    return (x + 0.05) / (y + 0.05);
+  };
+
+  test('napis na przycisku głównym ma kontrast w OBU motywach', () => {
+    // `button.act` to tło w akcencie i napis w `--on-accent` — czyli jedyne
+    // miejsce, gdzie akcent musi unieść drobny tekst. Próg 4,5:1.
+    for (const blok of [':root {', ':root[data-theme="dark"] {']) {
+      const k = kontrast(wartosc(blok, 'accent'), wartosc(blok, 'on-accent'));
+      assert.ok(k >= 4.5, `${blok} akcent/on-accent to ${k.toFixed(2)}:1`);
+    }
+  });
+
+  test('akcent nie wchodzi w odcienie zarezerwowane dla stanu', () => {
+    // Zieleń 149°, bursztyn 43°, czerwień 6°. Akcent ma trzymać się z dala,
+    // inaczej „wybrane" zacznie wyglądać jak „działa" albo „uwaga".
+    const odcien = (h) => { let x = h.replace('#', '');
+      if (x.length === 3) x = x.split('').map((z) => z + z).join('');
+      const [r, g, b] = x.match(/../g).map((v) => parseInt(v, 16) / 255);
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      if (mx === mn) return 0;
+      const d = mx - mn;
+      const k = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      return ((k * 60) + 360) % 360; };
+    for (const blok of [':root {', ':root[data-theme="dark"] {']) {
+      const h = odcien(wartosc(blok, 'accent'));
+      for (const [nazwa, stan] of [['zieleń', 149], ['bursztyn', 43], ['czerwień', 6]]) {
+        const roznica = Math.min(Math.abs(h - stan), 360 - Math.abs(h - stan));
+        assert.ok(roznica > 40,
+          `${blok} akcent ${Math.round(h)}° jest o ${Math.round(roznica)}° od ${nazwa} (${stan}°)`);
+      }
+    }
+  });
+
+  test('wybrany zakres: wypełniony w ciemnym, tylko zaznaczony w jasnym', () => {
+    // Ta sama sztuczka waży inaczej w kazdym motywie: blade indygo na granacie
+    // czyta sie spokojnie, nasycone na bieli krzyczy glosniej niz „Zapisz".
+    assert.match(H, /\.range button\.on \{ background:var\(--accent\)/);
+    assert.match(H, /:root\[data-theme="light"\] \.range button\.on,\s*\n\s*:root:not\(\[data-theme\]\) \.range button\.on \{/);
+    // „Jak w systemie" przy ciemnym pulpicie MUSI wrocic do wypelnienia,
+    // inaczej polowa uzytkownikow ciemnego dostanie wersje jasna.
+    const auto = H.slice(H.indexOf('@media (prefers-color-scheme: dark) {\n    /* Motyw'));
+    assert.match(auto.slice(0, 400), /:root:not\(\[data-theme\]\) \.range button\.on \{\s*background:var\(--accent\)/);
+  });
+});

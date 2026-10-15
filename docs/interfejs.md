@@ -494,6 +494,28 @@ To ten sam plik `index.html`, który jedzie w oknie programu — więc te reguł
 wchodzą też, gdy ktoś zwęzi okno na monitorze. Okno startuje w 900×700, czyli
 domyślnie ich nie widać.
 
+**Okno pamięta swój rozmiar i położenie** (`ui.window` w konfiguracji) —
+razem ze zmaksymalizowaniem. Dotąd wstawało zawsze w 900×700, więc kto trzyma
+je wąsko z boku ekranu albo na pełnej szerokości drugiego monitora, układał je
+od nowa przy każdym uruchomieniu.
+
+Dwie rzeczy warte odnotowania, obie zmierzone na żywym oknie:
+
+- **rozmiar sprzed zmaksymalizowania pamiętamy sami.** Flaga `isMaximized()`
+  nie wystarcza: gdy maksymalizuje menedżer okien, a nie program, zdarzenie
+  `resize` przychodzi, zanim Electron się o tym dowie — i do pliku trafiał
+  rozmiar ekranu zamiast wybranego (1400×995 zamiast 1180×640). Dlatego
+  wymiary porównujemy z obszarem roboczym ekranu i „na cały ekran" nie wchodzi
+  do pamięci jako rozmiar normalny;
+- **zapisane położenie jest sprawdzane pod kątem widoczności.** Po odłączeniu
+  drugiego monitora zapisane współrzędne wskazują pustkę, a okno otwarte tam
+  jest nie do odróżnienia od programu, który się nie uruchomił. Jeśli nic
+  z okna nie mieści się na żadnym ekranie, położenie jest pomijane i zostaje
+  sam rozmiar.
+
+Zapis jest dławiony (0,8 s), bo `resize` leci przy każdym pikselu przeciągania;
+przy zamykaniu okna zapisujemy natychmiast, żeby ostatnia zmiana nie przepadła.
+
 Zwężać da się **do 360×320 punktów strony** i ani piksela dalej. Wcześniej okno
 dawało się ścisnąć do paska kilku pikseli: nie było już czego czytać, a złapanie
 krawędzi myszą, żeby je rozciągnąć, wymagało cierpliwości. 360 px to zmierzona

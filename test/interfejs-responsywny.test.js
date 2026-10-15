@@ -189,7 +189,7 @@ describe('układ na wąskim ekranie', () => {
     // podniósł go do szerokości okna, układ telefonu wszedłby na monitor.
     const [, prog] = H.match(PROG);
     const M = readFileSync(new URL('../ui/main.js', import.meta.url), 'utf8');
-    const szerokoscOkna = Number(M.match(/width: (\d+),/)[1]);
+    const szerokoscOkna = Number(M.match(/OKNO_STARTOWE = \{ szer: (\d+)/)[1]);
     assert.ok(Number(prog) < szerokoscOkna,
       `próg ${prog}px nie może dochodzić do szerokości okna ${szerokoscOkna}px`);
   });
@@ -220,8 +220,9 @@ describe('okno ma dolną granicę rozmiaru', () => {
   });
 
   test('minimum nie przekracza rozmiaru startowego okna', () => {
-    const [, szerokoscOkna] = M.match(/width: (\d+),/);
-    const [, wysokoscOkna] = M.match(/height: (\d+),/);
+    // Rozmiar startowy czytamy ze STAŁEJ, nie z wywołania BrowserWindow —
+    // tam stoi teraz wyrażenie z zapamiętanym rozmiarem.
+    const [, szerokoscOkna, wysokoscOkna] = M.match(/OKNO_STARTOWE = \{ szer: (\d+), wys: (\d+)/);
     assert.ok(minTresc().szer < Number(szerokoscOkna));
     assert.ok(minTresc().wys < Number(wysokoscOkna));
   });

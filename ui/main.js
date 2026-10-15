@@ -254,6 +254,34 @@ function buildMenu() {
 // liczby i początek listy, a pełny — nagłówek razem z paskiem zakładek.
 const MIN_TRESC = { szer: 360, wys: 320 };
 
+/** Rozmiar okna przy PIERWSZYM uruchomieniu — potem decyduje zapamiętany. */
+const OKNO_STARTOWE = { szer: 900, wys: 700 };
+
+/**
+ * Zapamiętany rozmiar okna — albo nic, gdy go nie ma lub nie mieści się już
+ * na żadnym ekranie.
+ *
+ * Sprawdzamy WIDOCZNOŚĆ, a nie samo istnienie liczb: po odłączeniu drugiego
+ * monitora zapisane współrzędne wskazują pustkę, a okno otwarte tam jest dla
+ * człowieka nie do odróżnienia od nieuruchomionego programu.
+ */
+function zapamietanyRozmiar() {
+  const o = daemon?.getConfig?.()?.ui?.window;
+  if (!o || !Number.isFinite(o.width) || !Number.isFinite(o.height)) return null;
+  const wynik = { width: o.width, height: o.height, maximized: !!o.maximized };
+  if (Number.isFinite(o.x) && Number.isFinite(o.y)) {
+    const widoczne = screen.getAllDisplays().some((d) => {
+      const p = d.workArea;
+      // Wystarczy, że widać kawałek paska tytułu — inaczej okno zapisane
+      // częściowo poza krawędzią byłoby odrzucane bez powodu.
+      return o.x + o.width > p.x + 40 && o.x < p.x + p.width - 40
+        && o.y >= p.y - 10 && o.y < p.y + p.height - 40;
+    });
+    if (widoczne) { wynik.x = o.x; wynik.y = o.y; }
+  }
+  return wynik;
+}
+
 function showWindow() {
   if (win) {
     if (win.isMinimized()) win.restore();
@@ -261,9 +289,15 @@ function showWindow() {
     win.focus();
     return;
   }
+  // Rozmiar i położenie z poprzedniego uruchomienia — jeśli są i jeśli nadal
+  // mieszczą się na którymś ekranie. Monitor bywa odłączony między sesjami
+  // i okno zapisane na nim otworzyłoby się poza widokiem, czyli dla człowieka
+  // po prostu by zniknęło.
+  const zapamietane = zapamietanyRozmiar();
   win = new BrowserWindow({
-    width: 900,
-    height: 700,
+    width: zapamietane?.width ?? OKNO_STARTOWE.szer,
+    height: zapamietane?.height ?? OKNO_STARTOWE.wys,
+    ...(zapamietane?.x !== undefined ? { x: zapamietane.x, y: zapamietane.y } : {}),
     title: 'RadioDyplom Bridge',
     icon: iconFor('ok'),
     webPreferences: {
@@ -334,8 +368,66 @@ function showWindow() {
 
   win.loadFile(join(__dirname, 'index.html'));
 
+  // Zapis rozmiaru. Dławiony, bo `resize` leci przy KAŻDYM pikselu
+  // przeciągania — bez tego zapisywalibyśmy konfigurację kilkadziesiąt razy
+  // na sekundę.
+  //
+  // Rozmiar sprzed zmaksymalizowania pamiętamy SAMI, zamiast ufać
+  // `getNormalBounds()`. Zmierzone na żywym oknie (xfwm4): gdy maksymalizuje
+  // MENEDŻER OKIEN, a nie program, `getNormalBounds()` oddaje rozmiar ekranu
+  // — i do pliku trafiało 1400×995 zamiast 1180×640. Po odmaksymalizowaniu
+  // okno wracałoby wtedy na cały ekran, a wybrany rozmiar przepadał.
+  let zapisOkna = null;
+  let ostatniNormalny = null;
+  /**
+   * Czy te wymiary to w praktyce „na cały ekran"?
+   *
+   * Flaga `isMaximized()` NIE wystarcza: gdy maksymalizuje menedżer okien,
+   * zdarzenie `resize` przychodzi, zanim Electron się o tym dowie, więc
+   * w tej chwili flaga jest jeszcze fałszywa i rozmiar ekranu zostałby
+   * zapamiętany jako „normalny". Zmierzone na xfwm4: do pliku trafiało
+   * 1400×995 zamiast 1180×640.
+   */
+  const naCalyEkran = (b) => {
+    const praca = screen.getDisplayMatching(b).workArea;
+    return Math.abs(b.width - praca.width) <= 8 && Math.abs(b.height - praca.height) <= 8;
+  };
+  const zapiszRozmiar = () => {
+    if (win && !win.isDestroyed() && !win.isMinimized() && !win.isMaximized()) {
+      const b = win.getBounds();
+      if (!naCalyEkran(b)) ostatniNormalny = b;
+    }
+    clearTimeout(zapisOkna);
+    zapisOkna = setTimeout(() => {
+      if (!win || win.isDestroyed() || win.isMinimized()) return;
+      const b = ostatniNormalny || win.getNormalBounds();
+      try {
+        daemon?.saveConfig?.({ ui: { window: { ...b, maximized: win.isMaximized() } } });
+      } catch { /* rdzeń jeszcze wstaje albo już go nie ma */ }
+    }, 800);
+  };
+  win.on('resize', zapiszRozmiar);
+  win.on('move', zapiszRozmiar);
+  win.on('maximize', zapiszRozmiar);
+  win.on('unmaximize', zapiszRozmiar);
+
+  if (zapamietane?.maximized) win.maximize();
+
   // Zamknięcie okna chowa aplikację do zasobnika – daemon ma pracować dalej.
   win.on('close', (e) => {
+    // Zapisujemy OD RAZU, bez dławienia: zamknięcie może nastąpić przed
+    // upływem opóźnienia i ostatnia zmiana rozmiaru by przepadła.
+    clearTimeout(zapisOkna);
+    if (!win.isDestroyed() && !win.isMinimized()) {
+      if (!win.isMaximized()) {
+        const b = win.getBounds();
+        if (!naCalyEkran(b)) ostatniNormalny = b;
+      }
+      const b = ostatniNormalny || win.getNormalBounds();
+      try {
+        daemon?.saveConfig?.({ ui: { window: { ...b, maximized: win.isMaximized() } } });
+      } catch { /* rdzeń mógł już zejść */ }
+    }
     if (!quitting) { e.preventDefault(); win.hide(); }
   });
   win.on('closed', () => { win = null; });

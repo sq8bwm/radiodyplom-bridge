@@ -106,6 +106,24 @@ zakres „dziś" na Statystykach, więc obie liczby zgadzają się także wieczo
 Dziennik indeksuje po dacie QSO, więc wysłanie wczorajszej łączności z pliku ADIF
 powiększy liczbę z wczoraj, a nie z dzisiaj.
 
+### Kolor akcentu
+
+Program ma **cztery barwy i każda ma swoją robotę**: zieleń, bursztyn i czerwień
+znaczą **stan**, a akcent — to, co **interaktywne albo wybrane**: przycisk główny,
+obwódka skupienia, podkreślenie aktywnej zakładki, najechania, wypełnienia
+słupków na Statystykach.
+
+Akcent to **indygo** (`#4338ca` w jasnym, `#a5b4fc` w ciemnym). Wybrane
+świadomie: 245° to odcień najdalszy od zieleni (149°), bursztynu (43°)
+i czerwieni (6°), więc „wybrane" nigdy nie będzie wyglądać jak „działa" albo
+„uwaga". Wcześniej akcentem był granat `#2c3e50` — praktycznie kolor tekstu,
+który jako barwa nie istniał.
+
+**Wybrany zakres na Statystykach wygląda inaczej w każdym motywie** i tak ma
+być: w ciemnym jest wypełniony (blade indygo na granacie czyta się spokojnie),
+w jasnym tylko zaznaczony ramką i tłem na 14%, bo nasycone wypełnienie krzyczy
+tam głośniej niż „Zapisz" — a to filtr, nie akcja.
+
 ### Belka nagłówka
 
 Nagłówek ma **własny kolor tła**, odsunięty od panelu, a wszystko, co na nim

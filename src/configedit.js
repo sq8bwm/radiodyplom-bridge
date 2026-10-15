@@ -67,7 +67,12 @@ export function editableConfig(cfg) {
     radiodyplom: {
       apiUrl: cfg.radiodyplom.apiUrl,
       pin: maskPin(cfg.radiodyplom.pin),
-      pinSet: !!cfg.radiodyplom.pin,
+      // Ocena „czy PIN jest" MUSI iść przez `isPinMissing`, jak wszędzie
+      // indziej: samo `!!pin` uznawało wzorcowe „WSTAW-PIN" za ustawiony PIN,
+      // czyli dokładnie to rozjechanie, przed którym ostrzega komentarz przy
+      // tamtej funkcji. Nic z tego jeszcze nie wynikało, bo interfejs tego
+      // pola nie czytał — teraz czyta.
+      pinSet: !isPinMissing(cfg.radiodyplom.pin),
       // Interfejs musi wiedzieć, że zmiana tutaj nic nie da: przy następnym
       // starcie wartość ze środowiska i tak wygra.
       pinFromEnv: !!cfg._zEnv?.pin,

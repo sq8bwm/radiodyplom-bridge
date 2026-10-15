@@ -80,6 +80,19 @@ describe('editableConfig — co widzi interfejs', () => {
     assert.equal(view.radiodyplom.pinSet, true);
     assert.equal(view.forward.targets[0].pinSet, true);
   });
+
+  test('wzorcowe „WSTAW-PIN" to NIE jest ustawiony PIN', () => {
+    // Ocena musi iść przez `isPinMissing`, tak jak w reszcie programu —
+    // samo `!!pin` uznawało wzorzec za prawdziwy PIN, więc pole w oknie
+    // pokazywało maskę obok plakietki „brak PIN-u API".
+    const cfg = cfgMod.loadConfig();
+    cfg.radiodyplom.pin = 'WSTAW-PIN';
+    assert.equal(mod.editableConfig(cfg).radiodyplom.pinSet, false);
+    cfg.radiodyplom.pin = '   ';
+    assert.equal(mod.editableConfig(cfg).radiodyplom.pinSet, false);
+    cfg.radiodyplom.pin = 'ABCD-1234';
+    assert.equal(mod.editableConfig(cfg).radiodyplom.pinSet, true);
+  });
 });
 
 describe('applyConfig — zapis z interfejsu', () => {

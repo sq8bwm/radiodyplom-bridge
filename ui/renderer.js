@@ -1128,14 +1128,23 @@ function updateLogFollow() {
 async function loadConfig() {
   const cfg = await window.bridge.getConfig();
   if (!cfg) return;
-  $('fPin').value = cfg.radiodyplom.pin || '';
+  // Pole pokazuje maskę TYLKO wtedy, gdy PIN naprawdę jest. Po instalacji
+  // w konfiguracji leży wzorcowe „WSTAW-PIN"; jego maska wyglądała w polu
+  // dokładnie tak samo jak zapisany PIN, czyli przeczyła plakietce „brak
+  // PIN-u API" obok. Puste pole z podpowiedzią mówi to samo, co reszta okna.
+  $('fPin').value = cfg.radiodyplom.pinSet ? (cfg.radiodyplom.pin || '') : '';
   const pinZEnv = !!cfg.radiodyplom.pinFromEnv;
   $('fPin').disabled = pinZEnv;
   // Oczko razem z polem: przy PIN-ie z `pin.env` pole jest puste, więc
   // przycisk nie miałby czego pokazać.
   $('fPinOko').disabled = pinZEnv;
   if (pinZEnv) $('fPin').value = '';
-  $('pinHint').textContent = pinZEnv ? t('hint.pinFromEnv') : t('hint.pin');
+  // Trzy różne sytuacje, trzy różne zdania. „Zostaw bez zmian, żeby zachować
+  // dotychczasowy" przy PUSTYM polu mówiłoby o czymś, czego nie ma.
+  let pinHint = t('hint.pin');
+  if (pinZEnv) pinHint = t('hint.pinFromEnv');
+  else if (!cfg.radiodyplom.pinSet) pinHint = t('hint.pinEmpty');
+  $('pinHint').textContent = pinHint;
   $('fDryRun').checked = cfg.radiodyplom.dryRun;
   $('fHost').value = cfg.udp.host;
   $('fPort').value = cfg.udp.port;

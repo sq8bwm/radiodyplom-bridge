@@ -121,7 +121,16 @@ export function editableConfig(cfg) {
       host: cfg.tcp?.host || '127.0.0.1',
       port: Number(cfg.tcp?.port) || 52005,
     },
-    ui: { recentEvents: cfg.ui?.recentEvents ?? 20, zoom: cfg.ui?.zoom ?? 1 },
+    // `window` idzie tu razem z resztą, bo `getConfig()` oddaje WŁAŚNIE ten
+    // widok — także procesowi głównemu Electrona, który czyta stąd rozmiar
+    // okna przy starcie. Bez tego klucz zapisywał się do pliku i nigdy nie
+    // wracał (sprawdzone na żywym oknie: wstawało w 900×700 mimo zapisu).
+    // Sekretu tu nie ma: to wymiary okna, nie dane konta.
+    ui: {
+      recentEvents: cfg.ui?.recentEvents ?? 20,
+      zoom: cfg.ui?.zoom ?? 1,
+      ...(cfg.ui?.window ? { window: cfg.ui.window } : {}),
+    },
   };
 }
 
@@ -295,6 +304,29 @@ export function applyConfig(daemon, patch) {
     cfg.ui = cfg.ui || {};
     if (Number.isFinite(z)) cfg.ui.zoom = Math.max(0.8, Math.min(3, z));
   }
+  // Rozmiar i położenie okna. Zapisujemy, bo okno wstające zawsze w 900x700
+  // każe układać je od nowa przy każdym uruchomieniu — a ktoś, kto trzyma je
+  // wąsko z boku ekranu albo na pełnej szerokości drugiego monitora, robi tak
+  // CELOWO. Liczby sprawdzamy, bo trafiają tu wprost z okna: NaN albo ujemna
+  // szerokość położyłyby start.
+  if (patch.ui && patch.ui.window !== undefined) {
+    const o = patch.ui.window || {};
+    const liczba = (v) => (Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
+    const szer = liczba(o.width);
+    const wys = liczba(o.height);
+    cfg.ui = cfg.ui || {};
+    // Zapisujemy tylko komplet: połowa wymiarów jest gorsza niż ich brak,
+    // bo okno wstałoby w rozmiarze, którego nikt nie wybrał.
+    if (szer !== null && wys !== null && szer > 0 && wys > 0) {
+      cfg.ui.window = {
+        width: szer,
+        height: wys,
+        ...(liczba(o.x) !== null ? { x: liczba(o.x) } : {}),
+        ...(liczba(o.y) !== null ? { y: liczba(o.y) } : {}),
+        maximized: !!o.maximized,
+      };
+    }
+  }
   if (patch.ui && patch.ui.recentEvents !== undefined) {
     // Te same widełki co przy wczytywaniu — inaczej dałoby się je obejść
     // zapisem z interfejsu, a status puchłby przy każdym odpytaniu.
@@ -464,6 +496,11 @@ export function writeConfigFile(cfg) {
       // Bez tego powiększenie ginęło przy każdym zapisie z okna: rozwinięcie
       // `original` wygrywa, a tam tego pola jeszcze nie było.
       zoom: cfg.ui?.zoom ?? 1,
+      // To samo dotyczy rozmiaru okna — przy PIERWSZYM zapisie nie ma go
+      // jeszcze w pliku, więc rozwinięcie `original` nic by nie wniosło
+      // i zapamiętany rozmiar ginąłby w kółko. Klucza nie dopisujemy, dopóki
+      // nie ma czego zapisać, żeby nie zaśmiecać pliku pustym obiektem.
+      ...(cfg.ui?.window ? { window: cfg.ui.window } : {}),
     },
   };
   if (cfg.dataDir) out.dataDir = cfg.dataDir;

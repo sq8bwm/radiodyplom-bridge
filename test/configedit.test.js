@@ -95,6 +95,42 @@ describe('editableConfig — co widzi interfejs', () => {
   });
 });
 
+describe('rozmiar okna', () => {
+  // Zgłoszone 2026-10-15: „okno nie zapamiętuje proporcji". Wstawało zawsze
+  // w 900×700, więc kto trzyma je wąsko z boku ekranu, układał je od nowa
+  // przy każdym uruchomieniu.
+  test('zapisany rozmiar trafia do konfiguracji', () => {
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), { ui: { window: { width: 1200, height: 800, x: 40, y: 60 } } });
+    assert.deepEqual(saved().ui.window, { width: 1200, height: 800, x: 40, y: 60, maximized: false });
+  });
+
+  test('zmaksymalizowanie zapamiętuje się osobno', () => {
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), { ui: { window: { width: 900, height: 700, maximized: true } } });
+    assert.equal(saved().ui.window.maximized, true);
+  });
+
+  test('bzdurne liczby NIE są zapisywane', () => {
+    // Wymiary trafiają tu wprost z okna. NaN albo ujemna szerokość w pliku
+    // położyłyby start — i to w sposób, którego nikt nie powiąże z rozmiarem.
+    for (const zle of [{ width: NaN, height: 700 }, { width: 0, height: 700 },
+      { width: -100, height: 700 }, { width: 900 }, { height: 700 }]) {
+      const cfg = cfgMod.loadConfig();
+      mod.applyConfig(fakeDaemon(cfg), { ui: { window: zle } });
+      assert.equal(saved().ui?.window, undefined, `zapisano ${JSON.stringify(zle)}`);
+    }
+  });
+
+  test('ułamki są zaokrąglane', () => {
+    // Menedżer okien potrafi oddać 900.5 — w pliku konfiguracji ma być liczba.
+    const cfg = cfgMod.loadConfig();
+    mod.applyConfig(fakeDaemon(cfg), { ui: { window: { width: 900.6, height: 700.4 } } });
+    assert.equal(saved().ui.window.width, 901);
+    assert.equal(saved().ui.window.height, 700);
+  });
+});
+
 describe('applyConfig — zapis z interfejsu', () => {
   // REGRESJA: interfejs odsyła PIN-y w postaci zamaskowanej. Potraktowanie
   // maski jako nowej wartości zniszczyłoby prawdziwe PIN-y przy każdym zapisie.

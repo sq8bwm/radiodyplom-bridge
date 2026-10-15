@@ -367,3 +367,41 @@ describe('kolor akcentu', () => {
     assert.match(auto.slice(0, 400), /:root:not\(\[data-theme\]\) \.range button\.on \{\s*background:var\(--accent\)/);
   });
 });
+
+describe('okno pamięta rozmiar', () => {
+  const M = readFileSync(new URL('../ui/main.js', import.meta.url), 'utf8');
+
+  test('rozmiar startowy jest używany TYLKO gdy nie ma zapamiętanego', () => {
+    assert.match(M, /width: zapamietane\?\.width \?\? OKNO_STARTOWE\.szer/);
+    assert.match(M, /height: zapamietane\?\.height \?\? OKNO_STARTOWE\.wys/);
+  });
+
+  test('zapisujemy rozmiar SPRZED zmaksymalizowania', () => {
+    // Zmierzone na żywym oknie: gdy maksymalizuje MENEDŻER OKIEN, a nie
+    // program, `getNormalBounds()` oddaje rozmiar ekranu — do pliku trafiało
+    // 1400×995 zamiast 1180×640. Dlatego pamiętamy ostatni rozmiar sami
+    // i bierzemy go tylko wtedy, gdy okno NIE jest zmaksymalizowane.
+    // Flaga `isMaximized()` nie wystarcza — przy maksymalizacji z menedżera
+    // okien zdarzenie `resize` wyprzedza ją o chwilę. Dlatego porównujemy
+    // rozmiar z obszarem roboczym ekranu.
+    assert.match(M, /const naCalyEkran = \(b\) => \{/);
+    assert.match(M, /if \(!naCalyEkran\(b\)\) ostatniNormalny = b;/);
+    assert.match(M, /const b = ostatniNormalny \|\| win\.getNormalBounds\(\);/);
+  });
+
+  test('zapis jest dławiony, ale przy zamykaniu natychmiastowy', () => {
+    // `resize` leci przy każdym pikselu przeciągania.
+    assert.match(M, /setTimeout\(\(\) => \{[\s\S]*?saveConfig[\s\S]*?\}, 800\)/);
+    const zamkniecie = M.slice(M.indexOf("win.on('close'"));
+    assert.match(zamkniecie.slice(0, 600), /clearTimeout\(zapisOkna\);/);
+    assert.match(zamkniecie.slice(0, 600), /saveConfig/);
+  });
+
+  test('zapamiętane położenie jest sprawdzane pod kątem WIDOCZNOŚCI', () => {
+    // Po odłączeniu drugiego monitora zapisane współrzędne wskazują pustkę,
+    // a okno otwarte tam wygląda jak program, który się nie uruchomił.
+    const f = M.slice(M.indexOf('function zapamietanyRozmiar'), M.indexOf('function showWindow'));
+    assert.match(f, /screen\.getAllDisplays\(\)/);
+    assert.match(f, /workArea/);
+  });
+});

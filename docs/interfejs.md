@@ -75,11 +75,48 @@ uruchomieniu wygląda na coś, co trzeba skonfigurować — a nie trzeba: po wpi
 PIN-u QSO lecą same. Konfiguracje istniejące zostają na pełnym świadomie: nikt,
 kto pracuje z programem od miesiąca, nie prosił o schowanie mu zakładek.
 
+Wygląd tej strony jest podporządkowany jednemu pytaniu. **Linijka stanu ma
+własne pole i barwę stanu** — zieloną, gdy mostek pracuje, bursztynową przy
+wstrzymaniu, próbie na sucho albo odrzuconych, czerwoną przy braku łączności.
+Barwa niczego nie zastępuje, bo ten sam stan stoi obok tekstem; uczy oka
+kształtu, żeby odstępstwo było widać przed przeczytaniem. **Liczby mają 40 px**
+(28 px na ekranie węższym niż 620) i cyfry o stałej szerokości, więc licznik
+nie podskakuje przy każdym QSO.
+
+Podpis stoi **obok** liczby, nie pod nią: kafelek jest wtedy o 18 px niższy,
+a tyle wysokości zostaje liście łączności, po którą się do tego widoku wraca.
+Gdy obok zabraknie miejsca — przy 140% tekstu na najwęższym ekranie — podpis
+schodzi pod liczbę zamiast wyjść poza kafelek.
+
+**Lista rośnie razem z oknem.** Strona wypełnia całą jego wysokość, a panel
+z łącznościami dostaje to, co zostanie po stanie i liczbach — wcześniej przy
+900×700 dolna połowa ekranu była pusta, a lista kończyła się w jednej trzeciej
+wysokości i wyglądała na uciętą.
+
+**Kropka mruga raz, gdy łączność właśnie poszła na serwer.** Liczby zmieniają
+się po cichu i przy spojrzeniu z boku nie wiadomo, czy program jeszcze pracuje.
+Jeden przebieg, nie pętla: migający element przy kilkugodzinnej akcji byłby nie
+do zniesienia. Sygnałem jest licznik wysyłek, ten sam, który odświeża „z
+dzisiaj" — nie ma tu drugiego mechanizmu. Kto ma w systemie ustawione
+ograniczenie ruchu (`prefers-reduced-motion`), nie zobaczy animacji wcale.
+
 Liczba „z dzisiaj" idzie z **dziennika wysyłek**, a nie z licznika w pamięci —
 dzięki temu przeżywa restart programu. Dzień liczony jest w **UTC**, tak samo jak
 zakres „dziś" na Statystykach, więc obie liczby zgadzają się także wieczorem.
 Dziennik indeksuje po dacie QSO, więc wysłanie wczorajszej łączności z pliku ADIF
 powiększy liczbę z wczoraj, a nie z dzisiaj.
+
+### Najechanie i skupienie
+
+Wszystko, co klikalne, reaguje na kursor: przycisk z wypełnieniem rozjaśnia się,
+obrysowany dostaje delikatne tło i wyraźniejszą ramkę, zakładki ciemnieją,
+a wiersze łączności i kafelki z liczbami podświetlają się. Zmiany są celowo
+drobne — to potwierdzenie „trafiłeś", a nie efekt. **„Zakończ" ma stan własny,
+czerwony**, bo jako jedyny robi coś nieodwracalnego. Przyciski wyłączone nie
+reagują wcale, żeby nie udawały klikalnych.
+
+Obwódka skupienia (`:focus-visible`, 2 px w kolorze akcentu) była tu wcześniej
+i zostaje bez zmian — kto nawiguje klawiaturą, musi widzieć, gdzie jest.
 
 ### Pytania zadaje własne okienko, nie natywne `confirm`
 
@@ -382,6 +419,19 @@ liczniki idą po dwa w rzędzie, zakładki zostają w jednym rzędzie przewijany
 palcem, dwukolumnowe pary pól schodzą do jednej kolumny, a pola i przyciski
 rosną pod palec. Tabele przewijają się w bok **wewnątrz** swoich paneli, więc
 nagłówek nie ucieka razem z treścią.
+
+Przyciski w nagłówku: **„Wstrzymaj" i przełącznik widoku mają równą
+szerokość** — tyle, ile potrzebuje szerszy napis. Robi to siatka o kolumnach
+`1fr`, nie sztywna liczba pikseli, więc równość przeżywa zmianę języka
+i powiększenie tekstu. **„Zakończ" zostaje węższy**: jako jedyny robi coś
+nieodwracalnego i nie ma powodu, żeby ważył tyle samo. Na ekranie węższym niż
+620 px przyciski wypełniają cały wiersz, kończąc się równo z kafelkami pod
+spodem — ale **nie na równe części**: przy 360 px na trzy równe zostałoby po
+107 px, a „Zaawansowane" potrzebuje 124 i napis byłby ucięty.
+
+Równe szerokości kosztują trochę miejsca: nagłówek mieści się w jednym wierszu
+od **832 px** wzwyż, wcześniej było to 810. Przy oknie startowym 900×700 —
+także z pionowym paskiem przewijania, który zabiera 15 px — nadal jeden wiersz.
 
 Prawa krawędź paska zakładek jest **wygaszona** — to znak, że pasek się
 przesuwa. Bez tego ostatnia zakładka wyglądała na uciętą i nic nie mówiło,

@@ -479,6 +479,24 @@ function prostyStan(s) {
   return { dot: 'ok', kl: '', tekst: t('prosty.ok') };
 }
 
+/**
+ * Jedno mrugnięcie kropki stanu po wysłanej łączności.
+ *
+ * Zdjęcie i ponowne nadanie klasy w jednym kroku NIE wystarcza — przeglądarka
+ * skleja oba zapisy w jeden i animacja nie rusza drugi raz. Stąd wymuszone
+ * przeliczenie układu pomiędzy nimi.
+ */
+let koniecMrugniecia = null;
+function mrugnijKropka() {
+  const kropka = $('prostyDot');
+  if (!kropka) return;
+  kropka.classList.remove('swiezy');
+  void kropka.offsetWidth;
+  kropka.classList.add('swiezy');
+  clearTimeout(koniecMrugniecia);
+  koniecMrugniecia = setTimeout(() => kropka.classList.remove('swiezy'), 1200);
+}
+
 function renderProsty(s) {
   if (widok !== 'simple' || !s) return;
 
@@ -491,7 +509,10 @@ function renderProsty(s) {
 
   if (!brakPin) {
     const st = prostyStan(s);
-    $('prostyDot').className = `dot ${st.dot}`;
+    // Klasę mrugnięcia PRZEPISUJEMY: stan odświeża się co 2 s, a animacja trwa
+    // 1,1 s — bez tego ginęłaby w połowie, bo `className` wymiata wszystko.
+    const mruga = $('prostyDot').classList.contains('swiezy');
+    $('prostyDot').className = `dot ${st.dot}${mruga ? ' swiezy' : ''}`;
     $('prostyStan').className = `linijka ${st.kl}`;
     $('prostyStanTekst').textContent = st.tekst;
   }
@@ -510,6 +531,10 @@ function renderProsty(s) {
   const poszloCos = dzisiajPoWysylce !== null && wyslane !== dzisiajPoWysylce;
   dzisiajPoWysylce = wyslane;
   odswiezDzisiaj(poszloCos);
+
+  // Ten sam sygnał zapala mrugnięcie kropki. Nowego mechanizmu nie dokładamy:
+  // licznik trwały rośnie dokładnie wtedy, gdy łączność poszła na serwer.
+  if (poszloCos) mrugnijKropka();
 
   // Lista: tylko zdarzenia, które SĄ łącznością. Ostrzeżenia i komunikaty
   // należą do widoku pełnego — tutaj mieszałyby się z QSO i znowu robiły

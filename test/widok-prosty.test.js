@@ -185,9 +185,20 @@ describe('co widać w widoku prostym', () => {
 
   test('liczba „z dzisiaj" rusza od razu po wysyłce, nie po pół minuty', () => {
     // Inaczej QSO było już na liście, a liczba nad nią stała na zerze
-    // i wyglądała na zepsutą.
-    assert.match(blok, /dzisiajPoWysylce/);
-    assert.match(blok, /odswiezDzisiaj\(poszloCos\)/);
+    // i wyglądała na zepsutą. Sygnałem jest drgnięcie licznika wysyłek.
+    assert.match(R, /dzisiajPoWysylce !== null && wyslaneTeraz !== dzisiajPoWysylce/);
+    assert.match(R, /odswiezDzisiaj\(cosPoszlo\)/);
+  });
+
+  test('„z dzisiaj" odświeża się dla OBU widoków, nie tylko prostego', () => {
+    // Ta sama liczba stoi teraz na kafelku „Wysłane dziś" w widoku pełnym,
+    // więc odczyt dziennika musi być we wspólnej ścieżce — w `renderProsty`
+    // nie zdążyłby, bo ta wychodzi od razu, gdy widok jest pełny.
+    const d = R.slice(R.indexOf('async function odswiezDzisiaj'), R.indexOf('function prostyStan'));
+    assert.doesNotMatch(d, /widok !== 'simple'/,
+      'odczyt „dziś" nie może być zamknięty w widoku prostym');
+    assert.match(d, /\$\('cSent'\)\.textContent = tekst;/);
+    assert.match(d, /\$\('prostySent'\)\.textContent = tekst;/);
   });
 });
 
@@ -234,5 +245,51 @@ describe('teksty widoku prostego', () => {
     assert.match(R, /prosty\.tipPending/);
     const prosty = H.slice(H.indexOf('<main id="prosty"'), H.indexOf('<main id="pelny">'));
     assert.ok(!prosty.includes('class="s"'), 'kafelki w widoku prostym nie mają trzeciej linii');
+  });
+});
+
+// Zgłoszone 2026-10-15 przy czytaniu dwóch zrzutów obok siebie: „martwi mnie,
+// że w widoku uproszczonym mamy informację, której nie ma w pełnym". Liczba
+// z dzisiaj BYŁA w pełnym — na Statystykach, po przestawieniu zakresu na
+// „Dziś" — ale dwa kliknięcia dalej i pod inną nazwą.
+describe('„dziś" znaczy to samo w obu widokach', () => {
+  const R2 = readFileSync(new URL('../ui/renderer.js', import.meta.url), 'utf8');
+  const S2 = readFileSync(new URL('../ui/strings.js', import.meta.url), 'utf8');
+  const karty = R2.slice(R2.indexOf('function renderCards'), R2.indexOf("$('cPending')"));
+
+  test('pierwsza karta na QSOs NIE pokazuje już licznika trwałego', () => {
+    assert.doesNotMatch(karty, /\$\('cSent'\)\.textContent = s\.queue\.sent/,
+      'liczba główna ma iść z dziennika, nie z licznika od początku');
+  });
+
+  test('licznik trwały nie zniknął — zszedł do drugiej linii', () => {
+    assert.match(karty, /t\('sub\.sentTotal'\)\.replace\('\{n\}', s\.queue\.sent\)/);
+    assert.match(karty, /sub\.sentSession/);
+  });
+
+  test('podpowiedź tłumaczy, skąd liczba i za jaką dobę', () => {
+    assert.match(karty, /tip\.sentToday/);
+    // Tekst jest sklejony z kilku linii, więc bierzemy KAWAŁEK PLIKU od klucza,
+    // a nie pierwszy fragment w apostrofach — inaczej test sprawdzałby
+    // pierwsze pół zdania i przepuszczał resztę.
+    const i = S2.indexOf("'tip.sentToday'");
+    const pl = S2.slice(i, i + 500);
+    assert.match(pl, /UTC/);
+    assert.match(pl, /dziennik/i);
+  });
+
+  test('podpis karty jest w obu językach', () => {
+    assert.equal(S2.split("'card.sentToday'").length - 1, 2);
+  });
+
+  test('druga linia nie odmienia rzeczownika przez liczebnik', () => {
+    // „w tej sesji: 1 kopii" to błąd, „2 kopii" też — polski liczebnik rządzi
+    // odmianą, a my nie mamy czym jej robić. Stąd zapis etykietowy.
+    for (const klucz of ['sub.sentTotal', 'sub.sentSession']) {
+      for (const m of S2.matchAll(new RegExp(`'${klucz.replace('.', '\\.')}': '([^']+)'`, 'g'))) {
+        assert.doesNotMatch(m[1], /\{n\} (kopii|kopie|kopia)/,
+          `${klucz}: „${m[1]}" odmienia rzeczownik po liczbie`);
+      }
+    }
   });
 });

@@ -140,11 +140,23 @@ wysyłka prawdziwa z próbną.
 
 | Karta | Liczba główna | Druga linia |
 |---|---|---|
-| WYSŁANE | **kopie** wysłane od początku (trwałe) | `w tej sesji: N kopii`, plus duplikaty i przejścia próbne tej sesji, jeśli były |
+| WYSŁANE DZIŚ | **QSO** z dzisiejszą datą, które doszły na serwer | `kopie od początku: N · w tej sesji: M`, plus duplikaty i przejścia próbne tej sesji, jeśli były |
 | W KOLEJCE | oczekujące | `na dysku, przeżywa restart` |
 | ODRZUCONE | odrzucone przez serwis | `na dysku, przeżywa restart` |
 | ODEBRANE Z LOGGERA | **QSO** przyjęte w tej sesji | `datagramów: R · nieodczytane: N` |
 | POMINIĘTE (DUPLIKATY) | deduplikacja | `w tej sesji` |
+
+Pierwsza karta pokazuje **tę samą liczbę co widok prosty** i z tego samego
+odczytu — z dziennika wysyłek, z dobą liczoną w UTC. Wcześniej stał tu licznik
+trwały (kopie od początku), a dzisiejszy dorobek trzeba było odszukać na
+Statystykach po przestawieniu zakresu na „Dziś": dwa kliknięcia po liczbę,
+którą widok prosty podaje od razu. Licznik trwały nie zniknął — zszedł do
+drugiej linii, bo przy akcji liczy się dzisiejszy dorobek, a suma od zawsze
+jest ciekawostką.
+
+Uwaga na jednostki: **liczba główna to QSO, a druga linia to KOPIE**. Przy
+fan-oucie jedno QSO rozmnożone na trzy stacje daje trzy kopie, więc te dwie
+liczby mogą się rozjechać i tak ma być.
 
 **Przejścia próbne nie wchodzą do „wysłanych"** — ani do licznika trwałego, ani
 do sesyjnego. QSO, które nie opuściło komputera, nie jest wysłane. Liczba

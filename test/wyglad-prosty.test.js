@@ -176,6 +176,21 @@ describe('kropka mruga po wysłanej łączności', () => {
     assert.ok(!/infinite/.test(a));
   });
 
+  test('na ciemnym tle poświata jest MOCNIEJSZA niż na jasnym', () => {
+    // Ta sama wartość, która na bieli wystarcza, na ciemnym tle ginie.
+    // Zgłoszone wprost: „a mogłoby troszkę jaśniej pulsować na ciemnym".
+    const sila = (blok) => {
+      const i = H.indexOf(blok);
+      assert.ok(i > 0, `brak bloku ${blok}`);
+      const m = H.slice(i, H.indexOf('\n  }', i) + 4)
+        .match(/--poswiata-pulsu:\s*color-mix\(in srgb, var\(--ok\) (\d+)%/);
+      assert.ok(m, `w ${blok} nie ma poświaty`);
+      return Number(m[1]);
+    };
+    assert.ok(sila(':root[data-theme="dark"] {') > sila(':root {'),
+      'poświata w motywie ciemnym musi być mocniejsza');
+  });
+
   test('kto prosi system o mniej ruchu, dostaje mniej ruchu', () => {
     assert.match(H, /@media \(prefers-reduced-motion: reduce\) \{ \.dot\.swiezy \{ animation:none; \} \}/);
   });

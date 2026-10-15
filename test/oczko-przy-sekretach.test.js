@@ -38,6 +38,13 @@ describe('pola z sekretem kryją wpisywane znaki', () => {
     assert.match(wiersz, /class="icon-btn t-oko"/);
   });
 
+  test('pole PIN-u jest PUSTE, dopóki PIN-u nie ma', () => {
+    // Inaczej po instalacji w polu widać kropki (maska wzorcowego
+    // „WSTAW-PIN"), identyczne jak przy zapisanym PIN-ie — i przeczące
+    // plakietce „brak PIN-u API" w nagłówku.
+    assert.match(R, /\$\('fPin'\)\.value = cfg\.radiodyplom\.pinSet \? \(cfg\.radiodyplom\.pin \|\| ''\) : '';/);
+  });
+
   test('pola PIN nie proszą menedżera haseł o zapamiętanie', () => {
     // Bez tego przeglądarka proponuje zapisanie PIN-u jako hasła do strony.
     for (const id of ['fPin', 'prostyPinInput']) {

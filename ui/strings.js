@@ -175,6 +175,7 @@ const DICT = {
     'label.language': 'Język interfejsu',
 
     'hint.pin': 'Zostaw bez zmian, żeby zachować dotychczasowy. Wpisz nowy, aby podmienić.',
+    'hint.pinEmpty': 'Wklej PIN z radiodyplom.pl — bez niego program nie wyśle ani jednego QSO.',
     'hint.fromEnvShort': 'z pliku pin.env',
     'hint.pinFromEnv': 'PIN pochodzi ze zmiennej RD_PIN (plik pin.env). Zmień go tam i zrestartuj usługę — zmiana w tym polu nie miałaby skutku.',
     'hint.apiPasswordFromEnv': 'Hasło pochodzi ze zmiennej RD_API_PASSWORD_HASH (plik pin.env). Zmień je tam i zrestartuj usługę.',
@@ -610,6 +611,7 @@ const DICT = {
     'label.language': 'Interface language',
 
     'hint.pin': 'Leave it untouched to keep the current PIN. Type a new one to replace it.',
+    'hint.pinEmpty': 'Paste the PIN from radiodyplom.pl — without it the program will not upload a single QSO.',
     'hint.fromEnvShort': 'from pin.env',
     'hint.pinFromEnv': 'The PIN comes from the RD_PIN variable (pin.env file). Change it there and restart the service — editing this field would have no effect.',
     'hint.apiPasswordFromEnv': 'The password comes from the RD_API_PASSWORD_HASH variable (pin.env file). Change it there and restart the service.',
